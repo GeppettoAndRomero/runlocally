@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { configure, ZipReader, BlobReader, TextWriter, type Entry } from '@zip.js/zip.js';
-import { createZip } from './create-split-merge-port/create';
-import { createEncryptedZip } from './create-split-merge-port/encrypt';
+import { createZip } from '../../src/engine/zip/create';
 
 // In Node (vitest) there are no Web Workers; compress inline.
 configure({ useWebWorkers: false });
@@ -49,7 +48,7 @@ describe('createZip', () => {
 
   it('reports progress per file', async () => {
     const seen: number[] = [];
-    await createZip([file('a', '1'), file('b', '2')], (p) => seen.push(p.index));
+    await createZip([file('a', '1'), file('b', '2')], { onProgress: (p) => seen.push(p.index) });
     expect(seen).toEqual([0, 1]);
   });
 
@@ -72,9 +71,9 @@ async function readText(entry: Entry): Promise<string> {
   return entry.getData!(new TextWriter());
 }
 
-describe('createEncryptedZip', () => {
+describe('createZip with password', () => {
   it('produces a valid .zip (PK magic bytes) with entries flagged as encrypted', async () => {
-    const blob = await createEncryptedZip([file('secret.txt', 'top secret')], 'hunter2');
+    const blob = await createZip([file('secret.txt', 'top secret')], { password: 'hunter2' });
     expect(blob.type).toBe('application/zip');
     const head = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
     expect(isZip(head)).toBe(true);
@@ -87,7 +86,7 @@ describe('createEncryptedZip', () => {
   });
 
   it('round-trips: decrypts with the correct password', async () => {
-    const blob = await createEncryptedZip([file('a.txt', 'AAA'), file('日本語.txt', 'BBB')], 'p@ss');
+    const blob = await createZip([file('a.txt', 'AAA'), file('日本語.txt', 'BBB')], { password: 'p@ss' });
     const { entries, close } = await open(blob, 'p@ss');
     const byName = Object.fromEntries(entries.map((e) => [e.filename, e]));
     expect(await readText(byName['a.txt'])).toBe('AAA');
@@ -96,30 +95,30 @@ describe('createEncryptedZip', () => {
   });
 
   it('fails to decrypt with the wrong password', async () => {
-    const blob = await createEncryptedZip([file('secret.txt', 'top secret')], 'hunter2');
+    const blob = await createZip([file('secret.txt', 'top secret')], { password: 'hunter2' });
     const { entries, close } = await open(blob, 'wrong-password');
     await expect(readText(entries[0])).rejects.toThrow();
     await close();
   });
 
   it('fails to decrypt with no password at all', async () => {
-    const blob = await createEncryptedZip([file('secret.txt', 'top secret')], 'hunter2');
+    const blob = await createZip([file('secret.txt', 'top secret')], { password: 'hunter2' });
     const { entries, close } = await open(blob);
     await expect(readText(entries[0])).rejects.toThrow();
     await close();
   });
 
   it('keeps the UTF-8 filename flag so non-ASCII names survive on Windows', async () => {
-    const blob = await createEncryptedZip([file('日本語.txt', 'x')], 'pw');
+    const blob = await createZip([file('日本語.txt', 'x')], { password: 'pw' });
     const { entries, close } = await open(blob, 'pw');
     expect(entries[0].filenameUTF8).toBe(true);
     await close();
   });
 
   it('disambiguates duplicate names', async () => {
-    const blob = await createEncryptedZip(
+    const blob = await createZip(
       [file('a.txt', '1'), file('a.txt', '2'), file('a.txt', '3')],
-      'pw'
+      { password: 'pw' }
     );
     const { entries, close } = await open(blob, 'pw');
     expect(entries.map((e) => e.filename).sort()).toEqual(['a (1).txt', 'a (2).txt', 'a.txt'].sort());
@@ -129,22 +128,59 @@ describe('createEncryptedZip', () => {
   it('uses the folder-relative path when present', async () => {
     const f = file('photo.txt', 'x');
     Object.defineProperty(f, 'webkitRelativePath', { value: 'album/photo.txt' });
-    const { entries, close } = await open(await createEncryptedZip([f], 'pw'), 'pw');
+    const { entries, close } = await open(await createZip([f], { password: 'pw' }), 'pw');
     expect(entries[0].filename).toBe('album/photo.txt');
     await close();
   });
 
   it('reports progress per file', async () => {
     const seen: number[] = [];
-    await createEncryptedZip([file('a', '1'), file('b', '2')], 'pw', (p) => seen.push(p.index));
+    await createZip([file('a', '1'), file('b', '2')], { password: 'pw', onProgress: (p) => seen.push(p.index) });
     expect(seen).toEqual([0, 1]);
   });
 
   it('rejects an empty file list', async () => {
-    await expect(createEncryptedZip([], 'pw')).rejects.toThrow();
+    await expect(createZip([], { password: 'pw' })).rejects.toThrow();
   });
 
   it('rejects an empty password', async () => {
-    await expect(createEncryptedZip([file('a.txt', '1')], '')).rejects.toThrow();
+    await expect(createZip([file('a.txt', '1')], { password: '' })).rejects.toThrow();
+  });
+});
+
+describe('createZip failures', () => {
+  it('reports unsupported for empty input and an empty password', async () => {
+    await expect(createZip([])).rejects.toMatchObject({ code: 'unsupported' });
+    await expect(createZip([file('a', 'x')], { password: '' })).rejects.toMatchObject({ code: 'unsupported' });
+  });
+
+  it('preserves a callback failure and closes the writer', async () => {
+    const { ZipWriter } = await import('@zip.js/zip.js');
+    const { vi } = await import('vitest');
+    const close = vi.spyOn(ZipWriter.prototype, 'close');
+    const failure = new Error('progress failed');
+    try {
+      await expect(createZip([file('a', 'x')], { onProgress: () => { throw failure; } })).rejects.toBe(failure);
+      expect(close).toHaveBeenCalledOnce();
+    } finally {
+      close.mockRestore();
+    }
+  });
+});
+
+describe('createZip interrupted output', () => {
+  it('preserves an add failure and closes the writer', async () => {
+    const { ZipWriter } = await import('@zip.js/zip.js');
+    const { vi } = await import('vitest');
+    const failure = new Error('write failed');
+    const add = vi.spyOn(ZipWriter.prototype, 'add').mockRejectedValueOnce(failure);
+    const close = vi.spyOn(ZipWriter.prototype, 'close');
+    try {
+      await expect(createZip([file('a', 'x')])).rejects.toBe(failure);
+      expect(close).toHaveBeenCalledOnce();
+    } finally {
+      add.mockRestore();
+      close.mockRestore();
+    }
   });
 });

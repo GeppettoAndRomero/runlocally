@@ -8,7 +8,7 @@
  *
  * Name collisions (the same path in two inputs) are handled explicitly and never
  * silently overwritten:
- *  - 'rename' (default) keeps BOTH — the later one gets a numeric suffix
+ *  - 'rename' keeps BOTH — the later one gets a numeric suffix
  *    (`docs/readme.txt` → `docs/readme (1).txt`).
  *  - 'skip' keeps the FIRST occurrence and drops later duplicates.
  * The number of collisions resolved is reported back so the UI can tell the user.
@@ -18,6 +18,8 @@
  */
 
 import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js';
+import { EngineError } from '../errors';
+import { readCentralEntries } from './list';
 
 export type CollisionStrategy = 'rename' | 'skip';
 
@@ -79,7 +81,7 @@ export async function mergeZips(
   onProgress?: (p: MergeProgress) => void,
 ): Promise<MergeResult> {
   if (files.length < 2) {
-    throw new Error('Need at least two ZIP files to merge');
+    throw new EngineError('unsupported', 'Need at least two ZIP files to merge');
   }
 
   const writer = new ZipWriter(new BlobWriter('application/zip'), {
@@ -92,53 +94,61 @@ export async function mergeZips(
   let collisions = 0;
   let skipped = 0;
 
-  for (let i = 0; i < files.length; i++) {
-    onProgress?.({ index: i, total: files.length, name: files[i].name });
+  try {
+    for (let i = 0; i < files.length; i++) {
+      onProgress?.({ index: i, total: files.length, name: files[i].name });
 
-    const reader = new ZipReader(new BlobReader(files[i]));
-    let zipEntries;
-    try {
-      zipEntries = await reader.getEntries();
-    } catch {
-      await reader.close().catch(() => undefined);
-      await writer.close().catch(() => undefined);
-      throw new Error(`Not a valid ZIP file: ${files[i].name}`);
-    }
-
-    try {
-      for (const entry of zipEntries) {
-        if (entry.directory) {
-          // Carry folder entries over once so empty directories are preserved,
-          // but never treat a shared folder as a "collision".
-          if (!usedDirs.has(entry.filename)) {
-            usedDirs.add(entry.filename);
-            await writer.add(entry.filename, undefined, { directory: true });
+      const reader = new ZipReader(new BlobReader(files[i]));
+      try {
+        let zipEntries;
+        try {
+          zipEntries = await readCentralEntries(reader);
+        } catch (error) {
+          if (error instanceof EngineError) {
+            throw new EngineError(error.code, `Cannot read ZIP file: ${files[i].name}`, {
+              cause: error.cause ?? error,
+            });
           }
-          continue;
+          throw error;
         }
 
-        let name: string;
-        if (usedFiles.has(entry.filename)) {
-          collisions += 1;
-          if (options.collision === 'skip') {
-            skipped += 1;
+        for (const entry of zipEntries) {
+          if (entry.directory) {
+            // Carry folder entries over once so empty directories are preserved.
+            if (!usedDirs.has(entry.filename)) {
+              usedDirs.add(entry.filename);
+              await writer.add(entry.filename, undefined, { directory: true });
+            }
             continue;
           }
-          name = disambiguate(entry.filename, usedFiles);
-        } else {
-          usedFiles.add(entry.filename);
-          name = entry.filename;
+
+          let name: string;
+          if (usedFiles.has(entry.filename)) {
+            collisions += 1;
+            if (options.collision === 'skip') {
+              skipped += 1;
+              continue;
+            }
+            name = disambiguate(entry.filename, usedFiles);
+          } else {
+            usedFiles.add(entry.filename);
+            name = entry.filename;
+          }
+
+          if (entry.encrypted) throw new EngineError('encrypted-entry', `Entry is encrypted: ${entry.filename}`);
+          const data = await entry.getData(new BlobWriter());
+          await writer.add(name, new BlobReader(data));
+          entries += 1;
         }
-
-        const data = await entry.getData(new BlobWriter());
-        await writer.add(name, new BlobReader(data));
-        entries += 1;
+      } finally {
+        await reader.close().catch(() => {});
       }
-    } finally {
-      await reader.close();
     }
-  }
 
-  const blob = await writer.close();
-  return { blob, stats: { inputs: files.length, entries, collisions, skipped } };
+    const blob = await writer.close();
+    return { blob, stats: { inputs: files.length, entries, collisions, skipped } };
+  } catch (error) {
+    await writer.close().catch(() => {});
+    throw error;
+  }
 }

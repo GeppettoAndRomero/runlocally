@@ -1,4 +1,3 @@
-/* global URL, console */
 /**
  * Generates tests/fixtures/zip/create-split-merge/sample.zip — a real, multi-file .zip used by the
  * e2e split spec. Entries are STORED (uncompressed) pseudo-random bytes so the

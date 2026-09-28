@@ -17,15 +17,9 @@
  */
 
 import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js';
-
-export interface ZipEntryMeta {
-  name: string;
-  directory: boolean;
-  /** uncompressed size in bytes */
-  size: number;
-  /** compressed size as stored in the source (informational) */
-  compressedSize: number;
-}
+import type { ZipEntry } from '../types';
+import { EngineError } from '../errors';
+import { readCentralEntries } from './list';
 
 /** Per-entry structural overhead: local + central headers, data descriptor, UTF-8 extra. */
 const PER_ENTRY_OVERHEAD = 128;
@@ -108,7 +102,7 @@ export function planParts(
 }
 
 /** Plan how a set of zip entries would be split, without reading their data. */
-export function buildPlan(entries: ZipEntryMeta[], targetBytes: number): PlanPart[] {
+export function buildPlan(entries: ZipEntry[], targetBytes: number): PlanPart[] {
   const packEntries: PackEntry[] = entries.map((e) => ({
     name: e.name,
     size: e.directory
@@ -116,25 +110,6 @@ export function buildPlan(entries: ZipEntryMeta[], targetBytes: number): PlanPar
       : entryPackSize(e.size, e.name),
   }));
   return planParts(packEntries, targetBytes);
-}
-
-/** Read the central directory of a .zip. Throws a clear error on an invalid file. */
-export async function listZipEntries(file: File): Promise<ZipEntryMeta[]> {
-  const reader = new ZipReader(new BlobReader(file));
-  let raw;
-  try {
-    raw = await reader.getEntries();
-  } catch {
-    await reader.close().catch(() => {});
-    throw new Error('This file is not a valid .zip archive.');
-  }
-  await reader.close().catch(() => {});
-  return raw.map((e) => ({
-    name: e.filename,
-    directory: e.directory,
-    size: e.uncompressedSize,
-    compressedSize: e.compressedSize,
-  }));
 }
 
 export interface SplitPart {
@@ -159,7 +134,7 @@ export function partBaseName(fileName: string): string {
 }
 
 /**
- * Split `file` into independent .zip parts, each at or below `targetBytes`.
+ * Split `file` into independent .zip parts. A single oversized entry gets its own part.
  * Every entry of the input ends up in exactly one part.
  */
 export async function splitZip(
@@ -168,61 +143,48 @@ export async function splitZip(
   onProgress?: (p: SplitProgress) => void
 ): Promise<SplitPart[]> {
   const reader = new ZipReader(new BlobReader(file));
-  let entries;
   try {
-    entries = await reader.getEntries();
-  } catch {
-    await reader.close().catch(() => {});
-    throw new Error('This file is not a valid .zip archive.');
-  }
-  if (entries.length === 0) {
-    await reader.close().catch(() => {});
-    throw new Error('This .zip has no entries to split.');
-  }
-
-  try {
-    const meta: ZipEntryMeta[] = entries.map((e) => ({
+    const entries = await readCentralEntries(reader);
+    if (entries.length === 0) throw new EngineError('unsupported', 'This archive has no entries to split');
+    const meta: ZipEntry[] = entries.map((e) => ({
       name: e.filename,
       directory: e.directory,
       size: e.uncompressedSize,
       compressedSize: e.compressedSize,
+      date: e.lastModDate,
+      encrypted: e.encrypted,
+      utf8: e.filenameUTF8,
     }));
     const plan = buildPlan(meta, targetBytes);
-
     const base = partBaseName(file.name);
     const pad = Math.max(2, String(plan.length).length);
-
     const parts: SplitPart[] = [];
     for (let p = 0; p < plan.length; p++) {
       onProgress?.({ part: p + 1, totalParts: plan.length });
-      const writer = new ZipWriter(new BlobWriter('application/zip'), {
-        useUnicodeFileNames: true, // UTF-8 (bit 11) — correct names on Windows
-      });
-      let count = 0;
-      for (const idx of plan[p].indices) {
-        const entry = entries[idx];
-        if (entry.directory) {
-          await writer.add(entry.filename, undefined, {
-            directory: true,
-            lastModDate: entry.lastModDate,
-          });
-        } else {
-          const data = await entry.getData!(new BlobWriter());
-          await writer.add(entry.filename, new BlobReader(data), {
-            lastModDate: entry.lastModDate,
-          });
-          count++;
+      const writer = new ZipWriter(new BlobWriter('application/zip'), { useUnicodeFileNames: true });
+      try {
+        let count = 0;
+        for (const idx of plan[p].indices) {
+          const entry = entries[idx];
+          if (entry.directory) {
+            await writer.add(entry.filename, undefined, {
+              directory: true,
+              lastModDate: entry.lastModDate,
+            });
+          } else {
+            if (entry.encrypted) throw new EngineError('encrypted-entry', `Entry is encrypted: ${entry.filename}`);
+            const data = await entry.getData(new BlobWriter());
+            await writer.add(entry.filename, new BlobReader(data), { lastModDate: entry.lastModDate });
+            count++;
+          }
         }
+        const blob = await writer.close();
+        const num = String(p + 1).padStart(pad, '0');
+        parts.push({ name: `${base}-part-${num}.zip`, blob, size: blob.size, count, oversize: plan[p].oversize });
+      } catch (error) {
+        await writer.close().catch(() => {});
+        throw error;
       }
-      const blob = await writer.close();
-      const num = String(p + 1).padStart(pad, '0');
-      parts.push({
-        name: `${base}-part-${num}.zip`,
-        blob,
-        size: blob.size,
-        count,
-        oversize: plan[p].oversize,
-      });
     }
     return parts;
   } finally {

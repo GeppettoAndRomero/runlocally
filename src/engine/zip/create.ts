@@ -7,12 +7,17 @@
  */
 
 import { ZipWriter, BlobWriter, BlobReader } from '@zip.js/zip.js';
-import { AppError } from './appError';
+import { EngineError } from '../errors';
 
-export interface ZipProgress {
+export interface CreateProgress {
   index: number; // 0-based
   total: number;
   name: string;
+}
+
+export interface CreateOptions {
+  password?: string;
+  onProgress?: (progress: CreateProgress) => void;
 }
 
 /** Folder uploads expose a relative path; otherwise just the file name. */
@@ -42,19 +47,26 @@ function uniqueName(name: string, used: Set<string>): string {
 
 export async function createZip(
   files: File[],
-  onProgress?: (p: ZipProgress) => void
+  options: CreateOptions = {},
 ): Promise<Blob> {
-  if (files.length === 0) throw new AppError('errNoFilesToArchive');
+  if (files.length === 0) throw new EngineError('unsupported', 'No files to archive');
+  if (options.password === '') throw new EngineError('unsupported', 'Password cannot be empty');
 
   const writer = new ZipWriter(new BlobWriter('application/zip'), {
     useUnicodeFileNames: true, // UTF-8 (bit 11) — correct names on Windows
+    ...(options.password === undefined ? {} : { password: options.password, encryptionStrength: 3 as const }),
   });
 
   const used = new Set<string>();
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    onProgress?.({ index: i, total: files.length, name: file.name });
-    await writer.add(uniqueName(entryName(file), used), new BlobReader(file));
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      options.onProgress?.({ index: i, total: files.length, name: file.name });
+      await writer.add(uniqueName(entryName(file), used), new BlobReader(file));
+    }
+    return await writer.close();
+  } catch (error) {
+    await writer.close().catch(() => {});
+    throw error;
   }
-  return writer.close();
 }

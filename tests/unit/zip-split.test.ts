@@ -11,12 +11,12 @@ import {
   planParts,
   buildPlan,
   splitZip,
-  listZipEntries,
   entryPackSize,
   partBaseName,
   humanSize,
   type PackEntry,
-} from './create-split-merge-port/split';
+} from '../../src/engine/zip/split';
+import { listEntries } from '../../src/engine/zip/list';
 
 // No Web Workers in Node (vitest); compress inline.
 configure({ useWebWorkers: false });
@@ -89,7 +89,7 @@ describe('entryPackSize / partBaseName / humanSize', () => {
   });
 });
 
-// ---------- splitZip / listZipEntries / buildPlan (integration with @zip.js) ----------
+// ---------- splitZip / listEntries / buildPlan (integration with @zip.js) ----------
 
 function seeded(n: number, seed: number): Uint8Array {
   let a = (seed + 0x9e3779b9) >>> 0;
@@ -131,18 +131,18 @@ async function fileNames(blob: Blob): Promise<string[]> {
   return entries.filter((e) => !e.directory).map((e) => e.filename);
 }
 
-describe('listZipEntries', () => {
+describe('listEntries', () => {
   it('lists entries with sizes and throws on a non-zip', async () => {
     const zip = await makeZip([
       { name: 'a.bin', size: 1234 },
       { name: 'sub/日本語.bin', size: 2345 },
     ]);
-    const entries = await listZipEntries(zip);
+    const entries = await listEntries(zip);
     expect(entries.map((e) => e.name).sort()).toEqual(['a.bin', 'sub/日本語.bin'].sort());
     expect(entries.find((e) => e.name === 'a.bin')!.size).toBe(1234);
 
     await expect(
-      listZipEntries(new File([new Uint8Array([1, 2, 3, 4])], 'x.zip'))
+      listEntries(new File([new Uint8Array([1, 2, 3, 4])], 'x.zip'))
     ).rejects.toThrow();
   });
 });
@@ -220,9 +220,85 @@ describe('splitZip', () => {
       { name: '4.bin', size: 3000 },
     ];
     const zip = await makeZip(specs);
-    const meta = await listZipEntries(zip);
+    const meta = await listEntries(zip);
     const plan = buildPlan(meta, TARGET);
     const parts = await splitZip(zip, TARGET);
     expect(parts.length).toBe(plan.length);
+  });
+});
+
+describe('splitZip failures', () => {
+  it('classifies an empty archive and malformed central directory', async () => {
+    await expect(splitZip(await makeZip([]), 8192)).rejects.toMatchObject({ code: 'unsupported' });
+    await expect(splitZip(new File(['invalid'], 'bad.zip'), 8192)).rejects.toMatchObject({ code: 'bad-central' });
+  });
+
+  it('rejects an encrypted entry and closes its reader', async () => {
+    const { vi } = await import('vitest');
+    const close = vi.spyOn(ZipReader.prototype, 'close');
+    const writer = new ZipWriter(new BlobWriter('application/zip'), { password: 'secret', encryptionStrength: 3 });
+    await writer.add('secret.txt', new Uint8ArrayReader(new Uint8Array([1, 2, 3])));
+    const zip = new File([await writer.close()], 'encrypted.zip');
+    try {
+      await expect(splitZip(zip, 8192)).rejects.toMatchObject({ code: 'encrypted-entry' });
+      expect(close).toHaveBeenCalledOnce();
+    } finally {
+      close.mockRestore();
+    }
+  });
+
+  it('preserves a progress failure and closes the reader', async () => {
+    const { vi } = await import('vitest');
+    const zip = await makeZip([{ name: 'a.bin', size: 128 }]);
+    const close = vi.spyOn(ZipReader.prototype, 'close');
+    const failure = new Error('progress failed');
+    try {
+      await expect(splitZip(zip, 8192, () => { throw failure; })).rejects.toBe(failure);
+      expect(close).toHaveBeenCalledOnce();
+    } finally {
+      close.mockRestore();
+    }
+  });
+});
+
+describe('splitZip interrupted output', () => {
+  it('preserves a writer failure and closes the reader and writer', async () => {
+    const { vi } = await import('vitest');
+    const zip = await makeZip([{ name: 'a.bin', size: 128 }]);
+    const failure = new Error('write failed');
+    const add = vi.spyOn(ZipWriter.prototype, 'add').mockRejectedValueOnce(failure);
+    const writerClose = vi.spyOn(ZipWriter.prototype, 'close');
+    const readerClose = vi.spyOn(ZipReader.prototype, 'close');
+    try {
+      await expect(splitZip(zip, 8192)).rejects.toBe(failure);
+      expect(writerClose).toHaveBeenCalledOnce();
+      expect(readerClose).toHaveBeenCalledOnce();
+    } finally {
+      add.mockRestore();
+      writerClose.mockRestore();
+      readerClose.mockRestore();
+    }
+  });
+});
+
+describe('splitZip metadata', () => {
+  it('preserves an explicit directory and entry dates and counts only files', async () => {
+    const date = new Date('2020-01-02T03:04:06Z');
+    const writer = new ZipWriter(new BlobWriter('application/zip'));
+    await writer.add('empty/', undefined, { directory: true, lastModDate: date });
+    await writer.add('file.txt', new Uint8ArrayReader(new Uint8Array([1])), { lastModDate: date });
+    const zip = new File([await writer.close()], 'dated.zip');
+    const parts = await splitZip(zip, 8192);
+    expect(parts).toHaveLength(1);
+    expect(parts[0].count).toBe(1);
+    const reader = new ZipReader(new BlobReader(parts[0].blob));
+    try {
+      const entries = await reader.getEntries();
+      expect(entries.map((entry) => entry.filename)).toEqual(['empty/', 'file.txt']);
+      expect(entries[0].directory).toBe(true);
+      expect(entries.map((entry) => entry.lastModDate?.getTime())).toEqual([date.getTime(), date.getTime()]);
+    } finally {
+      await reader.close();
+    }
   });
 });

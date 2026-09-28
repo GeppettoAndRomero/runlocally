@@ -8,7 +8,7 @@ import {
   BlobReader,
   TextWriter,
 } from '@zip.js/zip.js';
-import { mergeZips, disambiguate } from './create-split-merge-port/merge';
+import { mergeZips, disambiguate } from '../../src/engine/zip/merge';
 
 // In Node (vitest) there are no Web Workers; compress/decompress inline.
 configure({ useWebWorkers: false });
@@ -128,5 +128,63 @@ describe('mergeZips', () => {
       type: 'application/zip',
     });
     await expect(mergeZips([good, bad], { collision: 'rename' })).rejects.toThrow(/bad\.zip/);
+  });
+});
+
+describe('mergeZips failures', () => {
+  it('reports unsupported for too few inputs and identifies a malformed input with cause', async () => {
+    await expect(mergeZips([], { collision: 'rename' })).rejects.toMatchObject({ code: 'unsupported' });
+    const good = await makeZipFile('good.zip', [['x', 'x']]);
+    const bad = new File(['invalid'], 'bad.zip');
+    let caught: unknown;
+    try { await mergeZips([good, bad], { collision: 'rename' }); } catch (error) { caught = error; }
+    expect(caught).toMatchObject({ code: 'bad-central', message: expect.stringContaining('bad.zip') });
+    expect((caught as Error).cause).toBeInstanceOf(Error);
+  });
+
+  it('skips an encrypted duplicate without decrypting it', async () => {
+    const first = await makeZipFile('first.zip', [['x.txt', 'first']]);
+    const writer = new ZipWriter(new BlobWriter('application/zip'), { password: 'secret', encryptionStrength: 3 });
+    await writer.add('x.txt', new TextReader('encrypted'));
+    const second = new File([await writer.close()], 'second.zip');
+    const result = await mergeZips([first, second], { collision: 'skip' });
+    expect((await readEntries(result.blob)).get('x.txt')).toBe('first');
+    expect(result.stats).toMatchObject({ collisions: 1, skipped: 1, entries: 1 });
+    await expect(mergeZips([first, second], { collision: 'rename' })).rejects.toMatchObject({ code: 'encrypted-entry' });
+  });
+
+  it('preserves a callback failure and closes the writer', async () => {
+    const { vi } = await import('vitest');
+    const first = await makeZipFile('first.zip', [['a', 'a']]);
+    const second = await makeZipFile('second.zip', [['b', 'b']]);
+    const close = vi.spyOn(ZipWriter.prototype, 'close');
+    const failure = new Error('progress failed');
+    try {
+      await expect(mergeZips([first, second], { collision: 'rename' }, () => { throw failure; })).rejects.toBe(failure);
+      expect(close).toHaveBeenCalledOnce();
+    } finally {
+      close.mockRestore();
+    }
+  });
+});
+
+describe('mergeZips interrupted output', () => {
+  it('preserves a writer failure and closes the reader and writer', async () => {
+    const { vi } = await import('vitest');
+    const first = await makeZipFile('first.zip', [['a', 'a']]);
+    const second = await makeZipFile('second.zip', [['b', 'b']]);
+    const failure = new Error('write failed');
+    const add = vi.spyOn(ZipWriter.prototype, 'add').mockRejectedValueOnce(failure);
+    const writerClose = vi.spyOn(ZipWriter.prototype, 'close');
+    const readerClose = vi.spyOn(ZipReader.prototype, 'close');
+    try {
+      await expect(mergeZips([first, second], { collision: 'rename' })).rejects.toBe(failure);
+      expect(writerClose).toHaveBeenCalledOnce();
+      expect(readerClose).toHaveBeenCalledOnce();
+    } finally {
+      add.mockRestore();
+      writerClose.mockRestore();
+      readerClose.mockRestore();
+    }
   });
 });
