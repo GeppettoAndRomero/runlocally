@@ -7,9 +7,7 @@ import type { ZipEntry } from '../types';
 import { EngineError } from '../errors';
 import { readCentralEntries } from './list';
 
-export interface RewriteEntry extends ZipEntry {
-  rawFilename?: Uint8Array;
-}
+export type RewriteEntry = ZipEntry;
 
 export interface RewriteProgress {
   index: number;

@@ -48,6 +48,7 @@ export async function listEntries(file: File): Promise<ZipEntry[]> {
       date: entry.lastModDate,
       encrypted: entry.encrypted,
       utf8: entry.filenameUTF8,
+      rawFilename: entry.rawFilename,
     }));
   } finally {
     await reader.close();

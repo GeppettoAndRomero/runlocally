@@ -1,8 +1,9 @@
 import { createZipEngine, openArchive, type ZipEngineClient } from './engine';
 import type { OpenArchive } from '../engine/archive/libarchive';
-import { sniffArchiveKind } from '../engine/sniff';
+import { sniffArchiveKind, type ArchiveKind } from '../engine/sniff';
 import { inputSizeFailure } from './state/reducer';
 import type { Session, SessionAction } from './state/session';
+import { derivedZipName, repairPlan, repairedName } from './rewrite-plan';
 
 export class WorkbenchController {
   private epoch = 0;
@@ -42,7 +43,6 @@ export class WorkbenchController {
     if (sizeFailure) { this.dispatch({ type: 'input/reject', error: sizeFailure }); return; }
     const epoch = this.invalidate();
     this.busy = true;
-    let listingRequest: { generation: number; requestId: string } | undefined;
     try {
       const bytes = new Uint8Array(await file.slice(0, 263).arrayBuffer());
       if (this.disposed || epoch !== this.epoch) return;
@@ -50,16 +50,27 @@ export class WorkbenchController {
       if (resultId && !session.results.some(result => result.id === resultId)) return;
       this.dispatch(resultId ? { type: 'result/reinput', resultId, file, kind } : { type: 'input/accept', file, kind });
       if (kind === 'unknown') return;
-      const generation = session.generation + 1;
-      const requestId = this.id();
-      listingRequest = { generation, requestId };
-      this.dispatch({ type: 'listing/start', generation, requestId });
+      await this.list(file, kind, session.generation + 1, epoch);
+    } catch (error) {
+      if (epoch === this.epoch && !this.disposed) this.dispatch({ type: 'input/reject', error });
+    } finally { if (epoch === this.epoch) this.busy = false; }
+  }
+  async retryListing(state: Session): Promise<void> {
+    if (this.disposed || this.busy || !state.source || state.listing.status !== 'error') return;
+    const epoch = this.epoch;
+    this.busy = true;
+    try { await this.list(state.source.file, state.source.kind, state.generation, epoch); }
+    finally { if (epoch === this.epoch) this.busy = false; }
+  }
+  private async list(file: File, kind: ArchiveKind, generation: number, epoch: number): Promise<void> {
+    const requestId = this.id();
+    this.dispatch({ type: 'listing/start', generation, requestId });
+    try {
       if (kind === 'zip') {
-        const client = createZipEngine();
-        this.clients.add(client);
+        const client = createZipEngine(); this.clients.add(client);
         try {
           const entries = await client.listEntries(file);
-          if (epoch === this.epoch) this.dispatch({ type: 'listing/success', generation, requestId, route: 'zip', entries });
+          if (epoch === this.epoch && !this.disposed) this.dispatch({ type: 'listing/success', generation, requestId, route: 'zip', entries });
         } finally { client.terminate(); this.clients.delete(client); }
       } else {
         const handle = await openArchive(file);
@@ -69,21 +80,27 @@ export class WorkbenchController {
         finally { this.close(handle); }
       }
     } catch (error) {
-      if (epoch === this.epoch && !this.disposed) {
-        if (listingRequest) this.dispatch({ type: 'listing/failure', ...listingRequest, error });
-        else this.dispatch({ type: 'input/reject', error });
-      }
-    } finally { if (epoch === this.epoch) this.busy = false; }
+      if (epoch === this.epoch && !this.disposed) this.dispatch({ type: 'listing/failure', generation, requestId, error });
+    }
   }
   async run(state: Session): Promise<void> {
-    if (this.disposed || this.busy || !state.source || state.listing.status !== 'ready' || state.op !== 'extract') return;
+    if (this.disposed || this.busy || !state.source || state.listing.status !== 'ready' || state.op === 'browse') return;
+    const op = state.op;
+    if (op !== 'extract') {
+      if (state.source.kind !== 'zip' || state.listing.route !== 'zip') return;
+      if (op === 'remove' && (!state.entries.some(entry => !state.selection.has(entry.name)) ||
+        !state.entries.some(entry => !entry.directory && state.selection.has(entry.name)))) return;
+      const plan = repairPlan(state.entries);
+      if (op === 'fix-names' && (!plan.changes.length || plan.collision)) return;
+    }
     const epoch = this.epoch;
     const generation = state.generation;
     const id = this.id();
-    this.dispatch({ type: 'job/start', generation, id, op: 'extract' });
+    this.dispatch({ type: 'job/start', generation, id, op });
     this.busy = true;
     const { file } = state.source;
     const input = { ...state.inputs.extract };
+    const kept = new Set(state.selection);
     try {
       let output: { name: string; blob: Blob }[];
       const progress = (done: number, total: number) => {
@@ -92,10 +109,21 @@ export class WorkbenchController {
       if (state.source.kind === 'zip') {
         const client = createZipEngine(); this.clients.add(client);
         try {
-          output = input.mode === 'one' ? [{ name: input.name, blob: await client.extractEntry(file, input.name) }]
+          if (op === 'extract') output = input.mode === 'one' ? [{ name: input.name, blob: await client.extractEntry(file, input.name) }]
             : await client.extractAll(file, progress);
+          else {
+            const rewrite = await client.rewriteZip(file, {
+              ...(op === 'remove' ? { keep: (name: string) => kept.has(name) } : { rename: (_name: string, entry: typeof state.entries[number]) => repairedName(entry) }),
+              onProgress: value => { if (epoch === this.epoch) this.dispatch({ type: 'job/progress', generation, id, progress: { kind: 'rewrite', progress: value } }); },
+            });
+            if (epoch === this.epoch) this.dispatch({ type: 'job/success', generation, id, op, output: {
+              name: derivedZipName(file.name, op === 'remove' ? 'trimmed' : 'fixed'), rewrite,
+            }, resultId: this.id(), at: Date.now() });
+            return;
+          }
         } finally { client.terminate(); this.clients.delete(client); }
       } else {
+        if (op !== 'extract') return;
         const handle = await openArchive(file);
         if (epoch !== this.epoch || this.disposed) { handle.close(); return; }
         this.handles.add(handle);

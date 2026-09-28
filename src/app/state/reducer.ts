@@ -53,8 +53,7 @@ export function isEmptyResult(entries: readonly EntryLike[], kept: ReadonlySet<s
 }
 export function directoryState(entries: readonly EntryLike[], dir: string, kept: ReadonlySet<string>): 'checked' | 'unchecked' | 'indeterminate' {
   if (!entries.some((entry) => entry.name === dir && entry.directory)) return 'unchecked';
-  const names = descendants(entries, dir).filter((name) => name !== dir);
-  if (!names.length) return kept.has(dir) ? 'checked' : 'unchecked';
+  const names = descendants(entries, dir);
   const count = names.filter((name) => kept.has(name)).length;
   return count === 0 ? 'unchecked' : count === names.length ? 'checked' : 'indeterminate';
 }
@@ -74,7 +73,7 @@ function withSource(state: Session, file: File, kind: ArchiveKind, chain: readon
   if (failure) return { ...state, inputFailure: failure };
   return { ...state, generation: state.generation + 1, source: { file, kind, chain },
     listing: { status: 'idle' }, entries: [], archiveEntries: [], selection: new Set(), job: { status: 'idle' },
-    inputs: { ...state.inputs, extract: { mode: 'all' } },
+    inputs: { ...state.inputs, extract: { mode: 'all' } }, op: 'browse',
     inputFailure: undefined };
 }
 
@@ -112,16 +111,16 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
     }
     case 'reset': return initialSession(state.generation + 1);
     case 'listing/start':
-      if (!state.source || state.source.kind === 'unknown' || action.generation !== state.generation) return state;
+      if (!state.source || state.source.kind === 'unknown' || action.generation !== state.generation || state.job.status === 'running') return state;
       return { ...state, listing: { status: 'reading', route: state.source.kind === 'zip' ? 'zip' : 'archive', requestId: action.requestId },
-        entries: [], archiveEntries: [], selection: new Set() };
+        entries: state.entries, archiveEntries: state.archiveEntries, selection: state.selection };
     case 'listing/success':
       if (action.generation !== state.generation || state.listing.status !== 'reading' ||
           state.listing.requestId !== action.requestId || state.listing.route !== action.route) return state;
       if (action.route === 'archive') return { ...state, inputFailure: settledInputFailure(state), listing: { status: 'ready', route: 'archive', requestId: action.requestId },
         archiveEntries: action.entries.map(entry => ({ ...entry })), entries: [], selection: new Set() };
       return { ...state, inputFailure: settledInputFailure(state), listing: { status: 'ready', route: 'zip', requestId: action.requestId },
-        entries: action.entries.map((entry): ZipEntry => ({ ...entry })), archiveEntries: [], selection: allNames(action.entries) };
+        entries: action.entries.map((entry): ZipEntry => ({ ...entry, rawFilename: entry.rawFilename?.slice() })), archiveEntries: [], selection: allNames(action.entries) };
     case 'listing/failure':
       if (action.generation !== state.generation || state.listing.status !== 'reading' ||
           state.listing.requestId !== action.requestId) return state;
@@ -130,11 +129,12 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
       return state.listing.status === 'ready' && state.listing.route === 'zip' ? { ...state, selection: applyToggle(state.entries, state.selection, action.name, action.keep) } : state;
     case 'selection/all':
       return state.listing.status === 'ready' && state.listing.route === 'zip' ? { ...state, selection: setAll(state.entries, action.keep) } : state;
-    case 'op/select': return { ...state, op: action.op };
+    case 'op/select': return action.op === 'browse' || action.op === 'extract' ||
+      (state.listing.status === 'ready' && state.listing.route === 'zip') ? { ...state, op: action.op } : state;
     case 'op/input': return { ...state, inputs: { ...state.inputs, [action.op]: action.input } };
     case 'job/start': {
       if (!state.source || state.source.kind === 'unknown' || state.listing.status !== 'ready' ||
-          (state.listing.route === 'archive' && action.op !== 'extract') ||
+          (action.op === 'browse' || (state.listing.route === 'archive' && action.op !== 'extract')) ||
           action.generation !== state.generation || state.job.status === 'running') return state;
       // The input and kept names are snapshots; later controls do not change this job.
       const job = { status: 'running', id: action.id, generation: action.generation,

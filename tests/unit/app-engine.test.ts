@@ -79,6 +79,9 @@ describe('app Comlink boundary', () => {
     const { client } = connect();
     const bytes = readFileSync(fileURLToPath(new URL('../fixtures/zip/rewrite/mojibake.zip', import.meta.url)));
     let raw: Uint8Array | undefined;
+    const listed = await client.listEntries(new File([bytes], 'mojibake.zip'));
+    expect(listed[0].rawFilename).toBeInstanceOf(Uint8Array);
+    expect(decodeShiftJisName(listed[0])).toBe('メモ帳.txt');
     const result = await client.rewriteZip(new File([bytes], 'mojibake.zip'), {
       rename: async (_name, entry) => {
         raw = entry.rawFilename;

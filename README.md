@@ -2,7 +2,7 @@
 
 ## 日本語
 
-**ZIP ワークベンチ**は、ブラウザだけで ZIP を開き、直し、作り直すためのアプリです。ファイルをアップロードせずに使えるよう開発中です。内部エンジンには ZIP の一覧・抽出・再構築・作成・分割・結合・修復と、RAR／7z／tar／tar.gz の一覧・展開があります。UI はまだ接続されておらず、公開可能な画面は準備中ページです。
+**ZIP ワークベンチ**は、ブラウザだけで ZIP を開き、直し、作り直すためのアプリです。ファイルをアップロードせずに使えるよう開発中です。内部エンジンには ZIP の一覧・抽出・再構築・作成・分割・結合・修復と、RAR／7z／tar／tar.gz の一覧・展開があります。画面では ZIP の閲覧・取り出し・削除・名前修復が使えます。RAR／7z／tar は閲覧・取り出しのみです。
 
 ### 4 つの公約
 
@@ -11,7 +11,7 @@
 3. PWA としてインストール可能 — ブラウザのインストール導線と Lighthouse PWA audit で確認できます。
 4. 脆弱性報告経路を維持する — [SECURITY.md](SECURITY.md) と GitHub Private Vulnerability Reporting で確認できます。
 
-正確な文言は [原則](docs/PRINCIPLES.md) を参照してください。ZIP の利用者向け機能・Service Worker・PWA は未実装です。公約の自動検証は P5 で CI に追加予定です。
+正確な文言は [原則](docs/PRINCIPLES.md) を参照してください。Service Worker・PWA は未実装です。画面の状態と操作は [UI 文書](docs/UI.md) を参照してください。公約の自動検証は P5 で CI に追加予定です。
 
 ### 開発
 
@@ -33,9 +33,9 @@ Colophon: Some code was written with AI assistance; all review and decisions are
 
 ## English
 
-**ZIP Workbench** is an app being developed to open, fix and repack ZIP files entirely in the browser, without uploading files. Its internal engine supports ZIP listing, extraction, rewriting, creation, splitting, merging and recovery, plus listing and extraction of RAR, 7z, tar and tar.gz archives. The UI is not connected yet; the only available page is the coming soon page.
+**ZIP Workbench** is an app being developed to open, fix and repack ZIP files entirely in the browser, without uploading files. Its internal engine supports ZIP listing, extraction, rewriting, creation, splitting, merging and recovery, plus listing and extraction of RAR, 7z, tar and tar.gz archives. The screen supports ZIP browsing, extraction, removal, and name repair. RAR, 7z, and tar support browsing and extraction only.
 
-The four promises are no additional client requests, offline use, PWA installation and a maintained vulnerability reporting path. Check them through DevTools Network, DevTools Offline, the browser install prompt and Lighthouse PWA audit, and [SECURITY.md](SECURITY.md) with Private Vulnerability Reporting, respectively. See the exact wording in [Principles](docs/PRINCIPLES.md). User-facing ZIP features, the Service Worker and PWA support are not implemented yet; automated checks for the promises are planned for P5 CI.
+The four promises are no additional client requests, offline use, PWA installation and a maintained vulnerability reporting path. Check them through DevTools Network, DevTools Offline, the browser install prompt and Lighthouse PWA audit, and [SECURITY.md](SECURITY.md) with Private Vulnerability Reporting, respectively. See the exact wording in [Principles](docs/PRINCIPLES.md). The Service Worker and PWA support are not implemented yet; automated checks for the promises are planned for P5 CI. See [UI behavior](docs/UI.md) for operations and state.
 
 Development requires Node.js 24 or newer: run `npm ci`, `npm run dev` and `npm run ci`. Self-hosting with Docker is planned for v0.4.0. License: [MIT](LICENSE).
 

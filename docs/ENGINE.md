@@ -1,6 +1,6 @@
 # Engine API
 
-The Japanese and English index pages mount a Workbench that calls the listing and extraction APIs. The app boundary in `src/app/engine.ts` owns the ZIP worker; `openArchive` calls the separate libarchive engine directly. `downloadBlob` in `src/app/download.ts` is the DOM-only download helper. No processing is sent to a server.
+The Japanese and English index pages mount a Workbench that calls the listing, extraction, and ZIP rewrite APIs. The app boundary in `src/app/engine.ts` owns the ZIP worker; `openArchive` calls the separate libarchive engine directly. `downloadBlob` in `src/app/download.ts` is the DOM-only download helper. No processing is sent to a server.
 
 ## App entry points
 
@@ -34,9 +34,9 @@ try {
 | `mergeZips(files: File[], options: MergeOptions, onProgress?: (p: MergeProgress) => unknown)` | `Promise<MergeResult>` | Reports each input before reading it; collisions are renamed or skipped. |
 | `recoverZip(input: ArrayBuffer \| Uint8Array)` | `Promise<RecoverResult>` | Salvages readable content; broken entries carry status and reason. The input buffer is cloned across the worker boundary rather than detached. |
 
-`ZipEntry` has `name`, `directory`, uncompressed `size`, `compressedSize`, optional `date`, `encrypted`, and `utf8`. `ExtractedFile` has `name` and `blob`.
+`ZipEntry` has `name`, `directory`, uncompressed `size`, `compressedSize`, optional `date`, `encrypted`, `utf8`, and optional `rawFilename: Uint8Array`. Listing retains the original name bytes for name repair previews; it does not extract file bodies. `ExtractedFile` has `name` and `blob`.
 
-`RewriteOptions` has optional `keep(name)`, `rename(name, entry)`, `password`, `outPassword`, and `onProgress({ index, total, name })`. `keep` and `rename` accept synchronous or Promise results. `RewriteEntry` extends `ZipEntry` with optional `rawFilename: Uint8Array`. `RewriteResult` has `blob`, `total`, `kept`, `removed`, `renamed`, and `encryptedCount`; counts include directories. Input and output passwords are independent. `CreateOptions` has optional `password` and `onProgress({ index, total, name })`; the progress name is the original file name. Progress callbacks are awaited, so callback failures reject the operation. Callback proxies are released after success or failure. Folder paths are transported separately from `File` metadata.
+`RewriteOptions` has optional `keep(name)`, `rename(name, entry)`, `password`, `outPassword`, and `onProgress({ index, total, name })`. `keep` and `rename` accept synchronous or Promise results. `RewriteEntry` has the same metadata as `ZipEntry`. `RewriteResult` has `blob`, `total`, `kept`, `removed`, `renamed`, and `encryptedCount`; counts include directories. Input and output passwords are independent. `CreateOptions` has optional `password` and `onProgress({ index, total, name })`; the progress name is the original file name. Progress callbacks are awaited, so callback failures reject the operation. Callback proxies are released after success or failure. Folder paths are transported separately from `File` metadata.
 
 `SplitProgress` is `{ part, totalParts }` with a one-based `part`. Each `SplitPart` has `name`, `blob`, actual `size`, file `count`, and `oversize`; a single entry exceeding the target gets its own part. `MergeOptions` requires `collision: 'rename' | 'skip'`. `MergeProgress` is `{ index, total, name }` with a zero-based input index. `MergeResult` is `{ blob, stats }`, where stats are `inputs`, output file `entries`, `collisions`, and `skipped`.
 
@@ -77,4 +77,4 @@ The Workbench reads only the first 263 input bytes for signature detection after
 
 ## Follow-up documentation
 
-The later operation screen work should add `docs/UI.md` and align the current implementation descriptions in `README.md` and `docs/PRINCIPLES.md`. Removal, name repair, and recovery controls are outside the current Workbench mount.
+See [UI.md](UI.md) for the connected operation screen. Removal and name repair are ZIP only. Their displayed counts come from rewrite results and include directories. Keeping an encrypted entry without a password fails the rewrite; removing it before decryption can succeed. Recovery controls are not mounted.

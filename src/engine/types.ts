@@ -6,6 +6,7 @@ export interface ZipEntry {
   date?: Date;
   encrypted: boolean;
   utf8: boolean;
+  rawFilename?: Uint8Array;
 }
 
 export interface ExtractedFile {

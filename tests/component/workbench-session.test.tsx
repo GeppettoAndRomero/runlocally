@@ -19,12 +19,12 @@ it('retains listing and result through failure, then allows retry without duplic
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file()] } });
   await waitFor(() => expect(screen.getByText(/Total entries: 1/)).toBeTruthy());
   fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
-  fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
-  await waitFor(() => expect(screen.getByText(/Extraction failed/)).toBeTruthy());
+  fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
+  await waitFor(() => expect(screen.getByText(/The operation failed/)).toBeTruthy());
   expect(screen.getByText('1 files')).toBeTruthy();
-  fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByText('0 files')).toBeTruthy());
   expect(mock.all).toHaveBeenCalledTimes(3);
   expect(mock.terminate).toHaveBeenCalled();
@@ -36,7 +36,7 @@ it('rejects multiple files and oversized input before reading', async () => {
   await waitFor(() => expect(screen.getByText('Choose one archive.')).toBeTruthy());
   const large = file(); Object.defineProperty(large, 'size', { value: 1_000_000_001 });
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [large] } });
-  await waitFor(() => expect(screen.getByText('Input must be 1 GB or less.')).toBeTruthy());
+  await waitFor(() => expect(screen.getByText('Choose an input of 1 GB (1,000,000,000 bytes) or less.')).toBeTruthy());
   expect(large.slice).not.toHaveBeenCalled(); expect(mock.list).not.toHaveBeenCalled();
 });
 it('closes a late archive handle after reset and does not show its listing', async () => {
@@ -47,7 +47,7 @@ it('closes a late archive handle after reset and does not show its listing', asy
   render(<Workbench locale="en" />);
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [source] } });
   await waitFor(() => expect(mock.open).toHaveBeenCalledTimes(1));
-  fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Reset:/ }));
   const close = vi.fn();
   resolve({ entries: [{ path: 'late.txt', size: 1 }], close, extractOne: vi.fn(), extractAll: vi.fn() });
   await waitFor(() => expect(close).toHaveBeenCalledTimes(1));
@@ -65,7 +65,7 @@ it('lists and extracts an archive through a newly opened handle', async () => {
   await waitFor(() => expect(screen.getByText('dir/a.txt')).toBeTruthy());
   expect(closeListing).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
   expect(mock.open).toHaveBeenCalledTimes(2);
   expect(closeExtraction).not.toHaveBeenCalled();
@@ -77,13 +77,13 @@ it('keeps the first result while listing a derived ZIP input', async () => {
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file()] } });
   await waitFor(() => expect(screen.getByText(/Total entries: 1/)).toBeTruthy());
   fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
-  fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
   vi.spyOn(File.prototype, 'slice').mockReturnValue({ arrayBuffer: async () => Uint8Array.from([80, 75, 3, 4]).buffer } as Blob);
   fireEvent.click(screen.getByRole('button', { name: 'Use as next input: inner.zip' }));
   await waitFor(() => expect(mock.list).toHaveBeenCalledTimes(2));
   fireEvent.click(screen.getByRole('tab', { name: 'Browse' }));
-  expect(screen.getByText('inside.txt')).toBeTruthy();
+  expect(screen.getAllByText('inside.txt')[0]).toBeTruthy();
   expect(screen.getByText('1 files')).toBeTruthy();
 });
 
@@ -98,9 +98,9 @@ it('restarts intake and actions after a BFCache return', async () => {
   await waitFor(() => expect(screen.getByText(/Total entries: 1/)).toBeTruthy());
   fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
   mock.all.mockResolvedValue([{ name: 'a.txt', blob: new Blob(['a']) }]);
-  fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
-  fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Reset:/ }));
   expect(screen.queryByText('1 files')).toBeNull();
 });
 
@@ -116,7 +116,7 @@ it('blocks repeated runs, ignores late progress and releases a running worker on
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file()] } });
   await waitFor(() => expect(screen.getByText(/Total entries: 1/)).toBeTruthy());
   fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
-  const run = screen.getByRole('button', { name: 'Extract' });
+  const run = screen.getByRole('button', { name: /^Extract:/ });
   fireEvent.click(run); fireEvent.click(run);
   await waitFor(() => expect(mock.all).toHaveBeenCalledTimes(1));
   window.dispatchEvent(new CustomEvent('filesDropped', { detail: [file()] }));
@@ -128,7 +128,7 @@ it('blocks repeated runs, ignores late progress and releases a running worker on
   expect(screen.queryByText('Processing. Try another input when it finishes.')).toBeNull();
   progress(2, 2);
   expect(screen.queryByText(/Progress: 2 \/ 2/)).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(mock.all).toHaveBeenCalledTimes(2));
   view.unmount();
   expect(mock.terminate).toHaveBeenCalledTimes(3);
@@ -143,9 +143,9 @@ it('extracts one archive entry and closes its handle', async () => {
   vi.spyOn(source, 'slice').mockReturnValue({ arrayBuffer: async () => Uint8Array.from([82, 97, 114, 33, 26, 7, 0]).buffer } as Blob);
   render(<Workbench locale="en" />);
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [source] } });
-  const choice = await screen.findByRole('button', { name: 'Select for extraction' });
+  const choice = await screen.findByRole('button', { name: /Select for extraction:/ });
   fireEvent.click(choice);
-  fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
   expect(extractOne).toHaveBeenCalledWith('dir/a.txt');
   expect(closeListing).toHaveBeenCalledTimes(1);

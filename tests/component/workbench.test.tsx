@@ -35,7 +35,7 @@ describe('Workbench', () => {
     await waitFor(() => expect(screen.getByText(new RegExp(`Total entries: ${count}`))).toBeTruthy());
     expect(within(screen.getByRole('list')).queryAllByRole('listitem')).toHaveLength(Math.min(500, count));
     if (count > 500) {
-      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: /^Next:/ }));
       expect(within(screen.getByRole('list')).queryAllByRole('listitem')).toHaveLength(Math.min(500, count - 500));
       expect(screen.getByText('item-500.txt')).toBeTruthy();
     }
@@ -43,15 +43,15 @@ describe('Workbench', () => {
   it('extracts, saves and reinputs a result without automatic download', async () => {
     mock.list.mockResolvedValue([zipEntry('inner.zip')]);
     render(<Workbench locale="en" />); await choose(zipFile());
-    await waitFor(() => expect(screen.getByText('inner.zip')).toBeTruthy());
+    await waitFor(() => expect(screen.getAllByText('inner.zip')[0]).toBeTruthy());
     fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
     await waitFor(() => expect(screen.getByText('0 files')).toBeTruthy());
     expect(mock.download).not.toHaveBeenCalled();
     const resultBlob = new Blob(['plain text']);
     vi.spyOn(resultBlob, 'slice').mockReturnValue({ arrayBuffer: async () => Uint8Array.from([1]).buffer } as Blob);
     mock.all.mockResolvedValue([{ name: 'inner.zip', blob: resultBlob }]);
-    fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
     await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
     fireEvent.click(screen.getByRole('button', { name: 'Save file: inner.zip' }));
     expect(mock.download).toHaveBeenCalledWith(expect.any(Blob), 'inner.zip');
@@ -65,7 +65,7 @@ describe('Workbench', () => {
     render(<Workbench locale="en" />); await choose(zipFile());
     await waitFor(() => expect(screen.getByText(/Total entries: 4/)).toBeTruthy());
     expect(screen.getByText(/first match/)).toBeTruthy();
-    expect(within(screen.getByRole('list')).getAllByRole('button', { name: 'Select for extraction' })).toHaveLength(2);
+    expect(within(screen.getByRole('list')).getAllByRole('button', { name: /Select for extraction:/ })).toHaveLength(2);
   });
 });
 
@@ -76,9 +76,9 @@ describe('extraction controls', () => {
     mock.all.mockResolvedValue(entries.map(entry => ({ name: entry.name, blob: new Blob([entry.name]) })));
     render(<Workbench locale="en" />); await choose(zipFile('many.zip'));
     await waitFor(() => expect(screen.getByText(/Total entries: 501/)).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Next:/ }));
     fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
     await waitFor(() => expect(screen.getByText('501 files')).toBeTruthy());
     expect(mock.all).toHaveBeenCalledTimes(1);
     expect(mock.all).toHaveBeenCalledWith(expect.any(File), expect.any(Function));
@@ -89,7 +89,7 @@ describe('extraction controls', () => {
   it('moves focus from a row choice to the extract tab', async () => {
     mock.list.mockResolvedValue([zipEntry('chosen.txt')]);
     render(<Workbench locale="en" />); await choose(zipFile());
-    const choice = await screen.findByRole('button', { name: 'Select for extraction' });
+    const choice = await screen.findByRole('button', { name: /Select for extraction:/ });
     choice.focus(); fireEvent.click(choice);
     expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Extract' }));
     expect((screen.getByRole('combobox', { name: 'One' }) as HTMLSelectElement).value).toBe('chosen.txt');
@@ -99,9 +99,9 @@ describe('extraction controls', () => {
     const blob = new Blob(['chosen']);
     mock.one.mockResolvedValue(blob);
     render(<Workbench locale="en" />); await choose(zipFile('pick.zip'));
-    const choices = await screen.findAllByRole('button', { name: 'Select for extraction' });
+    const choices = await screen.findAllByRole('button', { name: /Select for extraction:/ });
     fireEvent.click(choices[1]);
-    fireEvent.click(screen.getByRole('button', { name: 'Extract' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
     await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
     expect(mock.one).toHaveBeenCalledTimes(1);
     expect(mock.one).toHaveBeenCalledWith(expect.any(File), 'docs/chosen.txt');

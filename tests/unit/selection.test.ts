@@ -19,7 +19,9 @@ describe('name based keep selection', () => {
     expect(directoryState(entries, 'a/', after)).toBe('unchecked');
     expect(directoryState(entries, 'ab/', after)).toBe('checked');
     const childrenOnly = new Set(['a/one', 'a/two']);
-    expect(directoryState(entries, 'a/', childrenOnly)).toBe('checked');
+    expect(directoryState(entries, 'a/', childrenOnly)).toBe('indeterminate');
+    const parentOnly = new Set(['a/']);
+    expect(directoryState(entries, 'a/', parentOnly)).toBe('indeterminate');
   });
   it('supports mixed, all, none, and file counts across duplicate names', () => {
     const mixed = applyToggle(entries, allNames(entries), 'a/one', false);

@@ -72,6 +72,7 @@ describe('listEntries (unzip fixture)', () => {
     const memo = (await listEntries(unzipFile())).find((e) => e.name === 'メモ.txt')!;
     expect(memo.utf8).toBe(true);
     expect(isGarbled(memo)).toBe(false);
+    expect(memo.rawFilename).toBeInstanceOf(Uint8Array);
   });
   it('throws on a non-zip blob', async () => {
     await expect(listEntries(badFile())).rejects.toThrow();

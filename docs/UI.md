@@ -1,0 +1,35 @@
+# Workbench UI
+
+The Japanese and English pages mount one Workbench. It owns presentation and dispatches actions to the pure session reducer. The controller owns asynchronous listing and jobs, creates and closes one ZIP client or archive handle per request, and ignores notifications after invalidation. The engine performs local parsing and rewriting. `downloadBlob` handles explicit saves. Results are separate Blobs; creating one neither saves it nor replaces the input.
+
+## State and transitions
+
+```text
+new input or explicit result reinput -> listing: idle -> reading -> ready | error
+                                                error -> retry -> reading
+ready -> job: idle -> running -> succeeded | failed
+                             failed -> change selection/op -> running
+reset -> empty session
+```
+
+Listing and job are separate state machines. A new input increments `generation`; each listing attempt has a new `requestId`, and each job has a new ID. Late progress and responses are discarded. Reset, pagehide, and unmount close active resources. A return from the page cache creates a new controller. Listing retry keeps the same File, generation, result history, and chain. A failed job keeps its input, selection, results, and successful log.
+
+A result becomes the next input only through the explicit action. Its chain is derived from that result's own source chain and ID. A size check of 1,000,000,000 bytes precedes header reading for both new and derived inputs. The first 263 bytes choose the ZIP or archive route; an unknown signature does not start an engine job.
+
+## Operations
+
+ZIP has Browse, Extract, Remove, and Repair names tabs. RAR, 7z, and tar have Browse and Extract. Arrow keys move focus among available tabs. The displayed entry lists use pages of 500 rows. Extract all ignores removal selection. A single extract chooses the first matching ZIP name; encrypted ZIP entries are unavailable in the extraction controls.
+
+Removal selection means **keep**. All entries start selected. A directory control covers itself and actual descendants at a directory boundary. Its checked, unchecked, or mixed state includes the directory entry itself, matching the set passed to rewrite even when all children are excluded. Duplicate names share a decision, including across pages. Planned exclusions count entry rows, including directories and duplicates; the separate kept file count excludes directories. Zero exclusions or zero kept files disable execution. The controller snapshots the keep set and sends only `keep` to rewrite. Encrypted entries that are excluded can be skipped before decryption; keeping one causes an error without a password. The engine's empty ZIP behavior is unchanged.
+
+Repair candidates must be non-UTF-8 and non-ASCII, have original filename bytes, and decode to a different name as Shift_JIS. Preview and rewrite callback use the same function. Candidate names are text, not executable content. UTF-8 names, absent bytes, unchanged decodes, and zero targets do not start repair. A newly created collision between distinct source names blocks execution and shows the target name. The candidate is a suggestion, not a guarantee of correct encoding. A rename callback evaluates each entry's own metadata, including duplicate entries. Removal rewrites output names as UTF-8, so inspect repair before removal; later repair of a trimmed ZIP is not guaranteed.
+
+Rewrite progress points at the entry about to be processed. The result card appears only after the rewrite Promise resolves. Removal displays actual `removed` and `kept`, repair actual `renamed`, all including directories and including zero. The derived ZIP name is shared by the card, explicit save, and explicit reinput. The original File is not modified.
+
+## Errors and recovery
+
+Input, listing, and job failures share localized explanations for all six engine codes, aborts, and ordinary exceptions. Raw engine messages are not the main text. Failed jobs identify the operation that failed even if another tab is selected. Errors use alerts. A ZIP signature with failed listing prompts a separate future recovery feature; it does not promise repair. RAR and 7z listing errors offer retry before extraction. Tar listing errors also offer retry. Unknown signatures request another input. Signature detection does not establish integrity or promise extraction success.
+
+## Adding an operation
+
+Extend input and output types, route and reducer guards, then controller execution and resource cleanup. Add progress, result fields, and actual counts, then tabs, localized text, keyboard and accessible names. Test worker transfer and component behavior, and update public documentation.
