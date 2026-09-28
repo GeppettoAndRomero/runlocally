@@ -1,0 +1,17 @@
+export type ArchiveKind = 'zip' | 'rar' | '7z' | 'tar' | 'unknown';
+
+/** Inspect bytes only. Callers should read at least 263 bytes to recognize a ustar header. */
+export function sniffArchiveKind(bytes: Uint8Array): ArchiveKind {
+  const at = (offset: number, values: readonly number[]) =>
+    values.every((value, index) => bytes[offset + index] === value) &&
+    bytes.length >= offset + values.length;
+  if (at(0, [0x50, 0x4b, 0x03, 0x04]) ||
+      at(0, [0x50, 0x4b, 0x05, 0x06]) ||
+      at(0, [0x50, 0x4b, 0x07, 0x08])) return 'zip';
+  if (at(0, [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00]) ||
+      at(0, [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00])) return 'rar';
+  if (at(0, [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c])) return '7z';
+  if (at(257, [0x75, 0x73, 0x74, 0x61, 0x72, 0x00]) ||
+      at(257, [0x75, 0x73, 0x74, 0x61, 0x72, 0x20])) return 'tar';
+  return 'unknown';
+}
