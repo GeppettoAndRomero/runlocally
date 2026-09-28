@@ -55,6 +55,13 @@
       "name": "precache",
       "path": "dist/**/*.{js,css,html}",
       "limit": "200 KB"
+    },
+    {
+      "name": "wasm",
+      "path": "dist/**/*.wasm",
+      "limit": "5 MB",
+      "gzip": false,
+      "brotli": false
     }
   ]
 }

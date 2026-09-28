@@ -1,0 +1,55 @@
+name: build-lean-libarchive
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASELINE_SIZE: 1002547
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build lean libarchive
+        run: docker buildx build --file wasm/libarchive-lean/Dockerfile --output type=local,dest=wasm/libarchive-lean/out wasm/libarchive-lean
+      - name: Verify artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd wasm/libarchive-lean/out
+          files=(libarchive.wasm libarchive.js libarchive-node.mjs worker-bundle.js worker-bundle-node.mjs)
+          for file in "${files[@]}" libarchive-configure.log; do test -s "$file"; done
+          strings libarchive.wasm > wasm-strings.txt
+          status=0
+          grep -iE 'openssl|ssleay' wasm-strings.txt || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo 'OpenSSL or SSLeay found in WASM'
+            exit 1
+          fi
+          if [ "$status" -ne 1 ]; then
+            echo 'Could not scan the WASM strings'
+            exit 1
+          fi
+          size=$(stat -c%s libarchive.wasm)
+          test "$size" -lt "$BASELINE_SIZE"
+          sha256sum "${files[@]}" > SHA256SUMS
+          sha256sum --check SHA256SUMS
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: libarchive-lean
+          if-no-files-found: error
+          path: |
+            wasm/libarchive-lean/out/libarchive.wasm
+            wasm/libarchive-lean/out/libarchive.js
+            wasm/libarchive-lean/out/libarchive-node.mjs
+            wasm/libarchive-lean/out/worker-bundle.js
+            wasm/libarchive-lean/out/worker-bundle-node.mjs
+            wasm/libarchive-lean/out/SHA256SUMS
+            wasm/libarchive-lean/out/libarchive-configure.log

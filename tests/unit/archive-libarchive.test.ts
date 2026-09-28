@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Archive as NodeArchive } from 'libarchive.js/dist/libarchive-node.mjs';
-import { openArchive, baseName, __setArchiveForTesting } from './archive-port/archiveEngine';
+import { openArchive, baseName, __setArchiveForTesting } from '../../src/engine/archive/libarchive';
 
 beforeAll(() => {
   __setArchiveForTesting(NodeArchive as any);
@@ -117,37 +117,37 @@ describe('openArchive — RAR4 (nested folder)', () => {
 });
 
 describe('openArchive — encrypted archive', () => {
-  it('throws errArchiveEncrypted instead of listing or extracting', async () => {
+  it('throws encrypted-entry instead of listing or extracting', async () => {
     await expect(openArchive(fixture('rar-encrypted.rar'))).rejects.toMatchObject({
-      code: 'errArchiveEncrypted',
+      code: 'encrypted-entry',
     });
   });
 });
 
 describe('openArchive — empty archive', () => {
-  it('throws errEmpty for a valid but empty TAR (0 entries)', async () => {
-    await expect(openArchive(fixture('empty.tar'))).rejects.toMatchObject({ code: 'errEmpty' });
+  it('throws unsupported for a valid but empty TAR (0 entries)', async () => {
+    await expect(openArchive(fixture('empty.tar'))).rejects.toMatchObject({ code: 'unsupported' });
   });
 });
 
 describe('openArchive — unparseable input', () => {
-  it('throws errEmpty for garbage bytes with no recognizable archive format', async () => {
+  it('throws unsupported for garbage bytes with no recognizable archive format', async () => {
     // libarchive.js's archive_open() does not distinguish "unrecognized format"
-    // from "genuinely empty archive" (see the temporary engine implementation) — both
+    // from "genuinely empty archive" (see the archive engine) — both
     // are a successful open with zero listable entries, so this is the accurate,
     // honestly-scoped result rather than a distinct "invalid" error.
     await expect(
       openArchive(new File([new Uint8Array([1, 2, 3, 4])], 'x.rar')),
-    ).rejects.toMatchObject({ code: 'errEmpty' });
+    ).rejects.toMatchObject({ code: 'unsupported' });
   });
 });
 
 describe('openArchive(...).extractOne — invalid path', () => {
-  it('throws errInvalidArchive for a path that is not in the listing', async () => {
+  it('throws unsupported for a path that is not in the listing', async () => {
     const archive = await openArchive(fixture('sample.tar'));
     try {
       await expect(archive.extractOne('does/not/exist.txt')).rejects.toMatchObject({
-        code: 'errInvalidArchive',
+        code: 'unsupported',
       });
     } finally {
       archive.close();
