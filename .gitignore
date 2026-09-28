@@ -1,0 +1,10 @@
+.env
+.env.*
+.claude/settings.local.json
+node_modules/
+dist/
+.astro/
+coverage/
+test-results/
+playwright-report/
+.leak-patterns.local

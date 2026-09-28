@@ -1,0 +1,52 @@
+{
+  "name": "runlocally",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "description": "Open, fix and repack ZIP files in your browser. Nothing is uploaded.",
+  "homepage": "https://runlocally.app/",
+  "repository": "https://github.com/GeppettoAndRomero/runlocally",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check",
+    "lint": "eslint .",
+    "license:check": "license-checker --production --excludePrivatePackages --summary --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Unlicense;LGPL-3.0;LGPL-3.0-or-later;LGPL-2.1;LGPL-2.1-or-later;Python-2.0;CC-BY-4.0\"",
+    "check-leaks": "bash scripts/check-leaks.sh",
+    "test": "vitest run",
+    "size": "size-limit",
+    "prepare": "git config core.hooksPath .githooks || true",
+    "ci": "npm run typecheck && npm run lint && npm run license:check && npm run check-leaks && npm test && npm run build && npm run size"
+  },
+  "dependencies": {
+    "astro": "^4.16.18",
+    "preact": "^10.24.3",
+    "@astrojs/preact": "^3.5.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "typescript": "^5.6.3",
+    "eslint": "^9.39.4",
+    "@eslint/js": "^9.39.4",
+    "typescript-eslint": "^8.62.0",
+    "eslint-plugin-astro": "^1.7.0",
+    "globals": "^16.0.0",
+    "vitest": "^2.1.9",
+    "@types/node": "^22.9.0",
+    "license-checker": "^25.0.1",
+    "size-limit": "^11.0.0",
+    "@size-limit/file": "^11.0.0"
+  },
+  "size-limit": [
+    {
+      "name": "precache",
+      "path": "dist/**/*.{js,css,html}",
+      "limit": "200 KB"
+    }
+  ]
+}

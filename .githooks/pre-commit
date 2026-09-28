@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Commits in this repository are authored only as the project persona. Environment variables
+# such as GIT_AUTHOR_NAME override git config, so check the identity git will actually record.
+expected='Geppetto <6941546+GeppettoAndRomero@users.noreply.github.com>'
+for role in GIT_AUTHOR_IDENT GIT_COMMITTER_IDENT; do
+  ident=$(git var "$role" | sed 's/ [0-9]* [-+][0-9]*$//')
+  if [[ $ident != "$expected" ]]; then
+    printf 'pre-commit: %s is not the project identity; set user.name/user.email and unset GIT_AUTHOR_*/GIT_COMMITTER_*\n' "$role" >&2
+    exit 1
+  fi
+done
+
+bash scripts/check-leaks.sh --cached
