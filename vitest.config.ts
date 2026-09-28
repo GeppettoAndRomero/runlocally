@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: {
-    include: ['tests/unit/**/*.test.ts'],
+    include: ['tests/unit/**/*.test.ts', 'tests/component/**/*.test.ts', 'tests/component/**/*.test.tsx'],
+    environmentMatchGlobs: [['tests/component/**/*.test.ts', 'jsdom'], ['tests/component/**/*.test.tsx', 'jsdom']],
     environment: 'node',
     coverage: {
       provider: 'v8',
