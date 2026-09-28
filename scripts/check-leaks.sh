@@ -11,7 +11,7 @@ if [[ ${1:-} == --cached ]]; then
   cached=1
 fi
 
-exclude_paths=('--' '.' ':!scripts/check-leaks.sh' ':!.gitignore' ':!package-lock.json')
+exclude_paths=('--' '.' ':!scripts/check-leaks.sh' ':!.gitignore' ':!package-lock.json' ':!vendor/libarchive-lean/*.js' ':!vendor/libarchive-lean/*.mjs' ':!vendor/libarchive-lean/*.wasm')
 general_patterns=(
   -e '/Users/'
   -e '/home/[a-z]'

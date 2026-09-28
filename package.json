@@ -23,12 +23,16 @@
     "test:unit": "vitest run",
     "size": "size-limit",
     "prepare": "git config core.hooksPath .githooks || true",
-    "ci": "npm run typecheck && npm run lint && npm run license:check && npm run check-leaks && npm run check:engine-dom && npm run test:unit -- --coverage && npm run build && npm run size"
+    "ci": "npm run typecheck && npm run lint && npm run license:check && npm run check-leaks && npm run check:engine-dom && npm run test:unit -- --coverage && npm run build && npm run size",
+    "postinstall": "node scripts/vendor-libarchive.mjs",
+    "prebuild": "node scripts/vendor-libarchive.mjs",
+    "predev": "node scripts/vendor-libarchive.mjs"
   },
   "dependencies": {
     "@astrojs/preact": "^3.5.3",
     "@zip.js/zip.js": "^2.18.2",
     "astro": "^4.16.18",
+    "libarchive.js": "2.0.2",
     "preact": "^10.24.3"
   },
   "devDependencies": {

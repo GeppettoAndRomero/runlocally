@@ -4,6 +4,17 @@
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
     "baseUrl": ".",
-    "paths": { "@/*": ["./src/*"] }
-  }
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "exclude": [
+    "dist",
+    "public/vendor",
+    "vendor",
+    "wasm/libarchive-lean/out",
+    "coverage"
+  ]
 }
