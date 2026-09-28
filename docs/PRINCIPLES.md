@@ -16,7 +16,9 @@
 4. **脆弱性報告経路を維持する**
    `SECURITY.md` に明記された経路（GitHub Private Vulnerability Reporting / `security@runlocally.app`）で脆弱性を受け付ける。受領 72 時間 / 初回応答 7 日の SLA を遵守する（§6.6）。
 
-1 は DevTools の Network タブ、2 は DevTools の Offline モード、3 はブラウザのインストール導線と Lighthouse PWA audit、4 は `SECURITY.md` と GitHub Private Vulnerability Reporting で検証します。内部の ZIP 一覧・抽出エンジンは追加済みですが、UI は未接続です。現時点では 2・3 および利用者向け ZIP 機能は未実装です。公約の自動検証は P5 で CI に追加予定です。
+1 は DevTools の Network タブ、2 は DevTools の Offline モード、3 はブラウザのインストール導線と Lighthouse PWA audit、4 は `SECURITY.md` と GitHub Private Vulnerability Reporting で検証します。内部エンジンには ZIP の一覧・抽出・再構築・作成・分割・結合・修復と、RAR／7z／tar／tar.gz の一覧・展開があります。UI は未接続です。現時点では 2・3 および利用者向け ZIP 機能は未実装です。公約の自動検証は P5 で CI に追加予定です。公開 API は [ENGINE.md](ENGINE.md) を参照してください。
+
+The internal engine implements ZIP listing, extraction, rewriting, creation, splitting, merging and recovery, plus listing and extraction for RAR, 7z, tar and tar.gz. The UI is not connected. Offline Service Worker support, PWA installation and user-facing ZIP operations are not implemented yet. Automated verification of the four promises is planned for P5 CI. See [ENGINE.md](ENGINE.md) for the current API.
 
 ## 運営と公開
 

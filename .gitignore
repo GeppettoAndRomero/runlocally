@@ -3,6 +3,7 @@
 .claude/settings.local.json
 node_modules/
 dist/
+.notice-build/
 public/vendor/libarchive/
 wasm/libarchive-lean/out/
 .astro/

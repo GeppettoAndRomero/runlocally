@@ -1,0 +1,60 @@
+{
+  "recipe": "wasm/libarchive-lean/Dockerfile",
+  "note": "Components statically linked into vendor/libarchive-lean/libarchive.wasm and its generated JavaScript. License files are copied unchanged from the upstream source at the listed version.",
+  "components": [
+    {
+      "name": "libarchive",
+      "version": "3.7.2",
+      "spdx": "BSD-2-Clause AND BSD-3-Clause",
+      "copyright": "The libarchive distribution as a whole is Copyright by Tim Kientzle; some source files are also under a 3-clause UC Regents copyright (see COPYING)",
+      "linkage": "Static library (libarchive.a), built from the v3.7.2 release without OpenSSL.",
+      "source": "https://github.com/libarchive/libarchive/blob/v3.7.2/COPYING",
+      "licenseFile": "libarchive-3.7.2-COPYING"
+    },
+    {
+      "name": "libarchive compress (.Z) filter",
+      "version": "3.7.2",
+      "spdx": "BSD-3-Clause",
+      "copyright": "Copyright (c) 1985, 1986, 1992, 1993 The Regents of the University of California",
+      "linkage": "Part of the static libarchive library; libarchive/archive_read_support_filter_compress.c is derived from the BSD compress source.",
+      "source": "https://github.com/libarchive/libarchive/blob/v3.7.2/libarchive/archive_read_support_filter_compress.c",
+      "licenseFile": "libarchive-3.7.2-compress-UC-Regents.txt"
+    },
+    {
+      "name": "liblzma (XZ Utils)",
+      "version": "5.2.11",
+      "spdx": "LicenseRef-Public-Domain",
+      "copyright": "liblzma is in the public domain (see COPYING)",
+      "linkage": "Static library (liblzma.a) only; the xz command-line tools and scripts are not linked.",
+      "source": "https://github.com/tukaani-project/xz/blob/v5.2.11/COPYING",
+      "licenseFile": "xz-5.2.11-COPYING"
+    },
+    {
+      "name": "zlib (Emscripten port)",
+      "version": "1.2.13",
+      "spdx": "Zlib",
+      "copyright": "Copyright (C) 1995-2022 Jean-loup Gailly and Mark Adler",
+      "linkage": "Linked through emcc -s USE_ZLIB=1; emsdk 3.1.52 pins zlib 1.2.13 (tools/ports/zlib.py).",
+      "source": "https://github.com/madler/zlib/blob/v1.2.13/LICENSE",
+      "licenseFile": "zlib-1.2.13-LICENSE"
+    },
+    {
+      "name": "bzip2 / libbzip2 (Emscripten port)",
+      "version": "1.0.6",
+      "spdx": "bzip2-1.0.6",
+      "copyright": "Copyright (C) 1996-2010 Julian R Seward",
+      "linkage": "Linked through emcc -s USE_BZIP2=1; emsdk 3.1.52 pins bzip2 1.0.6 (tools/ports/bzip2.py).",
+      "source": "https://github.com/emscripten-ports/bzip2/blob/1.0.6/LICENSE",
+      "licenseFile": "bzip2-1.0.6-LICENSE"
+    },
+    {
+      "name": "Emscripten runtime",
+      "version": "3.1.52",
+      "spdx": "MIT OR NCSA",
+      "copyright": "Copyright (c) 2010-2014 Emscripten authors (see AUTHORS)",
+      "linkage": "Generated JavaScript glue and runtime support code in the WASM build.",
+      "source": "https://github.com/emscripten-core/emscripten/blob/3.1.52/LICENSE",
+      "licenseFile": "emscripten-3.1.52-LICENSE"
+    }
+  ]
+}

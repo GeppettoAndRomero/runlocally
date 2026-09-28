@@ -7,3 +7,5 @@ These five files are a matched build for libarchive.js 2.0.2. The WASM is 862,58
 A new build must be reviewed and its five hashes updated together before use.
 
 The [rebuild recipe](../../wasm/libarchive-lean/README.md) describes the component versions, verification gates, and artifact update process.
+
+[Component metadata](components.json) and primary-source [license texts](licenses/) feed the generated [NOTICE](../../NOTICE.md). The npm packages copied to public assets are identified explicitly by the generator.

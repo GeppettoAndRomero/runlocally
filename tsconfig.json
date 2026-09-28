@@ -12,6 +12,7 @@
   },
   "exclude": [
     "dist",
+    ".notice-build",
     "public/vendor",
     "vendor",
     "wasm/libarchive-lean/out",

@@ -63,6 +63,13 @@ export function __createZipEngineForEndpoint(endpoint: WorkerEndpoint,
       return callback(...args);
     }) as T;
   }
+  // Progress callbacks are notifications: their return value is discarded so a callback that
+  // returns a function or DOM node cannot fail the transfer back to the worker.
+  function progress<T extends (...args: never[]) => unknown>(callback?: T) {
+    const call = guarded(callback);
+    if (!call) return undefined;
+    return proxy(async (...args: Parameters<T>) => { await call(...args); });
+  }
   function terminate(): void {
     if (ended) return;
     ended = true;
@@ -84,24 +91,24 @@ export function __createZipEngineForEndpoint(endpoint: WorkerEndpoint,
     listEntries: (file) => run(() => remote.listEntries(file)),
     extractEntry: (file, name) => run(() => remote.extractEntry(file, name)),
     extractAll: (file, onProgress) => run(() => remote.extractAll(file,
-      onProgress ? proxy(guarded(onProgress)!) : undefined)),
+      progress(onProgress))),
     rewriteZip: (file, options = {}) => run(() => {
       const { keep, rename, onProgress, ...data } = options;
       return remote.rewriteZip(file, data,
         keep ? proxy(guarded(keep)!) : undefined,
         rename ? proxy(guarded(rename)!) : undefined,
-        onProgress ? proxy(guarded(onProgress)!) : undefined);
+        progress(onProgress));
     }),
     createZip: (files, options = {}) => run(() => {
       const { onProgress, ...data } = options;
       return remote.createZip(files.map((file) => ({ file,
         relativePath: file.webkitRelativePath || '' })), data,
-      onProgress ? proxy(guarded(onProgress)!) : undefined);
+      progress(onProgress));
     }),
     splitZip: (file, targetBytes, onProgress) => run(() => remote.splitZip(file, targetBytes,
-      onProgress ? proxy(guarded(onProgress)!) : undefined)),
+      progress(onProgress))),
     mergeZips: (files, options, onProgress) => run(() => remote.mergeZips(files, options,
-      onProgress ? proxy(guarded(onProgress)!) : undefined)),
+      progress(onProgress))),
     recoverZip: (input) => run(() => remote.recoverZip(input)),
     terminate,
   };

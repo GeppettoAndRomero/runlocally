@@ -1,6 +1,6 @@
 # Lean libarchive build
 
-The Dockerfile builds libarchive.js v2.0.2 with emsdk 3.1.52, libarchive 3.7.2, zlib 1.3, xz 5.2.11, and bzip2 1.0.8. OpenSSL is disabled. The JavaScript bundles and WASM are generated together because their export names must match.
+The Dockerfile builds libarchive.js v2.0.2 with emsdk 3.1.52, libarchive 3.7.2, zlib 1.3, xz 5.2.11, and bzip2 1.0.8 as source inputs. The final emcc link explicitly includes libarchive and liblzma static archives and selects Emscripten's zlib and bzip2 ports. The port revisions have not been verified against emsdk 3.1.52; the source versions must not be read as final port versions. OpenSSL is disabled. The JavaScript bundles and WASM are generated together because their export names must match. See [component attribution metadata](../../vendor/libarchive-lean/components.json) and the generated [NOTICE](../../NOTICE.md).
 
 Build from the repository root:
 

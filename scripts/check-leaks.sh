@@ -12,6 +12,7 @@ if [[ ${1:-} == --cached ]]; then
 fi
 
 exclude_paths=('--' '.' ':!scripts/check-leaks.sh' ':!.gitignore' ':!package-lock.json' ':!vendor/libarchive-lean/*.js' ':!vendor/libarchive-lean/*.mjs' ':!vendor/libarchive-lean/*.wasm')
+general_exclude_paths=("${exclude_paths[@]}" ':!NOTICE.md' ':!vendor/libarchive-lean/licenses/**')
 general_patterns=(
   -e '/Users/'
   -e '/home/[a-z]'
@@ -23,7 +24,12 @@ general_patterns=(
 check_patterns() {
   # git grep exits 0 on a match, 1 on no match and >1 on error; anything but 1 must not pass.
   local matches status=0
-  matches=$(git grep ${cached:+--cached} -n -I -i -E "$@" "${exclude_paths[@]}" 2>/dev/null) || status=$?
+  local paths=("${exclude_paths[@]}")
+  if [[ ${1:-} == --general ]]; then
+    shift
+    paths=("${general_exclude_paths[@]}")
+  fi
+  matches=$(git grep ${cached:+--cached} -n -I -i -E "$@" "${paths[@]}" 2>/dev/null) || status=$?
   if (( status == 0 )); then
     printf '%s\n' "$matches"
     return 1
@@ -34,7 +40,7 @@ check_patterns() {
   fi
 }
 
-check_patterns "${general_patterns[@]}" || exit $?
+check_patterns --general "${general_patterns[@]}" || exit $?
 
 personal_patterns=()
 read_patterns() {
