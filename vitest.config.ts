@@ -3,5 +3,14 @@ import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  test: { include: ['tests/unit/**/*.test.ts'], environment: 'node' },
+  test: {
+    include: ['tests/unit/**/*.test.ts'],
+    environment: 'node',
+    coverage: {
+      provider: 'v8',
+      include: ['src/engine/**/*.ts'],
+      all: true,
+      thresholds: { lines: 80, functions: 80, statements: 80, branches: 75 },
+    },
+  },
 });
