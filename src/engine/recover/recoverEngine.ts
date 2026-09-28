@@ -20,6 +20,7 @@
 
 import { ZipReader, BlobReader, Uint8ArrayWriter, configure } from '@zip.js/zip.js';
 import { scanLocalHeaders, type ScannedEntry } from './zipScan';
+import { nextRecordBoundary, trailingDescriptors } from './zipDescriptors';
 import { crc32 } from './crc32';
 
 // Decode on the main thread: deterministic, works offline (no worker chunk to
@@ -115,7 +116,7 @@ async function inflateRawPartial(
 /** Decode a single scanned entry's data into recovered bytes + a status. */
 async function decodeScanned(bytes: Uint8Array, s: ScannedEntry): Promise<Decoded> {
   const data = bytes.subarray(s.dataStart, s.dataEnd);
-  const crcKnown = !s.hasDataDescriptor && s.crc !== 0;
+  const crcKnown = s.descriptorValidated || (!s.hasDataDescriptor && s.crc !== 0);
 
   if (data.length === 0) {
     return { status: 'broken', bytes: null, reason: s.truncated ? 'truncated' : 'empty' };
@@ -135,8 +136,11 @@ async function decodeScanned(bytes: Uint8Array, s: ScannedEntry): Promise<Decode
     if (out.length === 0) {
       return { status: 'broken', bytes: null, reason: complete ? 'inflate' : 'truncated' };
     }
-    if (!complete) return { status: 'broken', bytes: out, reason: 'truncated' };
-    if (crcKnown && crc32(out) !== s.crc) return { status: 'broken', bytes: out, reason: 'crc' };
+    const crcMatches = crcKnown && crc32(out) === s.crc;
+    if (!complete && !crcMatches) {
+      return { status: 'broken', bytes: out, reason: s.truncated || !crcKnown ? 'truncated' : 'crc' };
+    }
+    if (crcKnown && !crcMatches) return { status: 'broken', bytes: out, reason: 'crc' };
     return { status: 'ok', bytes: out };
   }
 
@@ -144,10 +148,39 @@ async function decodeScanned(bytes: Uint8Array, s: ScannedEntry): Promise<Decode
   return { status: 'broken', bytes: null, reason: 'unsupported' };
 }
 
+/** Verify each size-plausible descriptor against its own decoded data slice. */
+async function decodeWithDescriptor(bytes: Uint8Array, s: ScannedEntry): Promise<Decoded> {
+  if (!s.hasDataDescriptor) return decodeScanned(bytes, s);
+
+  const boundary = nextRecordBoundary(bytes, s.dataStart);
+  for (const candidate of trailingDescriptors(bytes, s.dataStart, boundary)) {
+    const decoded = await decodeScanned(bytes, {
+      ...s,
+      crc: candidate.crc,
+      compressedSize: candidate.compressedSize,
+      dataEnd: candidate.dataEnd,
+      descriptorValidated: true,
+      truncated: false,
+    });
+    if (decoded.bytes && crc32(decoded.bytes) === candidate.crc) return decoded;
+  }
+
+  // A size match alone does not establish a descriptor. Keep the original
+  // boundary and apply the existing unknown-CRC recovery rules.
+  return decodeScanned(bytes, {
+    ...s,
+    crc: 0,
+    compressedSize: 0,
+    dataEnd: boundary,
+    descriptorValidated: false,
+    truncated: boundary >= bytes.length,
+  });
+}
+
 /** Salvage bytes for a named entry by decoding its scanned local header. */
 async function salvage(bytes: Uint8Array, s: ScannedEntry | undefined): Promise<Decoded> {
   if (!s) return { status: 'broken', bytes: null, reason: 'inflate' };
-  return decodeScanned(bytes, s);
+  return decodeWithDescriptor(bytes, s);
 }
 
 /** Layer 1: read the central directory and decode each entry. */
@@ -249,7 +282,7 @@ async function recoverFromScan(bytes: Uint8Array, scanned: ScannedEntry[]): Prom
       });
       continue;
     }
-    const dec = await decodeScanned(bytes, s);
+    const dec = await decodeWithDescriptor(bytes, s);
     entries.push({
       name: s.name,
       directory: false,

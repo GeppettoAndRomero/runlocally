@@ -1,3 +1,5 @@
+import { trailingDescriptors } from './zipDescriptors';
+
 /**
  * Local-file-header scanner — the salvage layer.
  *
@@ -55,6 +57,8 @@ export interface ScannedEntry {
   uncompressedSize: number;
   /** True when the header sizes/CRC are zero and carried in a data descriptor. */
   hasDataDescriptor: boolean;
+  /** True only when a unique trailing descriptor's size matches the located data. */
+  descriptorValidated: boolean;
   /** Start offset (inclusive) of this entry's compressed data. */
   dataStart: number;
   /** End offset (exclusive) of this entry's compressed data. */
@@ -141,19 +145,24 @@ export function scanLocalHeaders(bytes: Uint8Array): ScannedEntry[] {
       }
     }
 
+    const candidates = hasDataDescriptor ? trailingDescriptors(bytes, dataStart, dataEnd) : [];
+    // Without decoding, an ambiguous size match cannot identify the CRC.
+    const descriptor = candidates.length === 1 ? candidates[0] : null;
+
     entries.push({
       offset,
       name,
       directory: name.endsWith('/'),
       method,
       flag,
-      crc,
-      compressedSize,
+      crc: descriptor?.crc ?? crc,
+      compressedSize: descriptor?.compressedSize ?? compressedSize,
       uncompressedSize,
       hasDataDescriptor,
+      descriptorValidated: descriptor !== null,
       dataStart,
-      dataEnd,
-      truncated: dataEnd >= len && !sizeTrustable,
+      dataEnd: descriptor?.dataEnd ?? dataEnd,
+      truncated: descriptor === null && dataEnd >= len && !sizeTrustable,
       utf8: (flag & 0x0800) !== 0,
     });
   }
