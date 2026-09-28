@@ -8,7 +8,7 @@
   "homepage": "https://runlocally.app/",
   "repository": "https://github.com/GeppettoAndRomero/runlocally",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "astro dev",

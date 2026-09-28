@@ -15,7 +15,7 @@
 
 ### 開発
 
-Node.js 22 以上が必要です。依存の導入後は以下を実行します。
+Node.js 24 以上が必要です。依存の導入後は以下を実行します。
 
 ```sh
 npm ci
@@ -37,6 +37,6 @@ Colophon: Some code was written with AI assistance; all review and decisions are
 
 The four promises are no additional client requests, offline use, PWA installation and a maintained vulnerability reporting path. Check them through DevTools Network, DevTools Offline, the browser install prompt and Lighthouse PWA audit, and [SECURITY.md](SECURITY.md) with Private Vulnerability Reporting, respectively. See the exact wording in [Principles](docs/PRINCIPLES.md). User-facing ZIP features, the Service Worker and PWA support are not implemented yet; automated checks for the promises are planned for P5 CI.
 
-Development requires Node.js 22 or newer: run `npm ci`, `npm run dev` and `npm run ci`. Self-hosting with Docker is planned for v0.4.0. License: [MIT](LICENSE).
+Development requires Node.js 24 or newer: run `npm ci`, `npm run dev` and `npm run ci`. Self-hosting with Docker is planned for v0.4.0. License: [MIT](LICENSE).
 
 Run unit tests with `npm run test:unit -- --coverage`. Engine coverage thresholds are 80% for lines, functions and statements, and 75% for branches. `npm run check:engine-dom` checks for DOM references in the engine. See the [engine API](docs/ENGINE.md) for signatures and cleanup responsibilities. The notice generator identifies browser-delivered code from analysis-build sourcemaps and statically copied assets. Regenerate [NOTICE](NOTICE.md) with `npm run notice:generate` and verify it with `npm run notice:check`. These checks are part of `npm run ci`.
