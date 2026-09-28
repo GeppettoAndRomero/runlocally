@@ -58,7 +58,7 @@ try {
 | `not-encrypted` | `rewriteZip` received an input password but found no encrypted entries. |
 | `encrypted-entry` | Unsupported encrypted data in `extractEntry`, `rewriteZip`, `splitZip`, `mergeZips`, or `openArchive`. Merge checks after collision skipping. |
 | `bad-central` | Known ZIP central-directory failures via `readCentralEntries` in listing, extraction, rewrite, split, or merge. |
-| `too-large` | Reserved code; no current API creates it. |
+| `too-large` | Existing engine APIs do not create it. The app state rejects an input larger than 1,000,000,000 bytes before listing or a job is started. The caller must apply this check before reading the file or calling a worker. |
 | `unsupported` | Unsupported ZIP format, target or arguments; archive initialization, opening, listing or extraction failure. |
 
 `extractAll` skips encrypted ZIP files rather than emitting `encrypted-entry`. Recover reports entry damage in result fields. Worker termination emits `AbortError`, not an `EngineError` code.
@@ -66,3 +66,7 @@ try {
 ## Other exports and internal boundaries
 
 Synchronous helpers are available directly from their modules, outside the worker API: `zip/names.ts` exports `baseName`, `isGarbled`, `decodeShiftJisName`; `zip/split.ts` exports `entryPackSize`, `planParts`, `buildPlan`, `partBaseName`, `humanSize`; `zip/merge.ts` exports `disambiguate`; `recover/zipScan.ts` exports `scanLocalHeaders`, `isPkSignature`; `recover/crc32.ts` exports `crc32`; `recover/recoverEngine.ts` and `archive/libarchive.ts` each export their own `baseName`. `zip/list.ts`'s `readCentralEntries` is shared engine plumbing. `archive/libarchive.ts`'s `__setArchiveForTesting` and `app/engine.ts`'s `__createZipEngineForEndpoint` are test seams, not app operations. `worker-api.ts` separates data from proxied callbacks for transport and is not the public client signature.
+
+`sniffArchiveKind(bytes)` is a synchronous, byte-only hint for ZIP, RAR, 7z, and tar. Callers can read the first 263 bytes to include tar's `ustar` marker at offset 257; the function does not read a `File` or use its name, extension, or MIME type. It recognizes common ZIP PK records, both RAR generations, 7z, and the null or space terminated `ustar` marker. A gzip header alone does not identify tar.gz. Self-extracting archives and tar files without that marker may return `unknown`. A recognized signature does not establish archive integrity, encryption status, safety, or extractability.
+
+`src/app/state` holds a pure ZIP session reducer. Its `selection` contains kept names across the entire listing. Duplicate ZIP names therefore share a rewrite keep decision; `extractEntry` returns the first match. Rewrite counts include directories, while extracted file counts come from the returned files. Rewrite progress identifies the entry about to be processed; extract progress counts completed files. Generation and request IDs discard notifications from replaced inputs, reset sessions, and completed jobs. Results enter a source chain only through an explicit derived `File` action. The reducer stores no worker, archive handle, callback, or object URL. Other archive listing and recovery entry shapes are not represented as ZIP entries.
