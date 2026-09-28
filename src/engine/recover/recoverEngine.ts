@@ -22,8 +22,7 @@ import { ZipReader, BlobReader, Uint8ArrayWriter, configure } from '@zip.js/zip.
 import { scanLocalHeaders, type ScannedEntry } from './zipScan';
 import { crc32 } from './crc32';
 
-// Decode on the main thread: deterministic, works offline (no worker chunk to
-// cache), and the salvage path uses the native DecompressionStream anyway.
+// Decode in the current execution context; the salvage path uses native DecompressionStream.
 configure({ useWebWorkers: false });
 
 export type EntryStatus = 'ok' | 'broken';

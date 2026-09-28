@@ -18,11 +18,11 @@ export interface RewriteProgress {
 }
 
 export interface RewriteOptions {
-  keep?: (name: string) => boolean;
-  rename?: (name: string, entry: RewriteEntry) => string;
+  keep?: (name: string) => boolean | Promise<boolean>;
+  rename?: (name: string, entry: RewriteEntry) => string | Promise<string>;
   password?: string;
   outPassword?: string;
-  onProgress?: (progress: RewriteProgress) => void;
+  onProgress?: (progress: RewriteProgress) => unknown;
 }
 
 export interface RewriteResult {
@@ -70,8 +70,8 @@ export async function rewriteZip(file: File, options: RewriteOptions = {}): Prom
       for (let index = 0; index < total; index++) {
         const entry = entries[index];
         const name = entry.filename;
-        options.onProgress?.({ index, total, name });
-        if (options.keep && !options.keep(name)) {
+        await options.onProgress?.({ index, total, name });
+        if (options.keep && !(await options.keep(name))) {
           removed++;
           continue;
         }
@@ -89,7 +89,7 @@ export async function rewriteZip(file: File, options: RewriteOptions = {}): Prom
           utf8: entry.filenameUTF8,
           rawFilename: entry.rawFilename,
         };
-        const outputName = options.rename?.(name, metadata) ?? name;
+        const outputName = (await options.rename?.(name, metadata)) ?? name;
         if (outputName !== name) renamed++;
         if (entry.directory) {
           await writer.add(outputName, undefined, {

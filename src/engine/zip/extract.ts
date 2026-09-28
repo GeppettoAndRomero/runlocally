@@ -24,7 +24,7 @@ export async function extractEntry(file: File, name: string): Promise<Blob> {
 /** Extract supported files in archive order, reporting completed files. */
 export async function extractAll(
   file: File,
-  onProgress?: (done: number, total: number) => void,
+  onProgress?: (done: number, total: number) => unknown,
 ): Promise<ExtractedFile[]> {
   const reader = new ZipReader(new BlobReader(file));
   try {
@@ -36,7 +36,7 @@ export async function extractAll(
     for (const entry of files) {
       const blob = await entry.getData(new BlobWriter());
       out.push({ name: entry.filename, blob });
-      onProgress?.(out.length, files.length);
+      await onProgress?.(out.length, files.length);
     }
     return out;
   } finally {

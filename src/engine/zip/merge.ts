@@ -78,7 +78,7 @@ export function disambiguate(path: string, used: Set<string>): string {
 export async function mergeZips(
   files: File[],
   options: MergeOptions,
-  onProgress?: (p: MergeProgress) => void,
+  onProgress?: (p: MergeProgress) => unknown,
 ): Promise<MergeResult> {
   if (files.length < 2) {
     throw new EngineError('unsupported', 'Need at least two ZIP files to merge');
@@ -96,7 +96,7 @@ export async function mergeZips(
 
   try {
     for (let i = 0; i < files.length; i++) {
-      onProgress?.({ index: i, total: files.length, name: files[i].name });
+      await onProgress?.({ index: i, total: files.length, name: files[i].name });
 
       const reader = new ZipReader(new BlobReader(files[i]));
       try {

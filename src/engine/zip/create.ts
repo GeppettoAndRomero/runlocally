@@ -17,7 +17,7 @@ export interface CreateProgress {
 
 export interface CreateOptions {
   password?: string;
-  onProgress?: (progress: CreateProgress) => void;
+  onProgress?: (progress: CreateProgress) => unknown;
 }
 
 /** Folder uploads expose a relative path; otherwise just the file name. */
@@ -61,7 +61,7 @@ export async function createZip(
   try {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      options.onProgress?.({ index: i, total: files.length, name: file.name });
+      await options.onProgress?.({ index: i, total: files.length, name: file.name });
       await writer.add(uniqueName(entryName(file), used), new BlobReader(file));
     }
     return await writer.close();

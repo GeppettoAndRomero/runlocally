@@ -140,7 +140,7 @@ export function partBaseName(fileName: string): string {
 export async function splitZip(
   file: File,
   targetBytes: number,
-  onProgress?: (p: SplitProgress) => void
+  onProgress?: (p: SplitProgress) => unknown
 ): Promise<SplitPart[]> {
   const reader = new ZipReader(new BlobReader(file));
   try {
@@ -160,7 +160,7 @@ export async function splitZip(
     const pad = Math.max(2, String(plan.length).length);
     const parts: SplitPart[] = [];
     for (let p = 0; p < plan.length; p++) {
-      onProgress?.({ part: p + 1, totalParts: plan.length });
+      await onProgress?.({ part: p + 1, totalParts: plan.length });
       const writer = new ZipWriter(new BlobWriter('application/zip'), { useUnicodeFileNames: true });
       try {
         let count = 0;
