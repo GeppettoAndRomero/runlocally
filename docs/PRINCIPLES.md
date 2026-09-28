@@ -16,7 +16,7 @@
 4. **脆弱性報告経路を維持する**
    `SECURITY.md` に明記された経路（GitHub Private Vulnerability Reporting / `security@runlocally.app`）で脆弱性を受け付ける。受領 72 時間 / 初回応答 7 日の SLA を遵守する（§6.6）。
 
-1 は DevTools の Network タブ、2 は DevTools の Offline モード、3 はブラウザのインストール導線と Lighthouse PWA audit、4 は `SECURITY.md` と GitHub Private Vulnerability Reporting で検証します。現時点では 2・3 および ZIP 機能は未実装です。公約の自動検証は P5 で CI に追加予定です。
+1 は DevTools の Network タブ、2 は DevTools の Offline モード、3 はブラウザのインストール導線と Lighthouse PWA audit、4 は `SECURITY.md` と GitHub Private Vulnerability Reporting で検証します。内部の ZIP 一覧・抽出エンジンは追加済みですが、UI は未接続です。現時点では 2・3 および利用者向け ZIP 機能は未実装です。公約の自動検証は P5 で CI に追加予定です。
 
 ## 運営と公開
 
