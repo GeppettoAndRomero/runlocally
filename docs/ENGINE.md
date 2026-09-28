@@ -1,6 +1,6 @@
 # Engine API
 
-The current pages do not call these APIs yet. The app boundary in `src/app/engine.ts` owns the ZIP worker; `openArchive` calls the separate libarchive engine directly. `downloadBlob` in `src/app/download.ts` is the DOM-only download helper. No processing is sent to a server.
+The Japanese and English index pages mount a Workbench that calls the listing and extraction APIs. The app boundary in `src/app/engine.ts` owns the ZIP worker; `openArchive` calls the separate libarchive engine directly. `downloadBlob` in `src/app/download.ts` is the DOM-only download helper. No processing is sent to a server.
 
 ## App entry points
 
@@ -44,7 +44,7 @@ try {
 
 ## Archive route and ownership
 
-`openArchive(file: File): Promise<OpenArchive>` is an app export that calls `src/engine/archive/libarchive.ts` directly. libarchive.js creates its own worker using the matched lean JS/WASM artifacts. It lists extractable RAR, 7z, tar and tar.gz content; ZIP operations above use the separate ZIP worker. The returned handle has sorted `entries: { path: string; size: number }[]`, `extractOne(path): Promise<File>`, `extractAll(onProgress?: (done: number, total: number) => void): Promise<File[]>`, and `close(): void`. `extractAll` reports each completed file and closes on success. Call `close()` after single extraction, failed full extraction, or discarding a handle. An empty listing can also mean unreadable input; encrypted headers may prevent a precise diagnosis. The page that eventually wires these routes must terminate the ZIP client and close every open archive handle on departure.
+`openArchive(file: File): Promise<OpenArchive>` is an app export that calls `src/engine/archive/libarchive.ts` directly. libarchive.js creates its own worker using the matched lean JS/WASM artifacts. It lists extractable RAR, 7z, tar and tar.gz content; ZIP operations above use the separate ZIP worker. The returned handle has sorted `entries: { path: string; size: number }[]`, `extractOne(path): Promise<File>`, `extractAll(onProgress?: (done: number, total: number) => void): Promise<File[]>`, and `close(): void`. `extractAll` reports each completed file and closes on success. Call `close()` after single extraction, failed full extraction, or discarding a handle. An empty listing can also mean unreadable input; encrypted headers may prevent a precise diagnosis. The Workbench opens a new handle for each archive listing and extraction. It closes listing and single extraction handles, and closes failed or discarded handles. Successful full extraction closes through the archive API. Departure closes active resources, including handles returned after departure.
 
 `downloadBlob(blob: Blob, fileName: string): void` creates an object URL and temporary anchor, clicks it, removes the anchor, then revokes the URL after a delay. Callers choose the download name.
 
@@ -58,7 +58,7 @@ try {
 | `not-encrypted` | `rewriteZip` received an input password but found no encrypted entries. |
 | `encrypted-entry` | Unsupported encrypted data in `extractEntry`, `rewriteZip`, `splitZip`, `mergeZips`, or `openArchive`. Merge checks after collision skipping. |
 | `bad-central` | Known ZIP central-directory failures via `readCentralEntries` in listing, extraction, rewrite, split, or merge. |
-| `too-large` | Existing engine APIs do not create it. The app state rejects an input larger than 1,000,000,000 bytes before listing or a job is started. The caller must apply this check before reading the file or calling a worker. |
+| `too-large` | Existing engine APIs do not create it. The app state rejects an input larger than 1,000,000,000 bytes before listing or a job is started. The Workbench applies this check before reading the header or calling a worker, including result reinput. |
 | `unsupported` | Unsupported ZIP format, target or arguments; archive initialization, opening, listing or extraction failure. |
 
 `extractAll` skips encrypted ZIP files rather than emitting `encrypted-entry`. Recover reports entry damage in result fields. Worker termination emits `AbortError`, not an `EngineError` code.
@@ -69,4 +69,12 @@ Synchronous helpers are available directly from their modules, outside the worke
 
 `sniffArchiveKind(bytes)` is a synchronous, byte-only hint for ZIP, RAR, 7z, and tar. Callers can read the first 263 bytes to include tar's `ustar` marker at offset 257; the function does not read a `File` or use its name, extension, or MIME type. It recognizes common ZIP PK records, both RAR generations, 7z, and the null or space terminated `ustar` marker. A gzip header alone does not identify tar.gz. Self-extracting archives and tar files without that marker may return `unknown`. A recognized signature does not establish archive integrity, encryption status, safety, or extractability.
 
-`src/app/state` holds a pure ZIP session reducer. Its `selection` contains kept names across the entire listing. Duplicate ZIP names therefore share a rewrite keep decision; `extractEntry` returns the first match. Rewrite counts include directories, while extracted file counts come from the returned files. Rewrite progress identifies the entry about to be processed; extract progress counts completed files. Generation and request IDs discard notifications from replaced inputs, reset sessions, and completed jobs. Results enter a source chain only through an explicit derived `File` action. The reducer stores no worker, archive handle, callback, or object URL. Other archive listing and recovery entry shapes are not represented as ZIP entries.
+`src/app/state` holds a pure session reducer for ZIP and archive routes. Its `selection` contains kept names across the entire listing. Duplicate ZIP names therefore share a rewrite keep decision; `extractEntry` returns the first match. Rewrite counts include directories, while extracted file counts come from the returned files. Rewrite progress identifies the entry about to be processed; extract progress counts completed files. Generation and request IDs discard notifications from replaced inputs, reset sessions, and completed jobs. Results enter a source chain only through an explicit derived `File` action. The reducer stores no worker, archive handle, callback, or object URL. Archive listings use a separate `archiveEntries` array with `{ path, size }` values. ZIP entries retain their own metadata. A new source resets both arrays and the extract input; an explicit result reinput derives its chain from that result. An unknown signature remains outside the ready listing state.
+
+## Workbench boundary
+
+The Workbench reads only the first 263 input bytes for signature detection after the decimal 1 GB size check. ZIP uses a new worker client for each request; RAR, 7z, and tar use `openArchive`. Results remain in the session until reset, and saving uses `downloadBlob` without extraction. A recognized signature does not guarantee that listing will succeed.
+
+## Follow-up documentation
+
+The later operation screen work should add `docs/UI.md` and align the current implementation descriptions in `README.md` and `docs/PRINCIPLES.md`. Removal, name repair, and recovery controls are outside the current Workbench mount.

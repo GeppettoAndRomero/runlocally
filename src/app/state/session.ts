@@ -2,6 +2,7 @@ import type { ZipEntry, ExtractedFile } from '../../engine/types';
 import type { EngineErrorCode } from '../../engine/errors';
 import type { RewriteProgress, RewriteResult } from '../../engine/zip/rewrite';
 import type { ArchiveKind } from '../../engine/sniff';
+import type { ArchiveEntryInfo } from '../../engine/archive/libarchive';
 
 /** Add an operation by extending these keyed maps, then its result handling in the reducer. */
 export interface OpInputMap {
@@ -33,12 +34,12 @@ export interface Source {
   chain: readonly string[];
 }
 
-/** Only ZIP metadata can be ready today. Scan and archive routes need their own entry types. */
+export type ListingRoute = 'zip' | 'archive';
 export type Listing =
   | { status: 'idle' }
-  | { status: 'reading'; route: 'zip'; requestId: string }
-  | { status: 'ready'; route: 'zip'; requestId: string }
-  | { status: 'error'; route: 'zip'; requestId: string; failure: SessionFailure };
+  | { status: 'reading'; route: ListingRoute; requestId: string }
+  | { status: 'ready'; route: ListingRoute; requestId: string }
+  | { status: 'error'; route: ListingRoute; requestId: string; failure: SessionFailure };
 
 export type JobProgress =
   | { kind: 'extract'; done: number; total: number }
@@ -72,6 +73,7 @@ export interface Session {
   source: Source | null;
   listing: Listing;
   entries: readonly ZipEntry[];
+  archiveEntries: readonly ArchiveEntryInfo[];
   /** Names kept by rewrite. Duplicate names share one choice: extractOne uses the first match. */
   selection: ReadonlySet<string>;
   op: OpId;
@@ -93,9 +95,11 @@ export type JobSuccess = { [K in OpId]: {
 /** IDs, timestamps, read results, and derived Files enter through actions. */
 export type SessionAction =
   | { type: 'input/accept'; file: File; kind: ArchiveKind }
+  | { type: 'input/reject'; error: unknown }
   | { type: 'result/reinput'; resultId: string; file: File; kind: ArchiveKind }
   | { type: 'listing/start'; generation: number; requestId: string }
-  | { type: 'listing/success'; generation: number; requestId: string; entries: readonly ZipEntry[] }
+  | { type: 'listing/success'; generation: number; requestId: string; route: 'zip'; entries: readonly ZipEntry[] }
+  | { type: 'listing/success'; generation: number; requestId: string; route: 'archive'; entries: readonly ArchiveEntryInfo[] }
   | { type: 'listing/failure'; generation: number; requestId: string; error: unknown }
   | { type: 'selection/toggle'; name: string; keep: boolean }
   | { type: 'selection/all'; keep: boolean }

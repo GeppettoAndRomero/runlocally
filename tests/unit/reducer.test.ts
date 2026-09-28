@@ -10,7 +10,7 @@ const apply = (state: Session, ...actions: SessionAction[]) => actions.reduce(se
 function ready(): Session {
   return apply(initialSession(), { type: 'input/accept', file: file(), kind: 'zip' },
     { type: 'listing/start', generation: 1, requestId: 'list-1' },
-    { type: 'listing/success', generation: 1, requestId: 'list-1', entries: [entry] });
+    { type: 'listing/success', route: 'zip', generation: 1, requestId: 'list-1', entries: [entry] });
 }
 
 describe('session reducer', () => {
@@ -25,9 +25,9 @@ describe('session reducer', () => {
     expect(state.selection.has('a.txt')).toBe(true);
     const replacement = sessionReducer(state, { type: 'input/accept', file: file('next.zip'), kind: 'zip' });
     expect(replacement.entries).toEqual([]);
-    expect(sessionReducer(replacement, { type: 'listing/success', generation: 1, requestId: 'list-1', entries: [entry] })).toBe(replacement);
+    expect(sessionReducer(replacement, { type: 'listing/success', route: 'zip', generation: 1, requestId: 'list-1', entries: [entry] })).toBe(replacement);
     expect(sessionReducer(replacement, { type: 'listing/failure', generation: 1, requestId: 'list-1', error: Error('late') })).toBe(replacement);
-    const unknown = sessionReducer(state, { type: 'input/accept', file: file('other'), kind: 'rar' });
+    const unknown = sessionReducer(state, { type: 'input/accept', file: file('other'), kind: 'unknown' });
     expect(sessionReducer(unknown, { type: 'listing/start', generation: 2, requestId: 'rar-list' })).toBe(unknown);
     expect(sessionReducer(unknown, { type: 'job/start', generation: 2, id: 'rar-job', op: 'extract' })).toBe(unknown);
   });

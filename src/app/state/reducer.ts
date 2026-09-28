@@ -12,6 +12,8 @@ export function inputSizeFailure(size: number): SessionFailure | undefined {
 }
 
 export function failureOf(error: unknown): SessionFailure {
+  if (error && typeof error === 'object' && 'kind' in error &&
+      (error.kind === 'engine' || error.kind === 'abort' || error.kind === 'other')) return error as SessionFailure;
   if (error instanceof EngineError) return { kind: 'engine', code: error.code, message: error.message };
   if (error instanceof Error && error.name === 'AbortError') return { kind: 'abort', message: error.message };
   return { kind: 'other', message: error instanceof Error ? error.message : String(error) };
@@ -62,7 +64,7 @@ function defaultInputs(): OpInputs {
 }
 
 export function initialSession(generation = 0): Session {
-  return { generation, source: null, listing: { status: 'idle' }, entries: [],
+  return { generation, source: null, listing: { status: 'idle' }, entries: [], archiveEntries: [],
     selection: new Set(), op: 'browse', inputs: defaultInputs(), job: { status: 'idle' },
     results: [], log: [] };
 }
@@ -71,13 +73,18 @@ function withSource(state: Session, file: File, kind: ArchiveKind, chain: readon
   const failure = inputSizeFailure(file.size);
   if (failure) return { ...state, inputFailure: failure };
   return { ...state, generation: state.generation + 1, source: { file, kind, chain },
-    listing: { status: 'idle' }, entries: [], selection: new Set(), job: { status: 'idle' },
+    listing: { status: 'idle' }, entries: [], archiveEntries: [], selection: new Set(), job: { status: 'idle' },
+    inputs: { ...state.inputs, extract: { mode: 'all' } },
     inputFailure: undefined };
 }
 
 function isActiveJob(state: Session, generation: number, id: string): state is Session & { job: Extract<Job, { status: 'running' }> } {
   return state.generation === generation && state.job.status === 'running' &&
     state.job.generation === generation && state.job.id === id;
+}
+
+function settledInputFailure(state: Session): SessionFailure | undefined {
+  return state.inputFailure?.message === 'busy' ? undefined : state.inputFailure;
 }
 
 function resultFor(action: Extract<SessionAction, { type: 'job/success' }>, sourceFile: File, sourceChain: readonly string[]): ResultRecord | undefined {
@@ -97,6 +104,7 @@ function resultFor(action: Extract<SessionAction, { type: 'job/success' }>, sour
 export function sessionReducer(state: Session, action: SessionAction): Session {
   switch (action.type) {
     case 'input/accept': return withSource(state, action.file, action.kind, []);
+    case 'input/reject': return { ...state, inputFailure: failureOf(action.error) };
     case 'result/reinput': {
       const result = state.results.find((item) => item.id === action.resultId);
       if (!result) return state;
@@ -104,26 +112,29 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
     }
     case 'reset': return initialSession(state.generation + 1);
     case 'listing/start':
-      if (!state.source || state.source.kind !== 'zip' || action.generation !== state.generation) return state;
-      return { ...state, listing: { status: 'reading', route: 'zip', requestId: action.requestId },
-        entries: [], selection: new Set() };
+      if (!state.source || state.source.kind === 'unknown' || action.generation !== state.generation) return state;
+      return { ...state, listing: { status: 'reading', route: state.source.kind === 'zip' ? 'zip' : 'archive', requestId: action.requestId },
+        entries: [], archiveEntries: [], selection: new Set() };
     case 'listing/success':
       if (action.generation !== state.generation || state.listing.status !== 'reading' ||
-          state.listing.requestId !== action.requestId) return state;
-      return { ...state, listing: { status: 'ready', route: 'zip', requestId: action.requestId },
-        entries: action.entries.map((entry): ZipEntry => ({ ...entry })), selection: allNames(action.entries) };
+          state.listing.requestId !== action.requestId || state.listing.route !== action.route) return state;
+      if (action.route === 'archive') return { ...state, inputFailure: settledInputFailure(state), listing: { status: 'ready', route: 'archive', requestId: action.requestId },
+        archiveEntries: action.entries.map(entry => ({ ...entry })), entries: [], selection: new Set() };
+      return { ...state, inputFailure: settledInputFailure(state), listing: { status: 'ready', route: 'zip', requestId: action.requestId },
+        entries: action.entries.map((entry): ZipEntry => ({ ...entry })), archiveEntries: [], selection: allNames(action.entries) };
     case 'listing/failure':
       if (action.generation !== state.generation || state.listing.status !== 'reading' ||
           state.listing.requestId !== action.requestId) return state;
-      return { ...state, listing: { status: 'error', route: 'zip', requestId: action.requestId, failure: failureOf(action.error) } };
+      return { ...state, inputFailure: settledInputFailure(state), listing: { status: 'error', route: state.listing.route, requestId: action.requestId, failure: failureOf(action.error) } };
     case 'selection/toggle':
-      return state.listing.status === 'ready' ? { ...state, selection: applyToggle(state.entries, state.selection, action.name, action.keep) } : state;
+      return state.listing.status === 'ready' && state.listing.route === 'zip' ? { ...state, selection: applyToggle(state.entries, state.selection, action.name, action.keep) } : state;
     case 'selection/all':
-      return state.listing.status === 'ready' ? { ...state, selection: setAll(state.entries, action.keep) } : state;
+      return state.listing.status === 'ready' && state.listing.route === 'zip' ? { ...state, selection: setAll(state.entries, action.keep) } : state;
     case 'op/select': return { ...state, op: action.op };
     case 'op/input': return { ...state, inputs: { ...state.inputs, [action.op]: action.input } };
     case 'job/start': {
-      if (!state.source || state.source.kind !== 'zip' || state.listing.status !== 'ready' ||
+      if (!state.source || state.source.kind === 'unknown' || state.listing.status !== 'ready' ||
+          (state.listing.route === 'archive' && action.op !== 'extract') ||
           action.generation !== state.generation || state.job.status === 'running') return state;
       // The input and kept names are snapshots; later controls do not change this job.
       const job = { status: 'running', id: action.id, generation: action.generation,
@@ -143,13 +154,13 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
       const summary = action.op === 'browse' ? `${action.output.length} entries` :
         result?.actual.kind === 'extract' ? `${result.actual.files} files` :
         `${result?.actual.kind === 'rewrite' ? result.actual.counts.kept : 0} entries kept`;
-      return { ...state, job: { status: 'succeeded', id: action.id, generation: action.generation, op: action.op },
+      return { ...state, inputFailure: settledInputFailure(state), job: { status: 'succeeded', id: action.id, generation: action.generation, op: action.op },
         results: result ? [...state.results, result] : state.results,
         log: [...state.log, { jobId: action.id, op: action.op, at: action.at, summary }] };
     }
     case 'job/failure':
       if (!isActiveJob(state, action.generation, action.id)) return state;
-      return { ...state, job: { status: 'failed', id: action.id, generation: action.generation,
+      return { ...state, inputFailure: settledInputFailure(state), job: { status: 'failed', id: action.id, generation: action.generation,
         op: state.job.op, failure: failureOf(action.error) } };
   }
 }

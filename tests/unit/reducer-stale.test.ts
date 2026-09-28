@@ -10,7 +10,7 @@ function ready(): Session {
   return apply(initialSession(),
     { type: 'input/accept', file: file('source.zip'), kind: 'zip' },
     { type: 'listing/start', generation: 1, requestId: 'list-1' },
-    { type: 'listing/success', generation: 1, requestId: 'list-1', entries: [entry('source.txt')] });
+    { type: 'listing/success', route: 'zip', generation: 1, requestId: 'list-1', entries: [entry('source.txt')] });
 }
 
 const success = (id: string, resultId: string, at: number): SessionAction => ({
@@ -26,10 +26,10 @@ describe('stale notifications within one input generation', () => {
       { type: 'listing/start', generation: 1, requestId: 'list-new' });
 
     expect(reading.listing).toMatchObject({ status: 'reading', requestId: 'list-new' });
-    expect(sessionReducer(reading, { type: 'listing/success', generation: 1, requestId: 'list-old', entries: [entry('old.txt')] })).toBe(reading);
+    expect(sessionReducer(reading, { type: 'listing/success', route: 'zip', generation: 1, requestId: 'list-old', entries: [entry('old.txt')] })).toBe(reading);
     expect(sessionReducer(reading, { type: 'listing/failure', generation: 1, requestId: 'list-old', error: Error('old') })).toBe(reading);
 
-    const readyState = sessionReducer(reading, { type: 'listing/success', generation: 1, requestId: 'list-new', entries: [entry('new.txt')] });
+    const readyState = sessionReducer(reading, { type: 'listing/success', route: 'zip', generation: 1, requestId: 'list-new', entries: [entry('new.txt')] });
     expect(readyState.entries.map(({ name }) => name)).toEqual(['new.txt']);
     expect(readyState.listing).toMatchObject({ status: 'ready', requestId: 'list-new' });
   });
@@ -59,7 +59,7 @@ describe('result provenance', () => {
     expect(fromR1.source?.chain).toEqual(['r1']);
     const second = apply(fromR1,
       { type: 'listing/start', generation: 2, requestId: 'list-2' },
-      { type: 'listing/success', generation: 2, requestId: 'list-2', entries: [entry('r1.txt')] },
+      { type: 'listing/success', route: 'zip', generation: 2, requestId: 'list-2', entries: [entry('r1.txt')] },
       { type: 'job/start', generation: 2, id: 'job-2', op: 'extract' },
       { type: 'job/success', generation: 2, id: 'job-2', op: 'extract', resultId: 'r2', at: 2,
         output: [{ name: 'r2.txt', blob: new Blob(['r2']) }] });
