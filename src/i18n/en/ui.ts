@@ -10,6 +10,7 @@ export const update = {
 } satisfies UpdateStrings;
 
 export const ui = {
+  chrome: { navigation: 'Operations', home: 'Home', languages: 'Available in' },
   workbench: {
     input: 'Input', choose: 'Choose an archive', busy: 'Processing. Try another input when it finishes.', single: 'Choose one archive.',
     large: 'Choose an input of 1 GB (1,000,000,000 bytes) or less.', unknown: 'Format could not be identified. Choose ZIP, RAR, 7z, or tar.',

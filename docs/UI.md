@@ -12,7 +12,7 @@ ready -> job: idle -> running -> succeeded | failed
 reset -> empty session
 ```
 
-The URL records only the current public page and locale. Tab, keyboard, entry extraction, repair guidance, and language changes add a history entry. Back and Forward restore the page, locale, and selected operation without rolling back the File, selection, settings, job, or results. Reset clears the session but keeps the current page and locale. Reloading creates a new session. Accepted inputs hide only the page explanation; reset shows the current page explanation again.
+The URL records only the current public page and locale. Header operation links, language links, tabs, keyboard, entry extraction, repair guidance, and the language select use the same in-page transition. The header marks the current page and language. Back and Forward restore the page, locale, and selected operation without rolling back the File, selection, settings, job, or results. Reset clears the session but keeps the current page and locale. Reloading creates a new session. Accepted inputs hide only the page explanation; reset shows the current page explanation again. Header links also have ordinary public URLs for navigation without JavaScript.
 
 Listing and job are separate state machines. A new input increments `generation`; each listing attempt has a new `requestId`, and each job has a new ID. Late progress and responses are discarded. Reset, pagehide, and unmount close active resources. A return from the page cache creates a new controller. Listing retry keeps the same File, generation, result history, and chain. A failed job keeps its input, selection, results, and successful log.
 

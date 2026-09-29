@@ -15,3 +15,4 @@ const svg = await readFile(resolve('public/icons/app.svg'));
 for (const size of [192, 512]) {
   await writeFile(resolve(`public/icons/app-${size}.png`), await sharp(svg).resize(size, size).png().toBuffer());
 }
+await writeFile(resolve('public/icons/apple-touch-icon.png'), await sharp(svg).resize(180, 180).png().toBuffer());

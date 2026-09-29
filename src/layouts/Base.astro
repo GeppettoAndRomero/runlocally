@@ -2,10 +2,12 @@
 import '../styles/tokens.css';
 import '../styles/base.css';
 import '../ui/components.css';
+import '../styles/chrome.css';
 import { LOCALES, type Locale } from '../i18n/locales';
+import { AVAILABLE_OPS } from '../i18n/ops';
 import type { PageContent } from '../i18n/types';
-import { alternates, checkMetadataLength, headData, ogLocale, pageUrl, type PublicPage } from '../seo/page';
-import { ui } from '../i18n/ui';
+import { alternates, checkMetadataLength, headData, ogLocale, pagePath, pageUrl, type PublicPage } from '../seo/page';
+import { chromeUi, ui } from '../i18n/ui';
 
 interface Props {
   lang: Locale;
@@ -37,6 +39,8 @@ const og = metadata?.og ?? {
     <meta name="theme-color" content="#4f46e5" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/app-192.png" />
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <meta name="description" content={description} />
     <title>{title}</title>
     <link rel="canonical" href={canonical} />
@@ -51,8 +55,19 @@ const og = metadata?.og ?? {
     {metadata && <script type="application/ld+json" set:html={metadata.jsonLd} />}
   </head>
   <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="site-header__brand" data-chrome-home href={pagePath(lang, 'top')} aria-label={chromeUi[lang].home} aria-current={page === 'top' ? 'page' : undefined}>runlocally</a>
+        <nav class="site-nav" aria-label={chromeUi[lang].navigation} data-chrome-nav>
+          {AVAILABLE_OPS.map(op => <a data-chrome-page={op.id} href={pagePath(lang, op.id)} aria-current={page === op.id ? 'page' : undefined}>{ui[lang].workbench[op.i18nKey]}</a>)}
+        </nav>
+        <nav class="site-languages" aria-label={chromeUi[lang].languages} data-chrome-languages>
+          {LOCALES.map(locale => <a data-chrome-locale={locale.code} href={pagePath(locale.code, page)} aria-current={lang === locale.code ? 'page' : undefined}>{locale.name}</a>)}
+        </nav>
+      </div>
+    </header>
     <slot />
-    <footer>
+    <footer class="site-footer">
       <p>Some code was written with AI assistance; all review and decisions are the maintainer's.</p>
       <a id="footer-security" href="/SECURITY.md">{ui[lang].shared.security}</a>
     </footer>

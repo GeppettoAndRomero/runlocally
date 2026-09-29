@@ -58,6 +58,23 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   };
   const selectOp = (next: AvailableOpId) => navigate({ locale: routeRef.current.locale, page: next });
   useEffect(() => {
+    const click = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest<HTMLAnchorElement>('a[data-chrome-home], a[data-chrome-page], a[data-chrome-locale]');
+      if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+      const url = new URL(link.href);
+      if (url.origin !== window.location.origin || url.search || url.hash) return;
+      const next = publicPageFromPath(url.pathname);
+      if (!next) return;
+      event.preventDefault();
+      navigate(next);
+    };
+    document.addEventListener('click', click);
+    return () => document.removeEventListener('click', click);
+  }, []);
+  useEffect(() => {
     const pop = () => {
       const next = publicPageFromPath(window.location.pathname);
       if (next) navigate(next, 'pop');

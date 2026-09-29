@@ -1,7 +1,8 @@
 import { pageContent } from '../i18n/pages';
-import { ui } from '../i18n/ui';
-import type { Locale } from '../i18n/locales';
-import { headData, type PublicPage } from '../seo/page';
+import { chromeUi, ui } from '../i18n/ui';
+import { LOCALES, type Locale } from '../i18n/locales';
+import { AVAILABLE_OPS } from '../i18n/ops';
+import { headData, pagePath, type PublicPage } from '../seo/page';
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, value: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -19,6 +20,30 @@ export function displayPage(locale: Locale, page: PublicPage): void {
   document.documentElement.lang = locale;
   const securityLink = document.getElementById('footer-security');
   if (securityLink) securityLink.textContent = ui[locale].shared.security;
+  const home = document.querySelector<HTMLAnchorElement>('[data-chrome-home]');
+  if (home) {
+    home.href = pagePath(locale, 'top');
+    home.setAttribute('aria-label', chromeUi[locale].home);
+    if (page === 'top') home.setAttribute('aria-current', 'page');
+    else home.removeAttribute('aria-current');
+  }
+  document.querySelector('[data-chrome-nav]')?.setAttribute('aria-label', chromeUi[locale].navigation);
+  document.querySelector('[data-chrome-languages]')?.setAttribute('aria-label', chromeUi[locale].languages);
+  for (const op of AVAILABLE_OPS) {
+    const link = document.querySelector<HTMLAnchorElement>(`[data-chrome-page="${op.id}"]`);
+    if (!link) continue;
+    link.href = pagePath(locale, op.id);
+    link.textContent = ui[locale].workbench[op.i18nKey];
+    if (page === op.id) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+  for (const entry of LOCALES) {
+    const link = document.querySelector<HTMLAnchorElement>(`[data-chrome-locale="${entry.code}"]`);
+    if (!link) continue;
+    link.href = pagePath(entry.code, page);
+    if (locale === entry.code) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
   document.title = head.title;
   setMeta('meta[name="description"]', head.description);
   document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', head.canonical);
