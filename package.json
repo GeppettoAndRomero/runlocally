@@ -24,9 +24,11 @@
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:component": "vitest run tests/component",
+    "test:e2e": "playwright test",
+    "check:egress": "node scripts/check-egress.mjs",
     "size": "size-limit",
     "prepare": "git config core.hooksPath .githooks || true",
-    "ci": "npm run typecheck && npm run lint && npm run license:check && npm run check-leaks && npm run check:engine-dom && npm run build && npm run test:unit -- --coverage && npm run legacy:check && npm run headers:check && npm run notice:check && npm run size",
+    "ci": "npm run typecheck && npm run lint && npm run license:check && npm run check-leaks && npm run check:engine-dom && npm run build && npm run check:egress && npm run test:unit -- --coverage && npm run legacy:check && npm run headers:check && npm run notice:check && npm run size",
     "postinstall": "node scripts/vendor-libarchive.mjs",
     "prebuild": "node scripts/vendor-libarchive.mjs",
     "predev": "node scripts/vendor-libarchive.mjs",
@@ -48,6 +50,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "1.63.0",
     "@size-limit/file": "^11.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/preact": "^3.2.4",
@@ -63,7 +66,8 @@
     "size-limit": "^11.0.0",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.62.0",
-    "vitest": "^2.1.9"
+    "vitest": "^2.1.9",
+    "wrangler": "4.68.1"
   },
   "size-limit": [
     {

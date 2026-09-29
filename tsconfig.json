@@ -16,6 +16,9 @@
     "public/vendor",
     "vendor",
     "wasm/libarchive-lean/out",
-    "coverage"
+    "coverage",
+    ".wrangler",
+    "playwright-report",
+    "test-results"
   ]
 }

@@ -9,5 +9,6 @@ wasm/libarchive-lean/out/
 .astro/
 coverage/
 test-results/
+.wrangler/
 playwright-report/
 .leak-patterns.local
