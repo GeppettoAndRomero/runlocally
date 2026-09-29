@@ -1,7 +1,7 @@
 {
   "name": "runlocally",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MIT",
   "type": "module",
   "description": "Open, fix and repack ZIP files in your browser. Nothing is uploaded.",
