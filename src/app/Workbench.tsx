@@ -5,29 +5,42 @@ import { pagePath, publicPageFromPath, type PublicPage } from '../seo/page';
 import { displayPage } from './page-display';
 import { AppButton } from '../ui/AppButton';
 import { AppCard } from '../ui/AppCard';
+import { InstallPrompt } from '../ui/InstallPrompt';
+import { UpdatePrompt } from '../ui/UpdatePrompt';
+import { isUpdateApplying, subscribeUpdate } from './registerSW';
 import { GlobalDropZone } from '../ui/GlobalDropZone';
 import { downloadBlob } from './download';
 import { initialSession, sessionReducer } from './state/reducer';
 import { directoryState, keptFileCount } from './state/reducer';
-import type { OpId } from './state/session';
+import type { OpId, Session } from './state/session';
 import { WorkbenchController } from './workbench-controller';
-import { ui } from '../i18n/ui';
+import { ui, updateUi } from '../i18n/ui';
 import { failureText } from './workbench-errors';
 import { repairPlan } from './rewrite-plan';
 import './workbench.css';
 
 const PAGE_SIZE = 500;
 function leafName(path: string): string { return path.split('/').filter(Boolean).at(-1) || 'file'; }
+export function isWorkbenchBusy(session: Session, controller: WorkbenchController | null): boolean {
+  return Boolean(controller?.processing) || session.listing.status === 'reading' || session.job.status === 'running';
+}
+export function isWorkbenchUpdateSafe(session: Session, controller: WorkbenchController | null): boolean {
+  return !isWorkbenchBusy(session, controller) && !session.source && session.results.length === 0;
+}
 export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: { locale: Locale; page?: PublicPage; op?: AvailableOpId }) {
   const [route, setRoute] = useState<{ locale: Locale; page: PublicPage }>({ locale, page: initialPage });
   const routeRef = useRef(route);
   routeRef.current = route;
   const [session, publish] = useReducer(sessionReducer, undefined, () => initialSession(0, op));
+  const [updating, setUpdating] = useState(false);
+  useEffect(() => subscribeUpdate(state => setUpdating(state.applying)), []);
   const sessionRef = useRef(session);
   sessionRef.current = session;
   const pageHiddenRef = useRef(false);
+  useEffect(() => { window.__toolReady = !updating && !pageHiddenRef.current; }, [updating]);
   const controllerRef = useRef<WorkbenchController | null>(null);
-  if (!controllerRef.current) controllerRef.current = new WorkbenchController(publish);
+  const [controllerBusy, setControllerBusy] = useState(false);
+  if (!controllerRef.current) controllerRef.current = new WorkbenchController(publish, setControllerBusy);
   const [page, setPage] = useState(0);
   const [removePage, setRemovePage] = useState(0);
   const [repairPage, setRepairPage] = useState(0);
@@ -69,13 +82,14 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   useEffect(() => { setPage(0); setRemovePage(0); setRepairPage(0); }, [session.generation]);
   useEffect(() => {
     const dropped = (event: Event) => {
+      if (isUpdateApplying()) { window.dispatchEvent(new Event('filesProcessed')); return; }
       void controllerRef.current?.accept((event as CustomEvent<File[]>).detail, session).finally(() => window.dispatchEvent(new Event('filesProcessed')));
     };
     const stopIntake = () => { window.__toolReady = false; window.removeEventListener('filesDropped', dropped); };
     const startIntake = () => {
       if (pageHiddenRef.current) return;
       window.addEventListener('filesDropped', dropped);
-      window.__toolReady = true;
+      window.__toolReady = !isUpdateApplying();
     };
     const hideIntake = () => { pageHiddenRef.current = true; stopIntake(); };
     const resumeIntake = (event: PageTransitionEvent) => {
@@ -97,7 +111,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
         id: current.job.id, error: new DOMException('Page hidden', 'AbortError') });
     };
     const resume = (event: PageTransitionEvent) => {
-      if (event.persisted) controllerRef.current = new WorkbenchController(publish);
+      if (event.persisted) controllerRef.current = new WorkbenchController(publish, setControllerBusy);
     };
     window.addEventListener('pagehide', leave);
     window.addEventListener('pageshow', resume);
@@ -127,20 +141,24 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   const currentOne = extractInput.mode === 'one' && entries.some(entry => entry.name === extractInput.name && entry.eligible);
   const failure = session.inputFailure;
   const inputError = failure && failureText(failure, t, 'input');
-  const busy = session.listing.status === 'reading' || session.job.status === 'running';
+  const busy = controllerBusy || isWorkbenchBusy(session, controllerRef.current);
+  const isSafeToUpdate = () => isWorkbenchUpdateSafe(sessionRef.current, controllerRef.current);
   const results = session.results;
   return <div class="workbench">
-    <GlobalDropZone locale={route.locale} />
+    <InstallPrompt locale={route.locale} />
+    <UpdatePrompt locale={route.locale} busy={busy} hasWork={Boolean(session.source || results.length)} isSafe={isSafeToUpdate} />
+    <GlobalDropZone locale={route.locale} disabled={updating} />
+    {updating && <p role="status">{updateUi[route.locale].applying}</p>}
     <label class="workbench__language">{ui[route.locale].shared.language} <select aria-label={ui[route.locale].shared.language} value={route.locale} onChange={event => {
       const next = LOCALES.find(entry => entry.code === event.currentTarget.value);
       if (next) navigate({ locale: next.code, page: routeRef.current.page });
     }}>{LOCALES.map(entry => <option key={entry.code} value={entry.code}>{entry.name}</option>)}</select></label>
     <AppCard title={t.input}>
-      <label class="workbench__picker">{t.choose}<input type="file" aria-label={t.choose} disabled={busy} onChange={event => {
+      <label class="workbench__picker">{t.choose}<input type="file" aria-label={t.choose} disabled={busy || updating} onChange={event => {
         const input = event.currentTarget;
         const files = Array.from(input.files ?? []);
         input.value = '';
-        if (files.length) void controllerRef.current?.accept(files, session);
+        if (files.length && !isUpdateApplying()) void controllerRef.current?.accept(files, session);
       }} /></label>
       {session.source && <p>{t.source}: <span>{session.source.file.name}</span> ({session.source.kind})</p>}
       {session.source?.kind === 'unknown' && <p role="alert">{t.unknown}</p>}
@@ -194,7 +212,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
             {entries.filter(entry => entry.eligible).map((entry, index) => <option key={index} value={entry.name}>{entry.name}</option>)}
           </select>}
           {zip && <p>{t.encrypted}</p>}
-          <AppButton ariaLabel={`${t.run}: ${extractInput.mode === 'one' ? extractInput.name : session.source?.file.name}`} disabled={busy || (extractInput.mode === 'one' && !currentOne)} onClick={() => void controllerRef.current?.run(session)}>{t.run}</AppButton>
+          <AppButton ariaLabel={`${t.run}: ${extractInput.mode === 'one' ? extractInput.name : session.source?.file.name}`} disabled={busy || updating || (extractInput.mode === 'one' && !currentOne)} onClick={() => { if (!isUpdateApplying()) void controllerRef.current?.run(session); }}>{t.run}</AppButton>
         </AppCard>
       </section>
       {zip && <section id="panel-remove" role="tabpanel" aria-labelledby="tab-remove" hidden={session.op !== 'remove'}>
@@ -216,7 +234,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
             <span>{t.page} {removePage + 1} / {Math.max(1, Math.ceil(session.entries.length / PAGE_SIZE))}</span>
             <AppButton variant="secondary" ariaLabel={`${t.next}: ${t.remove} ${t.page}`} disabled={(removePage + 1) * PAGE_SIZE >= session.entries.length} onClick={() => setRemovePage(removePage + 1)}>{t.next}</AppButton></nav>
           {keptFiles === 0 && <p>{t.emptyKeep}</p>}
-          <AppButton ariaLabel={`${t.removeRun}: ${session.source?.file.name}`} disabled={busy || removed === 0 || keptFiles === 0} onClick={() => void controllerRef.current?.run(session)}>{t.removeRun}</AppButton>
+          <AppButton ariaLabel={`${t.removeRun}: ${session.source?.file.name}`} disabled={busy || updating || removed === 0 || keptFiles === 0} onClick={() => { if (!isUpdateApplying()) void controllerRef.current?.run(session); }}>{t.removeRun}</AppButton>
         </AppCard>
       </section>}
       {zip && <section id="panel-fix-names" role="tabpanel" aria-labelledby="tab-fix-names" hidden={session.op !== 'fix-names'}>
@@ -228,7 +246,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
           <nav class="workbench__pages" aria-label={`${t['fix-names']} ${t.page}`}><AppButton variant="secondary" ariaLabel={`${t.previous}: ${t['fix-names']} ${t.page}`} disabled={repairPage === 0} onClick={() => setRepairPage(repairPage - 1)}>{t.previous}</AppButton>
             <span>{t.page} {repairPage + 1} / {Math.max(1, Math.ceil(repair.changes.length / PAGE_SIZE))}</span>
             <AppButton variant="secondary" ariaLabel={`${t.next}: ${t['fix-names']} ${t.page}`} disabled={(repairPage + 1) * PAGE_SIZE >= repair.changes.length} onClick={() => setRepairPage(repairPage + 1)}>{t.next}</AppButton></nav>
-          <AppButton ariaLabel={`${t.repairRun}: ${session.source?.file.name}`} disabled={busy || repair.changes.length === 0 || Boolean(repair.collision)} onClick={() => void controllerRef.current?.run(session)}>{t.repairRun}</AppButton>
+          <AppButton ariaLabel={`${t.repairRun}: ${session.source?.file.name}`} disabled={busy || updating || repair.changes.length === 0 || Boolean(repair.collision)} onClick={() => { if (!isUpdateApplying()) void controllerRef.current?.run(session); }}>{t.repairRun}</AppButton>
         </AppCard>
       </section>}
       {session.job.status === 'running' && session.job.progress?.kind === 'extract' && <p role="status">{t.progress}: {session.job.progress.done} / {session.job.progress.total}</p>}

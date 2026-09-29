@@ -107,6 +107,7 @@ export type SharedStringKey =
   | 'later'
 ;
 export type SharedStrings = { [K in SharedStringKey]: string };
+export type UpdateStrings = { [K in 'title' | 'now' | 'busy' | 'work' | 'tabs' | 'coordination' | 'error' | 'retry' | 'applying' | 'reloadDeferred']: string };
 export interface UiStrings { workbench: WorkbenchStrings; shared: SharedStrings }
 
 // Every engine code must have localized text in the workbench dictionary.

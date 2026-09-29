@@ -54,7 +54,14 @@ async function packageMaterials(dir) {
 
 export async function generateNotice(root = projectRoot, sources) {
   const discovered = sources ?? await mapSources(join(root, '.notice-build'));
-  const locations = new Set([...packageLocationsFromSources(discovered), ...copiedPackages.map((name) => `node_modules/${name}`)]);
+  const fromMaps = packageLocationsFromSources(discovered);
+  const project = await json(join(root, 'package.json')).catch(() => ({}));
+  const pwaRequired = Boolean(project.devDependencies?.['@vite-pwa/astro']);
+  if (pwaRequired && !fromMaps.some(location => location.includes('workbox-'))) {
+    throw new Error('Workbox code missing from analysis sourcemaps');
+  }
+  const explicit = pwaRequired ? [...copiedPackages, 'vite-plugin-pwa'] : copiedPackages;
+  const locations = new Set([...fromMaps, ...explicit.map((name) => `node_modules/${name}`)]);
   const packages = new Map();
   for (const location of [...locations].sort()) {
     const dir = join(root, location);

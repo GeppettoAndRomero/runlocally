@@ -13,8 +13,13 @@ export class WorkbenchController {
   private clients = new Set<ZipEngineClient>();
   private handles = new Set<OpenArchive>();
 
-  constructor(private publish: (action: SessionAction) => void) {}
+  constructor(private publish: (action: SessionAction) => void, private onProcessingChange: (processing: boolean) => void = () => {}) {}
   get processing(): boolean { return this.busy; }
+  private setBusy(value: boolean): void {
+    if (this.busy === value) return;
+    this.busy = value;
+    this.onProcessingChange(value);
+  }
   dispatch(action: SessionAction): void {
     if (this.disposed) return;
     this.publish(action);
@@ -29,7 +34,7 @@ export class WorkbenchController {
     this.clients.clear();
     for (const handle of this.handles) handle.close();
     this.handles.clear();
-    this.busy = false;
+    this.setBusy(false);
     return this.epoch;
   }
   dispose(): void { this.invalidate(); this.disposed = true; }
@@ -42,7 +47,7 @@ export class WorkbenchController {
     const sizeFailure = inputSizeFailure(file.size);
     if (sizeFailure) { this.dispatch({ type: 'input/reject', error: sizeFailure }); return; }
     const epoch = this.invalidate();
-    this.busy = true;
+    this.setBusy(true);
     try {
       const bytes = new Uint8Array(await file.slice(0, 263).arrayBuffer());
       if (this.disposed || epoch !== this.epoch) return;
@@ -53,14 +58,14 @@ export class WorkbenchController {
       await this.list(file, kind, session.generation + 1, epoch);
     } catch (error) {
       if (epoch === this.epoch && !this.disposed) this.dispatch({ type: 'input/reject', error });
-    } finally { if (epoch === this.epoch) this.busy = false; }
+    } finally { if (epoch === this.epoch) this.setBusy(false); }
   }
   async retryListing(state: Session): Promise<void> {
     if (this.disposed || this.busy || !state.source || state.listing.status !== 'error') return;
     const epoch = this.epoch;
-    this.busy = true;
+    this.setBusy(true);
     try { await this.list(state.source.file, state.source.kind, state.generation, epoch); }
-    finally { if (epoch === this.epoch) this.busy = false; }
+    finally { if (epoch === this.epoch) this.setBusy(false); }
   }
   private async list(file: File, kind: ArchiveKind, generation: number, epoch: number): Promise<void> {
     const requestId = this.id();
@@ -97,7 +102,7 @@ export class WorkbenchController {
     const generation = state.generation;
     const id = this.id();
     this.dispatch({ type: 'job/start', generation, id, op });
-    this.busy = true;
+    this.setBusy(true);
     const { file } = state.source;
     const input = { ...state.inputs.extract };
     const kept = new Set(state.selection);
@@ -143,6 +148,6 @@ export class WorkbenchController {
       if (epoch === this.epoch) this.dispatch({ type: 'job/success', generation, id, op: 'extract', output, resultId: this.id(), at: Date.now() });
     } catch (error) {
       if (epoch === this.epoch) this.dispatch({ type: 'job/failure', generation, id, error });
-    } finally { if (epoch === this.epoch) this.busy = false; }
+    } finally { if (epoch === this.epoch) this.setBusy(false); }
   }
 }

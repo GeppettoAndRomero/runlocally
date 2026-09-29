@@ -1,4 +1,13 @@
-import type { UiStrings } from '../types';
+import type { UiStrings, UpdateStrings } from '../types';
+
+export const update = {
+  title: 'An update is available', now: 'Update', busy: 'Wait for processing to finish before updating.',
+  work: 'Reloading loses the input and unsaved results. Save and reset before updating.',
+  tabs: 'Another tab is open. Close it before updating.', error: 'The update could not be prepared. Try again later.',
+  coordination: 'This browser cannot check other tabs, so the update remains pending.',
+  retry: 'Retry', applying: 'Updating. Input and processing are paused.',
+  reloadDeferred: 'The update is active. Finish your work, then reload the page.',
+} satisfies UpdateStrings;
 
 export const ui = {
   workbench: {

@@ -33,7 +33,7 @@ async function expand(entries: FileSystemEntry[]): Promise<File[]> {
   for (const entry of entries) await collect(entry, files);
   return files;
 }
-export function GlobalDropZone({ locale = ENGLISH_LOCALE }: { locale?: Locale }) {
+export function GlobalDropZone({ locale = ENGLISH_LOCALE, disabled = false }: { locale?: Locale; disabled?: boolean }) {
   const [dragging, setDragging] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [count, setCount] = useState(0);
@@ -51,7 +51,7 @@ export function GlobalDropZone({ locale = ENGLISH_LOCALE }: { locale?: Locale })
     const dragLeave = (event: DragEvent) => { event.preventDefault(); event.stopPropagation(); depth = Math.max(0, depth - 1); if (!depth) setDragging(false); };
     const dragOver = (event: DragEvent) => { event.preventDefault(); event.stopPropagation(); };
     const dispatch = (files: File[]) => {
-      if (!active || !files.length) return;
+      if (!active || disabled || !files.length) return;
       awaitingProcessed++;
       setCount(files.length);
       updateProcessing();
@@ -97,7 +97,7 @@ export function GlobalDropZone({ locale = ENGLISH_LOCALE }: { locale?: Locale })
       document.removeEventListener('paste', paste);
       window.removeEventListener('filesProcessed', processed);
     };
-  }, []);
+  }, [disabled]);
   if (!dragging && !processing) return null;
   const t = ui[locale].shared;
   return <div class="global-drop-zone" role="status">

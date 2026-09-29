@@ -1,6 +1,6 @@
 import { ENGLISH_LOCALE, LOCALES, type Locale } from './locales';
-import type { UiStrings } from './types';
-const modules = import.meta.glob<{ ui: UiStrings }>('./*/ui.ts', { eager: true });
+import type { UiStrings, UpdateStrings } from './types';
+const modules = import.meta.glob<{ ui: UiStrings; update: UpdateStrings }>('./*/ui.ts', { eager: true });
 const reference = modules[`./${ENGLISH_LOCALE}/ui.ts`]?.ui;
 if (!reference) throw new Error(`Missing UI dictionary: ${ENGLISH_LOCALE}`);
 export const ui = Object.fromEntries(LOCALES.map(({ code }) => {
@@ -14,3 +14,4 @@ export const ui = Object.fromEntries(LOCALES.map(({ code }) => {
   }
   return [code, dictionary];
 })) as Record<Locale, UiStrings>;
+export const updateUi = Object.fromEntries(LOCALES.map(({ code }) => [code, modules[`./${code}/ui.ts`]?.update])) as Record<Locale, UpdateStrings>;

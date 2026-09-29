@@ -1,4 +1,13 @@
-import type { UiStrings } from '../types';
+import type { UiStrings, UpdateStrings } from '../types';
+
+export const update = {
+  title: '更新があります', now: '更新する', busy: '処理が終わるまで更新を保留します。',
+  work: '再読み込みで入力と未保存の結果が失われます。保存してリセットした後に更新できます。',
+  tabs: '別のタブが開いています。閉じてから更新してください。', error: '更新の準備に失敗しました。後で再試行してください。',
+  coordination: 'このブラウザでは他のタブを確認できないため、更新は保留されます。',
+  retry: '再試行', applying: '更新中です。入力と実行を一時停止しています。',
+  reloadDeferred: '更新が有効になりました。作業を終えてからページを再読み込みしてください。',
+} satisfies UpdateStrings;
 
 export const ui = {
   workbench: {

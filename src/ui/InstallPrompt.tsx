@@ -16,6 +16,7 @@ export function InstallPrompt({ locale = ENGLISH_LOCALE }: { locale?: Locale }) 
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
+    const installed = () => { setEvent(null); setMode('hidden'); write(modeKey, 'hidden'); };
     const receive = (incoming: Event) => {
       incoming.preventDefault();
       if (window.matchMedia?.('(display-mode: standalone)').matches) return;
@@ -25,7 +26,8 @@ export function InstallPrompt({ locale = ENGLISH_LOCALE }: { locale?: Locale }) 
       setMode(dismissed && Date.now() - dismissed >= week ? 'banner' : saved === 'footer' || saved === 'hidden' ? saved : 'banner');
     };
     window.addEventListener('beforeinstallprompt', receive);
-    return () => { mounted.current = false; window.removeEventListener('beforeinstallprompt', receive); };
+    window.addEventListener('appinstalled', installed);
+    return () => { mounted.current = false; window.removeEventListener('beforeinstallprompt', receive); window.removeEventListener('appinstalled', installed); };
   }, []);
   const install = async () => {
     if (!event) return;
