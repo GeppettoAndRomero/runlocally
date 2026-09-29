@@ -37,15 +37,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* PWAモード時はbody全体の幅を制限 */
-@media (display-mode: standalone) {
-  body {
-    max-width: 500px;
-    margin: 0 auto;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  }
-}
-
 /* タイポグラフィ */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
@@ -76,36 +67,6 @@ small {
 /* 数字の桁揃え */
 .num {
   font-variant-numeric: tabular-nums slashed-zero;
-}
-
-/* レイアウト */
-.container {
-  max-width: var(--size-container);
-  margin-inline: auto;
-  padding-inline: var(--space-4);
-}
-
-/* PWAモード（スタンドアロン）での追加調整 */
-@media (display-mode: standalone) {
-  .container {
-    max-width: 440px;
-  }
-}
-
-/* ヘッダー */
-header {
-  border-bottom: 1px solid var(--color-border);
-  padding-block: var(--space-5);
-  background-color: var(--color-bg);
-}
-
-header h1 {
-  margin-bottom: var(--space-2);
-}
-
-header p {
-  color: var(--color-subtle);
-  margin-bottom: 0;
 }
 
 /* メイン */
@@ -145,7 +106,7 @@ footer {
 
 /* リンク */
 a {
-  color: var(--color-primary);
+  color: var(--color-link);
   text-decoration: none;
   transition: color var(--dur-fast) var(--ease);
 }
@@ -155,8 +116,8 @@ a:hover {
 }
 
 /* In-prose links must be distinguishable without relying on colour (WCAG 1.4.1). */
-.seo-content a,
-footer small a {
+.page-content a,
+footer a {
   text-decoration: underline;
 }
 
@@ -184,8 +145,8 @@ input, select, textarea {
 }
 
 /* タップ領域最小サイズ（アクセシビリティ） */
-button, a, input, select, textarea {
-  min-height: 44px;
+button, input:not([type="hidden"]), select, textarea, summary {
+  min-height: var(--size-control-min);
 }
 
 /* ユーティリティ */
@@ -212,6 +173,6 @@ button, a, input, select, textarea {
   white-space: nowrap;
   border-width: 0;
 }
-.page-identity, .page-content { max-width: 72rem; margin: 1.5rem auto; padding: 0 1rem; }
+.page-identity, .page-content { max-width: var(--size-container); margin: 1.5rem auto; padding: 0 1rem; }
 .page-content li { margin-bottom: 1rem; }
 html[data-session="open"] .page-content { display: none; }

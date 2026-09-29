@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 40px;
+  min-height: var(--size-control-min);
   padding-inline: var(--space-4);
   border-radius: var(--radius-sm);
   font-weight: 500;
@@ -37,19 +37,19 @@
 }
 
 .app-button--primary:hover:not(:disabled) {
-  background-color: color-mix(in srgb, var(--color-primary) 92%, black);
+  background-color: var(--color-primary-hover);
 }
 
 /* Secondary */
 .app-button--secondary {
   background-color: transparent;
   color: var(--color-text);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-control-border);
 }
 
 .app-button--secondary:hover:not(:disabled) {
   background-color: var(--color-surface);
-  border-color: var(--color-primary);
+  border-color: var(--color-control-border);
 }
 
 /* Ghost */
@@ -85,7 +85,7 @@
   display: inline-block;
   padding: 2px var(--space-2);
   background-color: var(--color-danger);
-  color: white;
+  color: var(--color-danger-ink);
   font-size: var(--fs-1);
   border-radius: var(--radius-xs);
   font-weight: 500;
@@ -94,13 +94,13 @@
 .app-field__input,
 .app-field__select,
 .app-field__textarea {
-  min-height: 40px;
+  min-height: var(--size-control-min);
   padding-inline: var(--space-3);
   font-family: var(--font-sans);
   font-size: var(--fs-3);
   color: var(--color-text);
   background-color: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-control-border);
   border-radius: var(--radius-sm);
   transition: all var(--dur-fast) var(--ease);
 }
@@ -108,9 +108,15 @@
 .app-field__input:focus,
 .app-field__select:focus,
 .app-field__textarea:focus {
-  outline: none;
   border-color: var(--color-focus);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus) 20%, transparent);
+}
+
+.app-field__input:focus-visible,
+.app-field__select:focus-visible,
+.app-field__textarea:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .app-field__input:disabled,
