@@ -27,7 +27,7 @@ describe('localized UI dictionaries', () => {
   it('preserves every pre-migration UI value', () => {
     for (const locale of ['ja', 'en'] as const) {
       for (const section of ['workbench', 'shared'] as const) {
-        const digest = createHash('sha256').update(JSON.stringify(Object.fromEntries(Object.entries(ui[locale][section]).filter(([key]) => key !== 'language' && key !== 'security')))).digest('hex');
+        const digest = createHash('sha256').update(JSON.stringify(Object.fromEntries(Object.entries(ui[locale][section]).filter(([key]) => key !== 'language' && key !== 'security' && key !== 'corrupt-entry')))).digest('hex');
         expect(digest).toBe(original[locale][section]);
       }
     }

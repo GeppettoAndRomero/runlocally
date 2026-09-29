@@ -31,6 +31,7 @@ export const ui = {
     listingUnknown: 'The format could not be identified. Choose another input.',
     'wrong-password': 'Could not read the encrypted data with this password. The password may be incorrect, or the encrypted data may be unreadable.',
     'encrypted-entry': 'This operation cannot process encrypted entries.', 'bad-central': 'Could not read the ZIP directory information.',
+    'corrupt-entry': 'A file in the ZIP is corrupted and could not be extracted.',
     'too-large': 'Choose an input of 1 GB (1,000,000,000 bytes) or less.', unsupported: 'This format or operation is unsupported, or this archive could not be read.',
     'not-encrypted': 'No encrypted entries were found.', aborted: 'Processing was interrupted.', genericInput: 'Could not read the input.',
     genericListing: 'Could not list the archive.', genericJob: 'The operation failed. You can retry.',

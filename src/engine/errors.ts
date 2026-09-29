@@ -2,6 +2,7 @@ export type EngineErrorCode =
   | 'wrong-password'
   | 'not-encrypted'
   | 'encrypted-entry'
+  | 'corrupt-entry'
   | 'bad-central'
   | 'too-large'
   | 'unsupported';

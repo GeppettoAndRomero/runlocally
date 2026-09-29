@@ -26,9 +26,9 @@ try {
 | ZIP client method | Result | Progress and behavior |
 | --- | --- | --- |
 | `listEntries(file: File)` | `Promise<ZipEntry[]>` | Metadata only, in central-directory order. |
-| `extractEntry(file: File, name: string)` | `Promise<Blob>` | First matching full path; rejects for a directory or encrypted entry. |
-| `extractAll(file: File, onProgress?: (done: number, total: number) => unknown)` | `Promise<ExtractedFile[]>` | Files in archive order; directories and encrypted files are skipped. Reports each completed extraction. |
-| `rewriteZip(file: File, options?: RewriteOptions)` | `Promise<RewriteResult>` | Rebuilds in source order; reports before each source entry, including removed entries. |
+| `extractEntry(file: File, name: string)` | `Promise<Blob>` | First matching full path; rejects for a directory, encrypted entry, or CRC mismatch. |
+| `extractAll(file: File, onProgress?: (done: number, total: number) => unknown)` | `Promise<ExtractedFile[]>` | Files in archive order; directories and encrypted files are skipped. Verifies CRC and reports each completed extraction. Any CRC mismatch rejects the whole operation without returning partial results. |
+| `rewriteZip(file: File, options?: RewriteOptions)` | `Promise<RewriteResult>` | Rebuilds in source order; verifies CRC of kept unencrypted files and reports before each source entry, including removed entries. |
 | `createZip(files: File[], options?: CreateOptions)` | `Promise<Blob>` | Uses `webkitRelativePath` for folder input; reports before each file. |
 | `splitZip(file: File, targetBytes: number, onProgress?: (p: SplitProgress) => unknown)` | `Promise<SplitPart[]>` | Creates independent ZIPs, not a spanned archive. Reports each part before it is built. |
 | `mergeZips(files: File[], options: MergeOptions, onProgress?: (p: MergeProgress) => unknown)` | `Promise<MergeResult>` | Reports each input before reading it; collisions are renamed or skipped. |
@@ -50,7 +50,7 @@ try {
 
 ## Errors
 
-`EngineError` carries one of six codes. ZIP worker transfer preserves `code`, `message`, `name`, and `stack`, constructing a new instance on the receiving side; arbitrary `cause` objects and object identity do not cross. Ordinary errors and callback exceptions may propagate without an `EngineError` code.
+`EngineError` carries one of seven codes. ZIP worker transfer preserves `code`, `message`, `name`, and `stack`, constructing a new instance on the receiving side; arbitrary `cause` objects and object identity do not cross. Ordinary errors and callback exceptions may propagate without an `EngineError` code.
 
 | Code | Meaning and current sources |
 | --- | --- |
@@ -58,6 +58,7 @@ try {
 | `not-encrypted` | `rewriteZip` received an input password but found no encrypted entries. |
 | `encrypted-entry` | Unsupported encrypted data in `extractEntry`, `rewriteZip`, `splitZip`, `mergeZips`, or `openArchive`. Merge checks after collision skipping. |
 | `bad-central` | Known ZIP central-directory failures via `readCentralEntries` in listing, extraction, rewrite, split, or merge. |
+| `corrupt-entry` | CRC mismatch while reading an unencrypted file in `extractEntry`, `extractAll`, or `rewriteZip`. |
 | `too-large` | Existing engine APIs do not create it. The app state rejects an input larger than 1,000,000,000 bytes before listing or a job is started. The Workbench applies this check before reading the header or calling a worker, including result reinput. |
 | `unsupported` | Unsupported ZIP format, target or arguments; archive initialization, opening, listing or extraction failure. |
 

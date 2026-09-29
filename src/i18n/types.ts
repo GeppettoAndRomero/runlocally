@@ -77,6 +77,7 @@ export type WorkbenchStringKey =
   | 'wrong-password'
   | 'encrypted-entry'
   | 'bad-central'
+  | 'corrupt-entry'
   | 'too-large'
   | 'unsupported'
   | 'not-encrypted'

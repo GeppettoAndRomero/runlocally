@@ -31,6 +31,7 @@ export const ui = {
     listingTar: '一覧取得を再試行できます。', listingUnknown: '形式を確認できません。別の入力を選んでください。',
     'wrong-password': 'パスワードを使って読み出せませんでした。パスワードが正しくないか、暗号化データを読み取れません。',
     'encrypted-entry': 'この操作では暗号化された項目を処理できません。', 'bad-central': 'ZIP の一覧情報を読み取れませんでした。',
+    'corrupt-entry': 'ZIP 内のファイルが破損しているため、取り出せませんでした。',
     'too-large': '入力は1 GB（1,000,000,000 bytes）以下にしてください。', unsupported: 'この形式または操作には対応していないか、このアーカイブを読み取れません。',
     'not-encrypted': '暗号化された項目が見つかりませんでした。', aborted: '処理が中断されました。', genericInput: '入力を読み取れませんでした。',
     genericListing: '一覧を取得できませんでした。', genericJob: '操作に失敗しました。再実行できます。',

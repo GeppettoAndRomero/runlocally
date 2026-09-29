@@ -99,7 +99,7 @@ export async function rewriteZip(file: File, options: RewriteOptions = {}): Prom
           try {
             data = await entry.getData(
               new BlobWriter(),
-              entry.encrypted ? { password: options.password, checkCrc32: true } : undefined,
+              entry.encrypted ? { password: options.password, checkCrc32: true } : { checkSignature: true },
             );
           } catch (error) {
             if (entry.encrypted && error instanceof Error &&
@@ -109,6 +109,9 @@ export async function rewriteZip(file: File, options: RewriteOptions = {}): Prom
                   error.message === ERR_INVALID_COMPRESSED_DATA ||
                   error.message === ERR_INVALID_UNCOMPRESSED_SIZE)))) {
               throw new EngineError('wrong-password', error.message, { cause: error });
+            }
+            if (!entry.encrypted && error instanceof Error && error.message === ERR_INVALID_CRC32) {
+              throw new EngineError('corrupt-entry', error.message, { cause: error });
             }
             throw error;
           }

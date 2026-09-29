@@ -3,7 +3,7 @@ import { EngineError, type EngineErrorCode } from './errors';
 
 const codes: ReadonlySet<string> = new Set<EngineErrorCode>([
   'wrong-password', 'not-encrypted', 'encrypted-entry',
-  'bad-central', 'too-large', 'unsupported',
+  'bad-central', 'corrupt-entry', 'too-large', 'unsupported',
 ]);
 
 /** Only code, message, name and stack cross the boundary. Arbitrary causes do not. */
