@@ -1,0 +1,19 @@
+---
+import { LOCALES } from '../i18n/locales';
+import { AVAILABLE_OPS } from '../i18n/ops';
+import { pageContent } from '../i18n/pages';
+import { chromeUi, ui } from '../i18n/ui';
+import { pagePath } from '../seo/page';
+---
+{LOCALES.map(({ code }) =>
+  <nav class="operation-cards page-content" data-operation-cards data-lang={code} aria-label={chromeUi[code].navigation}>
+    <div class="operation-cards__grid">
+      {AVAILABLE_OPS.map(op =>
+        <article class="operation-cards__card">
+          <h2><a href={pagePath(code, op.id)}>{ui[code].workbench[op.i18nKey]}</a></h2>
+          <p>{pageContent(code, op.id).description}</p>
+        </article>
+      )}
+    </div>
+  </nav>
+)}
