@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ENGLISH_LOCALE, type Locale } from '@/i18n/locales';
-import { strings } from './strings';
+import { ui } from '@/i18n/ui';
 import { AppButton } from './AppButton';
 
 export interface InstallEvent extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
@@ -35,7 +35,7 @@ export function InstallPrompt({ locale = ENGLISH_LOCALE }: { locale?: Locale }) 
   };
   const dismiss = (next: DisplayMode) => { setMode(next); write(modeKey, next); if (next === 'hidden') write(dismissedKey, String(Date.now())); };
   if (!event || mode === 'hidden') return null;
-  const t = strings[locale];
+  const t = ui[locale].shared;
   return mode === 'banner' ? <div class="install-prompt" role="region" aria-label={t.installTitle}>
     <h3>{t.installTitle}</h3><p>{t.installBody}</p>
     <AppButton onClick={install}>{t.install}</AppButton> <AppButton variant="ghost" onClick={() => dismiss('footer')}>{t.later}</AppButton>

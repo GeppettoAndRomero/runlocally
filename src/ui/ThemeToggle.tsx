@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ENGLISH_LOCALE, type Locale } from '@/i18n/locales';
-import { strings } from './strings';
+import { ui } from '@/i18n/ui';
 
 export type Theme = 'light' | 'dark' | 'auto';
 const key = 'runlocally-theme';
@@ -26,8 +26,8 @@ export function ThemeToggle({ locale = ENGLISH_LOCALE }: { locale?: Locale }) {
     setTheme(next);
     try { localStorage.setItem(key, next); } catch { /* storage may be unavailable */ }
   };
-  const label = actual === 'dark' ? strings[locale].themeToLight : strings[locale].themeToDark;
+  const label = actual === 'dark' ? ui[locale].shared.themeToLight : ui[locale].shared.themeToDark;
   return <button type="button" class="theme-toggle" onClick={toggle} aria-label={label} title={label}>
-    <span aria-hidden="true">{actual === 'dark' ? '☀️' : '🌙'}</span><span class="theme-toggle__text">{strings[locale].themeLabel}</span>
+    <span aria-hidden="true">{actual === 'dark' ? '☀️' : '🌙'}</span><span class="theme-toggle__text">{ui[locale].shared.themeLabel}</span>
   </button>;
 }

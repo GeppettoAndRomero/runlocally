@@ -8,7 +8,7 @@ import { initialSession, sessionReducer } from './state/reducer';
 import { directoryState, keptFileCount } from './state/reducer';
 import type { OpId } from './state/session';
 import { WorkbenchController } from './workbench-controller';
-import { workbenchStrings } from './workbench-strings';
+import { ui } from '../i18n/ui';
 import { failureText } from './workbench-errors';
 import { repairPlan } from './rewrite-plan';
 import './workbench.css';
@@ -25,7 +25,7 @@ export function Workbench({ locale }: { locale: Locale }) {
   const [page, setPage] = useState(0);
   const [removePage, setRemovePage] = useState(0);
   const [repairPage, setRepairPage] = useState(0);
-  const t = workbenchStrings[locale];
+  const t = ui[locale].workbench;
   useEffect(() => { setPage(0); setRemovePage(0); setRepairPage(0); }, [session.generation]);
   useEffect(() => {
     const dropped = (event: Event) => {

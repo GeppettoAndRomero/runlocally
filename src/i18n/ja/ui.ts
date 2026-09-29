@@ -1,7 +1,7 @@
-import type { Locale } from '../i18n/locales';
-import type { UiStrings } from '../i18n/types';
-export const workbenchStrings: Record<Locale, UiStrings['workbench']> = {
-  ja: {
+import type { UiStrings } from '../types';
+
+export const ui = {
+  workbench: {
     input: '入力', choose: 'アーカイブを選択', busy: '処理中です。完了後に入力してください。', single: '1つのアーカイブを選んでください。',
     large: '入力は1 GB（1,000,000,000 bytes）以下にしてください。', unknown: '形式を確認できません。ZIP、RAR、7z、tar を選んでください。',
     source: '入力ファイル', browse: '閲覧', extract: '取り出し', entries: '総エントリ数', files: 'ファイル数', eligible: '抽出可能件数',
@@ -28,31 +28,9 @@ export const workbenchStrings: Record<Locale, UiStrings['workbench']> = {
     removeEncrypted: '暗号化された項目を残す選択になっています。対象を除外して再実行できます。',
     repairEncrypted: 'この画面ではパスワードを使った再構築を扱いません。', encryptedKept: '暗号化された項目が残る場合、再構築は失敗します。',
   },
-  en: {
-    input: 'Input', choose: 'Choose an archive', busy: 'Processing. Try another input when it finishes.', single: 'Choose one archive.',
-    large: 'Choose an input of 1 GB (1,000,000,000 bytes) or less.', unknown: 'Format could not be identified. Choose ZIP, RAR, 7z, or tar.',
-    source: 'Source file', browse: 'Browse', extract: 'Extract', entries: 'Total entries', files: 'Files', eligible: 'Extractable files',
-    name: 'Name', size: 'Size', previous: 'Previous', next: 'Next', page: 'Page', all: 'All', one: 'One', chooseOne: 'Select for extraction', run: 'Extract',
-    results: 'Results', save: 'Save', saveFile: 'Save file', reinput: 'Use this result as the next input', reinputFile: 'Use as next input', count: ' files', listingError: 'Could not list this archive.',
-    jobError: 'Extraction failed. You can retry.', encrypted: 'Encrypted files and directories are excluded from Extract all.',
-    duplicate: 'For duplicate names, Extract one uses the first match.', reset: 'Reset', progress: 'Progress',
-    remove: 'Remove', 'fix-names': 'Repair names', removeGuide: 'Unchecked entries are excluded from the new ZIP. The source stays unchanged.',
-    keep: 'Keep', keepAll: 'Keep all entries in the current input', clearAll: 'Exclude all entries in the current input', duplicateKeep: 'Entries with the same name share one choice.',
-    plannedRemove: 'Planned exclusions', keptFiles: 'Files kept', entriesUnit: ' entries (including directories)', filesUnit: ' files',
-    emptyKeep: 'Keep at least one file.', removeRun: 'Create new ZIP', repairRun: 'Repair names into a new ZIP',
-    repairGuide: 'These names may be garbled. Review the candidates decoded as Shift_JIS before running.',
-    repairBefore: 'Before', repairAfter: 'Candidate', plannedRepair: 'Repair targets', collision: 'Name collision prevents this operation: ',
-    orderGuide: 'Check name repair first. Removal rewrites names as UTF-8, so later repair may not be possible.',
-    goRepair: 'Review name repair', removed: 'Excluded', kept: 'Remaining', repaired: 'Repaired', processingEntry: 'Processing entry', retryListing: 'Retry listing',
-    listingZip: 'A ZIP signature was found. Recovery from an unreadable ZIP is planned separately from name repair.',
-    listingArchive: 'RAR/7z extraction is available after a successful listing. You can retry listing this file.', listingTar: 'You can retry listing this archive.',
-    listingUnknown: 'The format could not be identified. Choose another input.',
-    'wrong-password': 'Could not read the encrypted data with this password. The password may be incorrect, or the encrypted data may be unreadable.',
-    'encrypted-entry': 'This operation cannot process encrypted entries.', 'bad-central': 'Could not read the ZIP directory information.',
-    'too-large': 'Choose an input of 1 GB (1,000,000,000 bytes) or less.', unsupported: 'This format or operation is unsupported, or this archive could not be read.',
-    'not-encrypted': 'No encrypted entries were found.', aborted: 'Processing was interrupted.', genericInput: 'Could not read the input.',
-    genericListing: 'Could not list the archive.', genericJob: 'The operation failed. You can retry.',
-    removeEncrypted: 'Encrypted entries are selected to remain. Exclude them and retry.', repairEncrypted: 'Password-based rewriting is unavailable on this screen.',
-    encryptedKept: 'Rewriting fails if encrypted entries remain.',
+  shared: {
+    required: '必須', close: '閉じる', themeLabel: 'テーマ', themeToLight: '明るいテーマに切り替え', themeToDark: '暗いテーマに切り替え',
+    dropTitle: 'ファイルをドロップ', dropHint: 'ファイルやフォルダをここに移動', processing: 'ファイルを確認中: {count} 件', wait: 'しばらくお待ちください',
+    installTitle: 'アプリをインストール', installBody: 'この端末に追加できます。', install: 'インストール', later: '後で',
   },
-};
+} satisfies UiStrings;

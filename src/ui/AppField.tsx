@@ -1,6 +1,6 @@
 import type { JSX } from 'preact';
 import { ENGLISH_LOCALE, type Locale } from '@/i18n/locales';
-import { strings } from './strings';
+import { ui } from '@/i18n/ui';
 
 export interface AppFieldProps {
   label: string; id: string; type?: 'text' | 'number' | 'email' | 'password';
@@ -16,7 +16,7 @@ export function AppField({ label, id, type = 'text', value, onChange, required =
   };
   const description = [error && `${id}-error`, helpText && `${id}-help`].filter(Boolean).join(' ') || undefined;
   return <div class={`app-field ${error ? 'app-field--error' : ''}`}>
-    <label class="app-field__label" for={id}>{label}{required && <span class="app-field__required">{strings[locale].required}</span>}</label>
+    <label class="app-field__label" for={id}>{label}{required && <span class="app-field__required">{ui[locale].shared.required}</span>}</label>
     <input id={id} type={type} class="app-field__input" value={value} onInput={handleInput}
       disabled={disabled} placeholder={placeholder} min={min} max={max} step={step} required={required}
       aria-invalid={!!error} aria-describedby={description} />

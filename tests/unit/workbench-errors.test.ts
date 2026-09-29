@@ -1,10 +1,10 @@
 import { expect, it } from 'vitest';
 import { failureText } from '../../src/app/workbench-errors';
-import { workbenchStrings } from '../../src/app/workbench-strings';
+import { ui } from '../../src/i18n/ui';
 import type { SessionFailure } from '../../src/app/state/session';
 const codes = ['wrong-password', 'encrypted-entry', 'bad-central', 'too-large', 'unsupported', 'not-encrypted'] as const;
 it.each(['ja', 'en'] as const)('maps every engine code and ordinary failures in %s', locale => {
-  const t = workbenchStrings[locale];
+  const t = ui[locale].workbench;
   for (const code of codes) {
     const failure: SessionFailure = { kind: 'engine', code, message: 'raw internal text' };
     expect(failureText(failure, t, 'listing')).toBe(t[code]);
