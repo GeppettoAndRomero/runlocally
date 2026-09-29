@@ -1,0 +1,268 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: Successful main CI run ID
+        required: true
+        type: string
+      target_sha:
+        description: Full commit SHA from that CI run
+        required: true
+        type: string
+      dry_run:
+        description: Verify and package without deployment
+        required: true
+        default: true
+        type: boolean
+
+permissions: {}
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      artifact_id: ${{ steps.artifact.outputs.artifact-id }}
+    steps:
+      - name: Verify CI run and main tip
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ inputs.target_sha }}
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+        run: |
+          node --input-type=module <<'NODE'
+          const { GH_TOKEN, TARGET_SHA, CI_RUN_ID, REPOSITORY, REPOSITORY_ID } = process.env;
+          if (!/^[a-f\d]{40}$/i.test(TARGET_SHA) || !/^\d+$/.test(CI_RUN_ID)) throw Error('invalid dispatch input');
+          const get = async path => {
+            const response = await fetch(`https://api.github.com/repos/${REPOSITORY}/${path}`, { headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: 'application/vnd.github+json' } });
+            if (!response.ok) throw Error(`GitHub API HTTP ${response.status}`);
+            return response.json();
+          };
+          const [run, main] = await Promise.all([get(`actions/runs/${CI_RUN_ID}`), get('git/ref/heads/main')]);
+          const workflow = await get(`actions/workflows/${run.workflow_id}`);
+          if (workflow.path !== '.github/workflows/ci.yml' || run.head_repository?.id !== Number(REPOSITORY_ID) || run.event !== 'push' || run.head_branch !== 'main' || run.status !== 'completed' || run.conclusion !== 'success' || run.head_sha !== TARGET_SHA) throw Error('CI run does not match target');
+          if (main.object.sha !== TARGET_SHA) throw Error('main tip changed');
+          NODE
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.target_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Require production smoke specs
+        run: |
+          set -euo pipefail
+          test -f tests/e2e/covenants.spec.ts
+          test -f tests/e2e/network.spec.ts
+          test -f tests/e2e/csp.spec.ts
+      - run: npm ci
+      - name: Run complete CI checks
+        run: npm run ci
+        env:
+          GITHUB_SHA: ${{ inputs.target_sha }}
+          LEAK_PATTERNS: ${{ secrets.LEAK_PATTERNS }}
+          LEAK_PATTERNS_REQUIRED: '1'
+      - name: Install existing browser binaries
+        run: ./node_modules/.bin/playwright install --with-deps
+      - name: Run local production specs
+        run: CI=1 npm run test:e2e -- tests/e2e/covenants.spec.ts tests/e2e/network.spec.ts tests/e2e/csp.spec.ts
+      - name: Seal paired output
+        env:
+          TARGET_SHA: ${{ inputs.target_sha }}
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+        run: |
+          set -euo pipefail
+          test -s dist/index.html
+          test -s dist/_headers
+          test -s dist/sw.js
+          test -s functions/_middleware.js
+          test -z "$(find dist functions -type l -print -quit)"
+          node scripts/check-deployed-build.mjs --file dist/index.html --sha "$TARGET_SHA"
+          node -e 'const fs=require("fs");fs.writeFileSync("deploy-manifest.json",JSON.stringify({sha:process.env.TARGET_SHA,ciRun:process.env.CI_RUN_ID})+"\n")'
+          find dist functions -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+      - id: artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: verified-deploy
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            dist/
+            functions/
+            deploy-manifest.json
+            SHA256SUMS
+
+  verify-artifact:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+    steps:
+      - name: Download exact artifact ID
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          ARTIFACT_ID: ${{ needs.prepare.outputs.artifact_id }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { writeFile } from 'node:fs/promises';
+          const { GH_TOKEN, REPOSITORY, ARTIFACT_ID } = process.env;
+          if (!/^\d+$/.test(ARTIFACT_ID)) throw Error('invalid artifact ID');
+          const response = await fetch(`https://api.github.com/repos/${REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip`, { headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: 'application/vnd.github+json' } });
+          if (!response.ok) throw Error(`artifact download HTTP ${response.status}`);
+          await writeFile('artifact.zip', Buffer.from(await response.arrayBuffer()));
+          NODE
+          mkdir verified
+          unzip -q artifact.zip -d verified
+      - name: Verify paired artifact
+        working-directory: verified
+        env:
+          TARGET_SHA: ${{ inputs.target_sha }}
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+        run: |
+          set -euo pipefail
+          test -s dist/index.html
+          test -s dist/_headers
+          test -s dist/sw.js
+          test -s functions/_middleware.js
+          test -z "$(find dist functions -type l -print -quit)"
+          node -e 'const m=require("./deploy-manifest.json");if(m.sha!==process.env.TARGET_SHA||m.ciRun!==process.env.CI_RUN_ID)process.exit(1)'
+          sha256sum --check --status SHA256SUMS
+          diff <(find dist functions -type f | LC_ALL=C sort) <(sed 's/^[0-9a-f]*  //' SHA256SUMS | LC_ALL=C sort)
+
+  publish:
+    if: inputs.dry_run == false
+    needs: [prepare, verify-artifact]
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    permissions:
+      contents: read
+      actions: read
+    env:
+      TARGET_SHA: ${{ inputs.target_sha }}
+      CI_RUN_ID: ${{ inputs.ci_run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.target_sha }}
+          persist-credentials: false
+      - name: Check deployment gate and main tip
+        env:
+          DEPLOY_ENABLED: ${{ vars.DEPLOY_ENABLED }}
+          PAGES_PROJECT_NAME: ${{ vars.PAGES_PROJECT_NAME }}
+          INCIDENT_REPOSITORY: ${{ vars.INCIDENT_REPOSITORY }}
+          INCIDENT_TOKEN: ${{ secrets.INCIDENT_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          node --input-type=module <<'NODE'
+          const e = process.env;
+          if (e.DEPLOY_ENABLED !== 'true' || !/^[a-z\d][a-z\d-]{0,57}[a-z\d]$/.test(e.PAGES_PROJECT_NAME ?? '')) throw Error('deployment gate is not configured');
+          const response = await fetch(`https://api.github.com/repos/${e.REPOSITORY}/git/ref/heads/main`, { headers: { Authorization: `Bearer ${e.GH_TOKEN}`, Accept: 'application/vnd.github+json' } });
+          if (!response.ok || (await response.json()).object.sha !== e.TARGET_SHA) throw Error('main tip changed');
+          NODE
+          INCIDENT_REPOSITORY="$INCIDENT_REPOSITORY" INCIDENT_TOKEN="$INCIDENT_TOKEN" GITHUB_RUN_ID="$GITHUB_RUN_ID" node scripts/report-deploy-incident.mjs --check
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Download and verify paired artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          ARTIFACT_ID: ${{ needs.prepare.outputs.artifact_id }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { writeFile } from 'node:fs/promises';
+          const { GH_TOKEN, REPOSITORY, ARTIFACT_ID } = process.env;
+          if (!/^\d+$/.test(ARTIFACT_ID)) throw Error('invalid artifact ID');
+          const response = await fetch(`https://api.github.com/repos/${REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip`, { headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: 'application/vnd.github+json' } });
+          if (!response.ok) throw Error(`artifact download HTTP ${response.status}`);
+          await writeFile('artifact.zip', Buffer.from(await response.arrayBuffer()));
+          NODE
+          mkdir verified
+          unzip -q artifact.zip -d verified
+          cd verified
+          test -s dist/index.html
+          test -s dist/_headers
+          test -s dist/sw.js
+          test -s functions/_middleware.js
+          test -z "$(find dist functions -type l -print -quit)"
+          node -e 'const m=require("./deploy-manifest.json");if(m.sha!==process.env.TARGET_SHA||m.ciRun!==process.env.CI_RUN_ID)process.exit(1)'
+          sha256sum --check --status SHA256SUMS
+          diff <(find dist functions -type f | LC_ALL=C sort) <(sed 's/^[0-9a-f]*  //' SHA256SUMS | LC_ALL=C sort)
+          node ../scripts/check-deployed-build.mjs --file dist/index.html --sha "$TARGET_SHA"
+      - name: Install browser binaries for the production smoke
+        run: ./node_modules/.bin/playwright install --with-deps chromium firefox webkit
+        timeout-minutes: 10
+      - name: Recheck main tip
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          node --input-type=module <<'NODE'
+          const e = process.env;
+          const response = await fetch(`https://api.github.com/repos/${e.REPOSITORY}/git/ref/heads/main`, { headers: { Authorization: `Bearer ${e.GH_TOKEN}`, Accept: 'application/vnd.github+json' } });
+          if (!response.ok || (await response.json()).object.sha !== e.TARGET_SHA) throw Error('main tip changed');
+          NODE
+      - name: Deploy verified output
+        env:
+          PAGES_PROJECT_NAME: ${{ vars.PAGES_PROJECT_NAME }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: verified
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          ../node_modules/.bin/wrangler pages deploy dist --project-name "$PAGES_PROJECT_NAME" --branch main
+      - id: meta_before
+        name: Verify apex build before smoke
+        continue-on-error: true
+        run: node scripts/check-deployed-build.mjs --url https://runlocally.app/ --sha "$TARGET_SHA"
+      - id: smoke
+        if: steps.meta_before.outcome == 'success'
+        name: Run production smoke
+        continue-on-error: true
+        env:
+          BASE_URL: https://runlocally.app
+          CI: '1'
+        run: npm run test:e2e -- tests/e2e/covenants.spec.ts tests/e2e/network.spec.ts tests/e2e/csp.spec.ts
+      - id: meta_after
+        if: steps.meta_before.outcome == 'success'
+        name: Recheck apex build
+        continue-on-error: true
+        run: node scripts/check-deployed-build.mjs --url https://runlocally.app/ --sha "$TARGET_SHA"
+      - name: Report smoke failure
+        if: steps.meta_before.outcome == 'failure' || steps.smoke.outcome == 'failure' || steps.meta_after.outcome == 'failure'
+        env:
+          INCIDENT_REPOSITORY: ${{ vars.INCIDENT_REPOSITORY }}
+          INCIDENT_TOKEN: ${{ secrets.INCIDENT_TOKEN }}
+        run: |
+          if [ "${{ steps.meta_before.outcome }}" = failure ]; then
+            export INCIDENT_STAGE=build-meta-before
+          elif [ "${{ steps.smoke.outcome }}" = failure ]; then
+            export INCIDENT_STAGE=production-e2e
+          else
+            export INCIDENT_STAGE=build-meta-after
+          fi
+          node scripts/report-deploy-incident.mjs --report
+      - name: Fail after smoke or notification
+        if: steps.meta_before.outcome == 'failure' || steps.smoke.outcome == 'failure' || steps.meta_after.outcome == 'failure'
+        run: exit 1
