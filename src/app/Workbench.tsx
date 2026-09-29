@@ -23,6 +23,11 @@ import './workbench.css';
 
 const PAGE_SIZE = 500;
 function leafName(path: string): string { return path.split('/').filter(Boolean).at(-1) || 'file'; }
+function EntryIcon({ directory }: { directory: boolean }) {
+  return directory
+    ? <svg class="workbench__icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 6.5h7l2 2h10v10h-19z" stroke-linejoin="round" /></svg>
+    : <svg class="workbench__icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 2.5h9l5 5v14H5zM14 2.5v5h5" stroke-linejoin="round" /></svg>;
+}
 export function isWorkbenchBusy(session: Session, controller: WorkbenchController | null): boolean {
   return Boolean(controller?.processing) || session.listing.status === 'reading' || session.job.status === 'running';
 }
@@ -144,7 +149,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   }, []);
   const ready = session.listing.status === 'ready';
   const zip = session.listing.status === 'ready' && session.listing.route === 'zip';
-  const entries = zip ? session.entries.map((entry) => ({ name: entry.name, size: entry.size,
+  const entries = zip ? session.entries.map((entry) => ({ name: entry.name, size: entry.size, directory: entry.directory,
     eligible: !entry.directory && !entry.encrypted })) : session.archiveEntries.map(entry => ({ name: entry.path, size: entry.size, eligible: true }));
   const fileCount = zip ? session.entries.filter(entry => !entry.directory).length : entries.length;
   const eligible = entries.filter(entry => entry.eligible).length;
@@ -208,7 +213,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
           <p>{t.entries}: {entries.length} / {t.files}: {fileCount} / {t.eligible}: {eligible}</p>
           {duplicates && <p>{t.duplicate}</p>}
           <div class="workbench__list" role="list">{visible.map((entry, index) => <div role="listitem" class="workbench__row" key={`${page}-${index}`}>
-            <span>{entry.name}</span><span>{entry.size} B</span>
+            <span class="workbench__entry"><EntryIcon directory={'directory' in entry && entry.directory === true} /><span class="workbench__name">{entry.name}</span></span><span class="workbench__size">{entry.size} B</span>
             {entry.eligible && <AppButton variant="ghost" ariaLabel={`${t.chooseOne}: ${entry.name}`} onClick={() => {
               publish({ type: 'op/input', op: 'extract', input: { mode: 'one', name: entry.name } });
               selectOp('extract');
@@ -224,8 +229,8 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
       </section>
       <section id="panel-extract" role="tabpanel" aria-labelledby="tab-extract" hidden={session.op !== 'extract'}>
         <AppCard title={t.extract}>
-          <label><input type="radio" name="extract-mode" checked={extractInput.mode === 'all'} onChange={() => publish({ type: 'op/input', op: 'extract', input: { mode: 'all' } })} />{t.all} ({eligible})</label>
-          <label><input type="radio" name="extract-mode" checked={extractInput.mode === 'one'} onChange={() => {
+          <label class="workbench__choice"><input type="radio" name="extract-mode" checked={extractInput.mode === 'all'} onChange={() => publish({ type: 'op/input', op: 'extract', input: { mode: 'all' } })} />{t.all} ({eligible})</label>
+          <label class="workbench__choice"><input type="radio" name="extract-mode" checked={extractInput.mode === 'one'} onChange={() => {
             const first = entries.find(entry => entry.eligible);
             if (first) publish({ type: 'op/input', op: 'extract', input: { mode: 'one', name: first.name } });
           }} />{t.one}</label>
@@ -247,9 +252,9 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
             <AppButton variant="secondary" ariaLabel={`${t.clearAll}: ${session.source?.file.name}`} disabled={busy} onClick={() => publish({ type: 'selection/all', keep: false })}>{t.clearAll}</AppButton></div>
           <div class="workbench__list" role="list" aria-label={t.remove}>{session.entries.slice(removePage * PAGE_SIZE, (removePage + 1) * PAGE_SIZE).map((entry, index) => {
             const state = entry.directory ? directoryState(session.entries, entry.name, session.selection) : session.selection.has(entry.name) ? 'checked' : 'unchecked';
-            return <div role="listitem" class="workbench__row" key={`${removePage}-${index}`}><label><input type="checkbox" checked={state === 'checked'}
+            return <div role="listitem" class="workbench__row workbench__remove-row" data-keep-state={state} key={`${removePage}-${index}`}><label class="workbench__choice"><input type="checkbox" checked={state === 'checked'}
               ref={node => { if (node) node.indeterminate = state === 'indeterminate'; }} disabled={busy}
-              aria-label={`${entry.name}: ${t.keep}`} onChange={event => publish({ type: 'selection/toggle', name: entry.name, keep: event.currentTarget.checked })} />{entry.name}</label></div>;
+              aria-label={`${entry.name}: ${t.keep}`} onChange={event => publish({ type: 'selection/toggle', name: entry.name, keep: event.currentTarget.checked })} /><EntryIcon directory={entry.directory} /><span class="workbench__name">{entry.name}</span></label></div>;
           })}</div>
           <nav class="workbench__pages" aria-label={`${t.remove} ${t.page}`}><AppButton variant="secondary" ariaLabel={`${t.previous}: ${t.remove} ${t.page}`} disabled={removePage === 0} onClick={() => setRemovePage(removePage - 1)}>{t.previous}</AppButton>
             <span>{t.page} {removePage + 1} / {Math.max(1, Math.ceil(session.entries.length / PAGE_SIZE))}</span>
@@ -263,7 +268,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
           <p>{t.repairGuide}</p><p>{t.plannedRepair}: {repair.changes.length}{t.entriesUnit}</p>
           {repair.collision && <Alert>{t.collision}{repair.collision}</Alert>}
           <div class="workbench__list" role="list" aria-label={t['fix-names']}>{repair.changes.slice(repairPage * PAGE_SIZE, (repairPage + 1) * PAGE_SIZE).map((change, index) =>
-            <div role="listitem" class="workbench__row" key={`${repairPage}-${index}`}><span>{t.repairBefore}: {change.before}</span><span>{t.repairAfter}: {change.after}</span></div>)}</div>
+            <div role="listitem" class="workbench__row workbench__repair-row" key={`${repairPage}-${index}`}><span class="workbench__name">{t.repairBefore}: {change.before}</span><span class="workbench__name">{t.repairAfter}: {change.after}</span></div>)}</div>
           <nav class="workbench__pages" aria-label={`${t['fix-names']} ${t.page}`}><AppButton variant="secondary" ariaLabel={`${t.previous}: ${t['fix-names']} ${t.page}`} disabled={repairPage === 0} onClick={() => setRepairPage(repairPage - 1)}>{t.previous}</AppButton>
             <span>{t.page} {repairPage + 1} / {Math.max(1, Math.ceil(repair.changes.length / PAGE_SIZE))}</span>
             <AppButton variant="secondary" ariaLabel={`${t.next}: ${t['fix-names']} ${t.page}`} disabled={(repairPage + 1) * PAGE_SIZE >= repair.changes.length} onClick={() => setRepairPage(repairPage + 1)}>{t.next}</AppButton></nav>
@@ -278,14 +283,14 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
       {results.length === 0 && <p class="workbench__empty">{copy.emptyResults}</p>}
       {results.map(result => <article class="workbench__result" key={result.id}>
         <h3>{t[result.op]}</h3>
-        <p>{t.source}: {result.sourceFile.name}</p>
-        <p>{result.actual.kind === 'extract' ? `${result.actual.files}${t.count}` : result.op === 'remove' ?
+        <p class="workbench__result-source">{t.source}: {result.sourceFile.name}</p>
+        <p class="workbench__result-summary">{result.actual.kind === 'extract' ? `${result.actual.files}${t.count}` : result.op === 'remove' ?
           `${t.removed} ${result.actual.counts.removed}${t.entriesUnit} / ${t.kept} ${result.actual.counts.kept}${t.entriesUnit}` :
           `${t.repaired} ${result.actual.counts.renamed}${t.entriesUnit}`}</p>
         {result.files.map((file, index) => <div class="workbench__row" key={index}>
-          <span>{file.name}</span>
-          <AppButton variant="secondary" ariaLabel={`${t.saveFile}: ${file.name}`} onClick={() => downloadBlob(file.blob, result.op === 'extract' ? leafName(file.name) : file.name)}>{t.save}</AppButton>
-          <AppButton variant="ghost" ariaLabel={`${t.reinputFile}: ${file.name}`} disabled={busy} onClick={() => void controllerRef.current?.accept([new File([file.blob], result.op === 'extract' ? leafName(file.name) : file.name)], session, result.id)}>{t.reinput}</AppButton>
+          <span class="workbench__name">{file.name}</span>
+          <span class="workbench__row-actions"><AppButton variant="secondary" ariaLabel={`${t.saveFile}: ${file.name}`} onClick={() => downloadBlob(file.blob, result.op === 'extract' ? leafName(file.name) : file.name)}>{t.save}</AppButton>
+          <AppButton variant="ghost" ariaLabel={`${t.reinputFile}: ${file.name}`} disabled={busy} onClick={() => void controllerRef.current?.accept([new File([file.blob], result.op === 'extract' ? leafName(file.name) : file.name)], session, result.id)}>{t.reinput}</AppButton></span>
         </div>)}
       </article>)}
     </AppCard>
