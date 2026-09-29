@@ -9,6 +9,12 @@ export default [
   ...tseslint.configs.recommended,
   ...astro.configs.recommended,
   {
+    files: ['src/**/*.tsx', 'src/pages/**/*.astro', 'src/layouts/**/*.astro'],
+    rules: {
+      'no-restricted-syntax': ['error', { selector: 'Literal[value=/^(ja|en)$/]', message: 'Use a locale from src/i18n/locales.ts.' }],
+    },
+  },
+  {
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',

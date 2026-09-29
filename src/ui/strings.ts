@@ -1,10 +1,8 @@
 import type { Locale } from '@/i18n/locales';
 
-export const strings: Record<Locale, {
-  required: string; close: string; themeLabel: string; themeToLight: string; themeToDark: string;
-  dropTitle: string; dropHint: string; processing: string; wait: string;
-  installTitle: string; installBody: string; install: string; later: string;
-}> = {
+import type { UiStrings } from '@/i18n/types';
+
+export const strings: Record<Locale, UiStrings['shared']> = {
   ja: {
     required: '必須', close: '閉じる', themeLabel: 'テーマ', themeToLight: '明るいテーマに切り替え', themeToDark: '暗いテーマに切り替え',
     dropTitle: 'ファイルをドロップ', dropHint: 'ファイルやフォルダをここに移動', processing: 'ファイルを確認中: {count} 件', wait: 'しばらくお待ちください',

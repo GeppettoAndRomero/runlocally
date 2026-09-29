@@ -1,10 +1,11 @@
 ---
+import { ENGLISH_LOCALE } from '../../i18n/locales';
 import { Workbench } from '../../app/Workbench';
 import Base from '../../layouts/Base.astro';
 ---
-<Base lang="en" title="ZIP Workbench | runlocally" description="A workbench for opening, fixing and repacking ZIP files in your browser.">
+<Base lang={ENGLISH_LOCALE} title="ZIP Workbench | runlocally" description="A workbench for opening, fixing and repacking ZIP files in your browser.">
   <main>
     <h1>ZIP Workbench</h1>
-    <Workbench locale="en" client:load />
+    <Workbench locale={ENGLISH_LOCALE} client:load />
   </main>
 </Base>

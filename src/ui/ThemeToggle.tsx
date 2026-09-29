@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import type { Locale } from '@/i18n/locales';
+import { ENGLISH_LOCALE, type Locale } from '@/i18n/locales';
 import { strings } from './strings';
 
 export type Theme = 'light' | 'dark' | 'auto';
@@ -9,7 +9,7 @@ function storedTheme(): Theme {
   return 'light';
 }
 function systemTheme(): 'light' | 'dark' { return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
-export function ThemeToggle({ locale = 'en' }: { locale?: Locale }) {
+export function ThemeToggle({ locale = ENGLISH_LOCALE }: { locale?: Locale }) {
   const [theme, setTheme] = useState<Theme>('light');
   const [system, setSystem] = useState<'light' | 'dark'>('light');
   useEffect(() => { setTheme(storedTheme()); setSystem(systemTheme()); }, []);

@@ -26,4 +26,4 @@ The internal engine implements ZIP listing, extraction, rewriting, creation, spl
 
 Cloudflare Web Analytics と NEL は採用しません。Web Analytics はエッジで JS beacon を挿入するため公約 1 に反します。
 
-ロケールの追加には需要の証拠とネイティブレビュー体制が必要です。ロケール一覧は `src/i18n/locales.ts` の 1 箇所で管理します。
+ロケールの追加には需要の証拠とネイティブレビュー体制が必要です。`src/i18n/locales.ts` の code・default・hreflang 一覧を唯一の供給元とし、既定値と英語参照、Astro の設定をそこから導出します。操作ごとのページは、画面でその操作を利用できる場合に限り公開します。

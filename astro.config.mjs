@@ -17,7 +17,7 @@ export default defineConfig({
   compressHTML: true,
   i18n: {
     defaultLocale: DEFAULT_LOCALE,
-    locales: [...LOCALES],
+    locales: LOCALES.map(locale => locale.code),
     routing: { prefixDefaultLocale: false },
   },
 });

@@ -32,4 +32,4 @@ Input, listing, and job failures share localized explanations for all six engine
 
 ## Adding an operation
 
-Extend input and output types, route and reducer guards, then controller execution and resource cleanup. Add progress, result fields, and actual counts, then tabs, localized text, keyboard and accessible names. Test worker transfer and component behavior, and update public documentation.
+Register the operation in `src/i18n/ops.ts` with its legacy slug and representative engine entry point. Extend input and output types, route and reducer guards, then controller execution and resource cleanup. Add progress, result fields, and actual counts, then tabs, localized text, keyboard and accessible names. Set `available` only after the screen, guards, text, and verification are ready; an engine API alone does not make an operation publishable. Page and navigation generation should use the derived available list. Test worker transfer and component behavior, and update public documentation.

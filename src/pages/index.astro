@@ -1,10 +1,11 @@
 ---
+import { DEFAULT_LOCALE } from '../i18n/locales';
 import { Workbench } from '../app/Workbench';
 import Base from '../layouts/Base.astro';
 ---
-<Base lang="ja" title="ZIP ワークベンチ | runlocally" description="ブラウザで ZIP を開く・直す・作り直すためのワークベンチ。">
+<Base lang={DEFAULT_LOCALE} title="ZIP ワークベンチ | runlocally" description="ブラウザで ZIP を開く・直す・作り直すためのワークベンチ。">
   <main>
     <h1>ZIP ワークベンチ</h1>
-    <Workbench locale="ja" client:load />
+    <Workbench locale={DEFAULT_LOCALE} client:load />
   </main>
 </Base>

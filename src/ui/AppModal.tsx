@@ -1,11 +1,11 @@
 import { useEffect } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
-import type { Locale } from '@/i18n/locales';
+import { ENGLISH_LOCALE, type Locale } from '@/i18n/locales';
 import { strings } from './strings';
 
 export interface AppModalProps { isOpen: boolean; onClose: () => void; title: string; children: ComponentChildren; locale?: Locale }
 
-export function AppModal({ isOpen, onClose, title, children, locale = 'en' }: AppModalProps) {
+export function AppModal({ isOpen, onClose, title, children, locale = ENGLISH_LOCALE }: AppModalProps) {
   useEffect(() => {
     if (!isOpen) return;
     const previous = document.body.style.overflow;

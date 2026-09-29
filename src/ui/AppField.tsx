@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import type { Locale } from '@/i18n/locales';
+import { ENGLISH_LOCALE, type Locale } from '@/i18n/locales';
 import { strings } from './strings';
 
 export interface AppFieldProps {
@@ -10,7 +10,7 @@ export interface AppFieldProps {
 }
 
 export function AppField({ label, id, type = 'text', value, onChange, required = false,
-  disabled = false, error, helpText, placeholder, min, max, step, locale = 'en' }: AppFieldProps) {
+  disabled = false, error, helpText, placeholder, min, max, step, locale = ENGLISH_LOCALE }: AppFieldProps) {
   const handleInput = (event: JSX.TargetedEvent<HTMLInputElement>) => {
     onChange(type === 'number' ? event.currentTarget.valueAsNumber || 0 : event.currentTarget.value);
   };

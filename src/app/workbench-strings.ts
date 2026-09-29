@@ -1,5 +1,6 @@
 import type { Locale } from '../i18n/locales';
-export const workbenchStrings: Record<Locale, Record<string, string>> = {
+import type { UiStrings } from '../i18n/types';
+export const workbenchStrings: Record<Locale, UiStrings['workbench']> = {
   ja: {
     input: '入力', choose: 'アーカイブを選択', busy: '処理中です。完了後に入力してください。', single: '1つのアーカイブを選んでください。',
     large: '入力は1 GB（1,000,000,000 bytes）以下にしてください。', unknown: '形式を確認できません。ZIP、RAR、7z、tar を選んでください。',

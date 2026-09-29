@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import type { Locale } from '@/i18n/locales';
+import { ENGLISH_LOCALE, type Locale } from '@/i18n/locales';
 import { strings } from './strings';
 
 function readAll(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
@@ -33,7 +33,7 @@ async function expand(entries: FileSystemEntry[]): Promise<File[]> {
   for (const entry of entries) await collect(entry, files);
   return files;
 }
-export function GlobalDropZone({ locale = 'en' }: { locale?: Locale }) {
+export function GlobalDropZone({ locale = ENGLISH_LOCALE }: { locale?: Locale }) {
   const [dragging, setDragging] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [count, setCount] = useState(0);

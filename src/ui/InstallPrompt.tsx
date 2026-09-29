@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { Locale } from '@/i18n/locales';
+import { ENGLISH_LOCALE, type Locale } from '@/i18n/locales';
 import { strings } from './strings';
 import { AppButton } from './AppButton';
 
@@ -10,7 +10,7 @@ const dismissedKey = 'runlocally-install-prompt-dismissed';
 const week = 7 * 24 * 60 * 60 * 1000;
 function read(key: string): string | null { try { return localStorage.getItem(key); } catch { return null; } }
 function write(key: string, value: string): void { try { localStorage.setItem(key, value); } catch { /* storage may be unavailable */ } }
-export function InstallPrompt({ locale = 'en' }: { locale?: Locale }) {
+export function InstallPrompt({ locale = ENGLISH_LOCALE }: { locale?: Locale }) {
   const [event, setEvent] = useState<InstallEvent | null>(null);
   const [mode, setMode] = useState<DisplayMode>('hidden');
   const mounted = useRef(true);
