@@ -4,6 +4,7 @@ import preact from '@astrojs/preact';
 import sitemap from '@astrojs/sitemap';
 import pwa from '@vite-pwa/astro';
 import { transformPrecache } from './scripts/pwa-manifest.mjs';
+import { buildMetaIntegration } from './scripts/build-meta.mjs';
 
 const pwaOptions = {
   outDir: 'dist',
@@ -29,7 +30,7 @@ export default defineConfig({
     outDir: '.notice-build',
   } : {}),
   site: SITE_ORIGIN,
-  integrations: [preact(), sitemap({ filter: isPublicPageUrl, i18n: sitemapI18n }), pwaOutput, pwa(pwaOptions)],
+  integrations: [preact(), sitemap({ filter: isPublicPageUrl, i18n: sitemapI18n }), pwaOutput, pwa(pwaOptions), buildMetaIntegration()],
   vite: {
     ...(process.env.NOTICE_ANALYZE === '1' ? { build: { sourcemap: true } } : {}),
     plugins: [libarchiveVendorPlugin()],
