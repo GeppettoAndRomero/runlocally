@@ -29,7 +29,7 @@ npm run ci
 
 ライセンス: [MIT](LICENSE)。
 
-Colophon: Some code was written with AI assistance; all review and decisions are the maintainer's. 一部のコードは AI の支援を受けて書かれました。レビューと判断はすべてメンテナーが行っています。
+Colophon: Some code was written with AI assistance; all review and decisions are the maintainer's.
 
 ## English
 

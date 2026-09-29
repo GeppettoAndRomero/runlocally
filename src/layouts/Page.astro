@@ -1,0 +1,17 @@
+---
+import Base from './Base.astro';
+import type { Locale } from '../i18n/locales';
+import type { PageContent } from '../i18n/types';
+import type { PublicPage } from '../seo/page';
+
+interface Props {
+  locale: Locale;
+  page: PublicPage;
+  content: PageContent;
+}
+
+const { locale, page, content } = Astro.props;
+---
+<Base lang={locale} page={page} content={content}>
+  <slot />
+</Base>

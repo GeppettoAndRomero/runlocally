@@ -2,24 +2,55 @@
 import '../styles/tokens.css';
 import '../styles/base.css';
 import '../ui/components.css';
+import { LOCALES, type Locale } from '../i18n/locales';
+import type { PageContent } from '../i18n/types';
+import { alternates, checkMetadataLength, headData, ogLocale, pageUrl, type PublicPage } from '../seo/page';
 
 interface Props {
-  lang: string;
-  title: string;
-  description: string;
+  lang: Locale;
+  title?: string;
+  description?: string;
+  page?: PublicPage;
+  content?: PageContent;
 }
 
-const { lang, title, description } = Astro.props;
+const { lang, page = 'top', content } = Astro.props;
+const title = content?.title ?? Astro.props.title ?? '';
+const description = content?.description ?? Astro.props.description ?? '';
+const metadata = content ? headData(lang, page, content) : undefined;
+if (!content) checkMetadataLength(lang, page, title, description);
+const canonical = metadata?.canonical ?? pageUrl(lang, page);
+const links = metadata?.alternates ?? alternates(page);
+const localeInfo = LOCALES.find(entry => entry.code === lang)!;
+const og = metadata?.og ?? {
+  type: 'website', url: canonical, title, description, siteName: 'runlocally',
+  locale: ogLocale(lang),
+  alternateLocales: LOCALES.filter(entry => entry.code !== lang).map(entry => ogLocale(entry.code)),
+};
 ---
 <!doctype html>
-<html lang={lang}>
+<html lang={localeInfo.code}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <link rel="canonical" href={canonical} />
+    {links.map(link => <link rel="alternate" hreflang={link.hreflang} href={link.href} />)}
+    <meta property="og:type" content={og.type} />
+    <meta property="og:url" content={og.url} />
+    <meta property="og:title" content={og.title} />
+    <meta property="og:description" content={og.description} />
+    <meta property="og:site_name" content={og.siteName} />
+    <meta property="og:locale" content={og.locale} />
+    {og.alternateLocales.map(locale => <meta property="og:locale:alternate" content={locale} />)}
+    {metadata && <script type="application/ld+json" set:html={metadata.jsonLd} />}
   </head>
   <body>
     <slot />
+    <footer>
+      <p>Some code was written with AI assistance; all review and decisions are the maintainer's.</p>
+      <a href="/SECURITY.md">Security</a>
+    </footer>
   </body>
 </html>
