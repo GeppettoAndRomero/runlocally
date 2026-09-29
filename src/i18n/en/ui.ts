@@ -11,6 +11,7 @@ export const update = {
 
 export const ui = {
   chrome: { navigation: 'Operations', home: 'Home', languages: 'Available in' },
+  inputState: { dropHint: 'Drag one archive here, or paste a file from the clipboard.', emptyResults: 'Choose an archive and run an operation to see results here.', progressLabel: 'Operation progress' },
   workbench: {
     input: 'Input', choose: 'Choose an archive', busy: 'Processing. Try another input when it finishes.', single: 'Choose one archive.',
     large: 'Choose an input of 1 GB (1,000,000,000 bytes) or less.', unknown: 'Format could not be identified. Choose ZIP, RAR, 7z, or tar.',
