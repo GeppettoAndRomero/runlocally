@@ -90,6 +90,8 @@ export type WorkbenchStringKey =
 ;
 export type WorkbenchStrings = { [K in WorkbenchStringKey]: string };
 export type SharedStringKey =
+  | 'language'
+  | 'security'
   | 'required'
   | 'close'
   | 'themeLabel'

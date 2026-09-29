@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { AVAILABLE_OPS, OPS } from '../../src/i18n/ops';
-import { pages as ja } from '../../src/i18n/ja/pages';
-import { pages as en } from '../../src/i18n/en/pages';
+import { pages } from '../../src/i18n/pages';
+import { LOCALES } from '../../src/i18n/locales';
 
 const expected = ['top', ...AVAILABLE_OPS.map(op => op.i18nKey)].sort();
 
-describe.each([['ja', ja], ['en', en]] as const)('%s page content', (_locale, pages) => {
+describe.each(LOCALES.map(locale => [locale.code, pages[locale.code]] as const))('%s page content', (_locale, pages) => {
   it('covers exactly the available operations', () => {
     expect(Object.keys(pages).sort()).toEqual(expected);
     for (const op of OPS.filter(op => !op.available)) expect(Object.keys(pages)).not.toContain(op.i18nKey);

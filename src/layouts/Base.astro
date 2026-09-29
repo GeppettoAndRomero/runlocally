@@ -5,6 +5,7 @@ import '../ui/components.css';
 import { LOCALES, type Locale } from '../i18n/locales';
 import type { PageContent } from '../i18n/types';
 import { alternates, checkMetadataLength, headData, ogLocale, pageUrl, type PublicPage } from '../seo/page';
+import { ui } from '../i18n/ui';
 
 interface Props {
   lang: Locale;
@@ -50,7 +51,7 @@ const og = metadata?.og ?? {
     <slot />
     <footer>
       <p>Some code was written with AI assistance; all review and decisions are the maintainer's.</p>
-      <a href="/SECURITY.md">Security</a>
+      <a id="footer-security" href="/SECURITY.md">{ui[lang].shared.security}</a>
     </footer>
   </body>
 </html>

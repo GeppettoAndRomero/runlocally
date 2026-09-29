@@ -212,3 +212,6 @@ button, a, input, select, textarea {
   white-space: nowrap;
   border-width: 0;
 }
+.page-identity, .page-content { max-width: 72rem; margin: 1.5rem auto; padding: 0 1rem; }
+.page-content li { margin-bottom: 1rem; }
+html[data-session="open"] .page-content { display: none; }

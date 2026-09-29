@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { ui } from '../../src/i18n/ui';
-import { LOCALES } from '../../src/i18n/locales';
+import { ENGLISH_LOCALE, LOCALES } from '../../src/i18n/locales';
 
 // Fingerprints of every value in the two original dictionaries, including spaces and tokens.
 const original = {
@@ -12,20 +12,23 @@ const original = {
 describe('localized UI dictionaries', () => {
   it('covers every supported locale and both finite sections', () => {
     expect(Object.keys(ui).sort()).toEqual(LOCALES.map(locale => locale.code).sort());
+    const sections = ['shared', 'workbench'] as const;
     for (const locale of LOCALES) {
-      expect(Object.keys(ui[locale.code]).sort()).toEqual(['shared', 'workbench']);
-      expect(Object.keys(ui[locale.code].workbench)).toHaveLength(76);
-      expect(Object.keys(ui[locale.code].shared)).toHaveLength(13);
+      expect(Object.keys(ui[locale.code]).sort()).toEqual([...sections].sort());
+      for (const section of sections) {
+        expect(Object.keys(ui[locale.code][section]).sort()).toEqual(Object.keys(ui[ENGLISH_LOCALE][section]).sort());
+      }
       expect(Object.values(ui[locale.code].workbench).every(value => value.length > 0)).toBe(true);
       expect(Object.values(ui[locale.code].shared).every(value => value.length > 0)).toBe(true);
+      expect(ui[locale.code].shared.security.trim()).not.toBe('');
     }
   });
 
   it('preserves every pre-migration UI value', () => {
-    for (const locale of LOCALES) {
+    for (const locale of ['ja', 'en'] as const) {
       for (const section of ['workbench', 'shared'] as const) {
-        const digest = createHash('sha256').update(JSON.stringify(ui[locale.code][section])).digest('hex');
-        expect(digest).toBe(original[locale.code][section]);
+        const digest = createHash('sha256').update(JSON.stringify(Object.fromEntries(Object.entries(ui[locale][section]).filter(([key]) => key !== 'language' && key !== 'security')))).digest('hex');
+        expect(digest).toBe(original[locale][section]);
       }
     }
   });

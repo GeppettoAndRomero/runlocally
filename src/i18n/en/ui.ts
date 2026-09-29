@@ -29,6 +29,7 @@ export const ui = {
     encryptedKept: 'Rewriting fails if encrypted entries remain.',
   },
   shared: {
+    language: 'Language', security: 'Security',
     required: 'Required', close: 'Close', themeLabel: 'Theme', themeToLight: 'Switch to light theme', themeToDark: 'Switch to dark theme',
     dropTitle: 'Drop files', dropHint: 'Move files or folders here', processing: 'Checking files: {count}', wait: 'Please wait',
     installTitle: 'Install app', installBody: 'Add this app to this device.', install: 'Install', later: 'Later',

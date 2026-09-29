@@ -1,5 +1,8 @@
 import { useEffect, useReducer, useRef, useState } from 'preact/hooks';
-import type { Locale } from '../i18n/locales';
+import { LOCALES, type Locale } from '../i18n/locales';
+import { AVAILABLE_OPS, type AvailableOpId } from '../i18n/ops';
+import { pagePath, publicPageFromPath, type PublicPage } from '../seo/page';
+import { displayPage } from './page-display';
 import { AppButton } from '../ui/AppButton';
 import { AppCard } from '../ui/AppCard';
 import { GlobalDropZone } from '../ui/GlobalDropZone';
@@ -15,8 +18,11 @@ import './workbench.css';
 
 const PAGE_SIZE = 500;
 function leafName(path: string): string { return path.split('/').filter(Boolean).at(-1) || 'file'; }
-export function Workbench({ locale }: { locale: Locale }) {
-  const [session, publish] = useReducer(sessionReducer, undefined, () => initialSession());
+export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: { locale: Locale; page?: PublicPage; op?: AvailableOpId }) {
+  const [route, setRoute] = useState<{ locale: Locale; page: PublicPage }>({ locale, page: initialPage });
+  const routeRef = useRef(route);
+  routeRef.current = route;
+  const [session, publish] = useReducer(sessionReducer, undefined, () => initialSession(0, op));
   const sessionRef = useRef(session);
   sessionRef.current = session;
   const pageHiddenRef = useRef(false);
@@ -25,7 +31,41 @@ export function Workbench({ locale }: { locale: Locale }) {
   const [page, setPage] = useState(0);
   const [removePage, setRemovePage] = useState(0);
   const [repairPage, setRepairPage] = useState(0);
-  const t = ui[locale].workbench;
+  const t = ui[route.locale].workbench;
+  const requestedOp = (value: PublicPage): AvailableOpId => value === 'top' ? 'browse' : value;
+  const navigate = (next: { locale: Locale; page: PublicPage }, mode: 'push' | 'replace' | 'pop' = 'push') => {
+    const current = routeRef.current;
+    const path = pagePath(next.locale, next.page);
+    if (mode === 'push' && current.locale === next.locale && current.page === next.page) return;
+    if (mode === 'push') window.history.pushState(null, '', path);
+    if (mode === 'replace') window.history.replaceState(null, '', path);
+    routeRef.current = next;
+    setRoute(next);
+    publish({ type: 'op/select', op: requestedOp(next.page) });
+  };
+  const selectOp = (next: AvailableOpId) => navigate({ locale: routeRef.current.locale, page: next });
+  useEffect(() => {
+    const pop = () => {
+      const next = publicPageFromPath(window.location.pathname);
+      if (next) navigate(next, 'pop');
+    };
+    window.addEventListener('popstate', pop);
+    return () => window.removeEventListener('popstate', pop);
+  }, []);
+  useEffect(() => { displayPage(route.locale, route.page); }, [route]);
+  useEffect(() => {
+    if (session.source?.kind && session.source.kind !== 'zip' && route.page !== 'top' &&
+        !AVAILABLE_OPS.find(entry => entry.id === route.page)?.archive) {
+      navigate({ locale: route.locale, page: 'browse' }, 'replace');
+    } else if (!session.source && session.op !== requestedOp(route.page)) {
+      publish({ type: 'op/select', op: requestedOp(route.page) });
+    }
+  }, [session.source, session.op, route]);
+  useEffect(() => {
+    if (session.source) document.documentElement.dataset.session = 'open';
+    else delete document.documentElement.dataset.session;
+  }, [session.source]);
+  useEffect(() => () => { delete document.documentElement.dataset.session; }, []);
   useEffect(() => { setPage(0); setRemovePage(0); setRepairPage(0); }, [session.generation]);
   useEffect(() => {
     const dropped = (event: Event) => {
@@ -77,7 +117,7 @@ export function Workbench({ locale }: { locale: Locale }) {
   const pages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
   const visible = entries.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const duplicates = zip && new Set(session.entries.map(entry => entry.name)).size !== session.entries.length;
-  const operations: OpId[] = zip ? ['browse', 'extract', 'remove', 'fix-names'] : ['browse', 'extract'];
+  const operations: OpId[] = AVAILABLE_OPS.filter(entry => zip || entry.archive).map(entry => entry.id);
   const removed = zip ? session.entries.filter(entry => !session.selection.has(entry.name)).length : 0;
   const keptFiles = zip ? keptFileCount(session.entries, session.selection) : 0;
   const repair = repairPlan(zip ? session.entries : []);
@@ -90,7 +130,11 @@ export function Workbench({ locale }: { locale: Locale }) {
   const busy = session.listing.status === 'reading' || session.job.status === 'running';
   const results = session.results;
   return <div class="workbench">
-    <GlobalDropZone locale={locale} />
+    <GlobalDropZone locale={route.locale} />
+    <label class="workbench__language">{ui[route.locale].shared.language} <select aria-label={ui[route.locale].shared.language} value={route.locale} onChange={event => {
+      const next = LOCALES.find(entry => entry.code === event.currentTarget.value);
+      if (next) navigate({ locale: next.code, page: routeRef.current.page });
+    }}>{LOCALES.map(entry => <option key={entry.code} value={entry.code}>{entry.name}</option>)}</select></label>
     <AppCard title={t.input}>
       <label class="workbench__picker">{t.choose}<input type="file" aria-label={t.choose} disabled={busy} onChange={event => {
         const input = event.currentTarget;
@@ -112,13 +156,13 @@ export function Workbench({ locale }: { locale: Locale }) {
           event.preventDefault();
           const current = operations.indexOf(session.op);
           const op = operations[(current + (event.key === 'ArrowRight' ? 1 : operations.length - 1)) % operations.length];
-          publish({ type: 'op/select', op });
+          selectOp(op);
           (event.currentTarget.querySelector(`[data-op="${op}"]`) as HTMLButtonElement | null)?.focus();
         }
       }}>
         {operations.map(op => <button key={op} data-op={op} id={`tab-${op}`} type="button" role="tab"
           aria-selected={session.op === op} aria-controls={`panel-${op}`} tabIndex={session.op === op ? 0 : -1}
-          onClick={() => publish({ type: 'op/select', op })}>{t[op]}</button>)}
+          onClick={() => selectOp(op)}>{t[op]}</button>)}
       </div>
       <section id="panel-browse" role="tabpanel" aria-labelledby="tab-browse" hidden={session.op !== 'browse'}>
         <AppCard title={t.browse}>
@@ -128,7 +172,7 @@ export function Workbench({ locale }: { locale: Locale }) {
             <span>{entry.name}</span><span>{entry.size} B</span>
             {entry.eligible && <AppButton variant="ghost" ariaLabel={`${t.chooseOne}: ${entry.name}`} onClick={() => {
               publish({ type: 'op/input', op: 'extract', input: { mode: 'one', name: entry.name } });
-              publish({ type: 'op/select', op: 'extract' });
+              selectOp('extract');
               document.getElementById('tab-extract')?.focus();
             }}>{t.chooseOne}</AppButton>}
           </div>)}</div>
@@ -157,7 +201,7 @@ export function Workbench({ locale }: { locale: Locale }) {
         <AppCard title={t.remove}>
           <p>{t.removeGuide}</p>
           {duplicates && <p>{t.duplicateKeep}</p>}
-          {hasCandidates && <p>{t.orderGuide} <AppButton variant="ghost" ariaLabel={`${t.goRepair}: ${session.source?.file.name}`} onClick={() => { publish({ type: 'op/select', op: 'fix-names' }); document.getElementById('tab-fix-names')?.focus(); }}>{t.goRepair}</AppButton></p>}
+          {hasCandidates && <p>{t.orderGuide} <AppButton variant="ghost" ariaLabel={`${t.goRepair}: ${session.source?.file.name}`} onClick={() => { selectOp('fix-names'); document.getElementById('tab-fix-names')?.focus(); }}>{t.goRepair}</AppButton></p>}
           <p>{t.plannedRemove}: {removed}{t.entriesUnit} / {t.keptFiles}: {keptFiles}{t.filesUnit}</p>
           {encryptedKept && <p>{t.encryptedKept}</p>}
           <div class="workbench__actions"><AppButton variant="secondary" ariaLabel={`${t.keepAll}: ${session.source?.file.name}`} disabled={busy} onClick={() => publish({ type: 'selection/all', keep: true })}>{t.keepAll}</AppButton>
@@ -193,7 +237,7 @@ export function Workbench({ locale }: { locale: Locale }) {
     </>}
     <AppCard title={t.results}>
       {results.map(result => <article class="workbench__result" key={result.id}>
-        <h4>{t[result.op]}</h4>
+        <h3>{t[result.op]}</h3>
         <p>{t.source}: {result.sourceFile.name}</p>
         <p>{result.actual.kind === 'extract' ? `${result.actual.files}${t.count}` : result.op === 'remove' ?
           `${t.removed} ${result.actual.counts.removed}${t.entriesUnit} / ${t.kept} ${result.actual.counts.kept}${t.entriesUnit}` :

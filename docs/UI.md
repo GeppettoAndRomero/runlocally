@@ -1,6 +1,6 @@
 # Workbench UI
 
-The Japanese and English pages mount one Workbench. It owns presentation and dispatches actions to the pure session reducer. The controller owns asynchronous listing and jobs, creates and closes one ZIP client or archive handle per request, and ignores notifications after invalidation. The engine performs local parsing and rewriting. `downloadBlob` handles explicit saves. Results are separate Blobs; creating one neither saves it nor replaces the input.
+The Japanese and English top and available operation pages each mount the same Workbench. It owns presentation and dispatches actions to the pure session reducer. The controller owns asynchronous listing and jobs, creates and closes one ZIP client or archive handle per request, and ignores notifications after invalidation. The engine performs local parsing and rewriting. `downloadBlob` handles explicit saves. Results are separate Blobs; creating one neither saves it nor replaces the input.
 
 ## State and transitions
 
@@ -12,11 +12,15 @@ ready -> job: idle -> running -> succeeded | failed
 reset -> empty session
 ```
 
+The URL records only the current public page and locale. Tab, keyboard, entry extraction, repair guidance, and language changes add a history entry. Back and Forward restore the page, locale, and selected operation without rolling back the File, selection, settings, job, or results. Reset clears the session but keeps the current page and locale. Reloading creates a new session. Accepted inputs hide only the page explanation; reset shows the current page explanation again.
+
 Listing and job are separate state machines. A new input increments `generation`; each listing attempt has a new `requestId`, and each job has a new ID. Late progress and responses are discarded. Reset, pagehide, and unmount close active resources. A return from the page cache creates a new controller. Listing retry keeps the same File, generation, result history, and chain. A failed job keeps its input, selection, results, and successful log.
 
 A result becomes the next input only through the explicit action. Its chain is derived from that result's own source chain and ID. A size check of 1,000,000,000 bytes precedes header reading for both new and derived inputs. The first 263 bytes choose the ZIP or archive route; an unknown signature does not start an engine job.
 
 ## Operations
+
+Operation pages request their corresponding tab after a ZIP is accepted. RAR, 7z, and tar keep only Browse and Extract available; a removal or name repair URL is replaced with the Browse URL when such an input is accepted. Opening a page never runs its operation automatically.
 
 ZIP has Browse, Extract, Remove, and Repair names tabs. RAR, 7z, and tar have Browse and Extract. Arrow keys move focus among available tabs. The displayed entry lists use pages of 500 rows. Extract all ignores removal selection. A single extract chooses the first matching ZIP name; encrypted ZIP entries are unavailable in the extraction controls.
 
@@ -31,5 +35,7 @@ Rewrite progress points at the entry about to be processed. The result card appe
 Input, listing, and job failures share localized explanations for all six engine codes, aborts, and ordinary exceptions. Raw engine messages are not the main text. Failed jobs identify the operation that failed even if another tab is selected. Errors use alerts. A ZIP signature with failed listing prompts a separate future recovery feature; it does not promise repair. RAR and 7z listing errors offer retry before extraction. Tar listing errors also offer retry. Unknown signatures request another input. Signature detection does not establish integrity or promise extraction success.
 
 ## Adding an operation
+
+See [I18N.md](I18N.md) for the publication and language workflow.
 
 Register the operation in `src/i18n/ops.ts` with its legacy slug and representative engine entry point. Extend input and output types, route and reducer guards, then controller execution and resource cleanup. Add progress, result fields, and actual counts, then tabs, localized text, keyboard and accessible names. Set `available` only after the screen, guards, text, and verification are ready; an engine API alone does not make an operation publishable. Page and navigation generation should use the derived available list. Test worker transfer and component behavior, and update public documentation.

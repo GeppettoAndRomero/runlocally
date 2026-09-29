@@ -12,7 +12,7 @@ export function AppCard({ title, description, children, className = '' }: AppCar
     <div class={`app-card ${className}`}>
       {(title || description) && (
         <div class="app-card__header">
-          {title && <h3 class="app-card__title">{title}</h3>}
+          {title && <h2 class="app-card__title">{title}</h2>}
           {description && <p class="app-card__description">{description}</p>}
         </div>
       )}

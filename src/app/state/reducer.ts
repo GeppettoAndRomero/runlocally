@@ -2,6 +2,7 @@ import { EngineError } from '../../engine/errors';
 import type { ArchiveKind } from '../../engine/sniff';
 import type { ZipEntry } from '../../engine/types';
 import type { Job, OpInputs, ResultRecord, Session, SessionAction, SessionFailure } from './session';
+import { archiveAvailable } from '../../i18n/ops';
 
 export const MAX_INPUT_BYTES = 1_000_000_000;
 
@@ -62,9 +63,9 @@ function defaultInputs(): OpInputs {
   return { browse: {}, extract: { mode: 'all' }, remove: {}, 'fix-names': {} };
 }
 
-export function initialSession(generation = 0): Session {
+export function initialSession(generation = 0, op: Session['op'] = 'browse'): Session {
   return { generation, source: null, listing: { status: 'idle' }, entries: [], archiveEntries: [],
-    selection: new Set(), op: 'browse', inputs: defaultInputs(), job: { status: 'idle' },
+    selection: new Set(), op, inputs: defaultInputs(), job: { status: 'idle' },
     results: [], log: [] };
 }
 
@@ -73,7 +74,8 @@ function withSource(state: Session, file: File, kind: ArchiveKind, chain: readon
   if (failure) return { ...state, inputFailure: failure };
   return { ...state, generation: state.generation + 1, source: { file, kind, chain },
     listing: { status: 'idle' }, entries: [], archiveEntries: [], selection: new Set(), job: { status: 'idle' },
-    inputs: { ...state.inputs, extract: { mode: 'all' } }, op: 'browse',
+    inputs: { ...state.inputs, extract: { mode: 'all' } },
+    op: kind === 'zip' || archiveAvailable(state.op) ? state.op : 'browse',
     inputFailure: undefined };
 }
 
@@ -129,8 +131,8 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
       return state.listing.status === 'ready' && state.listing.route === 'zip' ? { ...state, selection: applyToggle(state.entries, state.selection, action.name, action.keep) } : state;
     case 'selection/all':
       return state.listing.status === 'ready' && state.listing.route === 'zip' ? { ...state, selection: setAll(state.entries, action.keep) } : state;
-    case 'op/select': return action.op === 'browse' || action.op === 'extract' ||
-      (state.listing.status === 'ready' && state.listing.route === 'zip') ? { ...state, op: action.op } : state;
+    case 'op/select': return !state.source || state.source.kind === 'zip' || archiveAvailable(action.op)
+      ? { ...state, op: action.op } : state;
     case 'op/input': return { ...state, inputs: { ...state.inputs, [action.op]: action.input } };
     case 'job/start': {
       if (!state.source || state.source.kind === 'unknown' || state.listing.status !== 'ready' ||

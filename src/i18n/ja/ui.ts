@@ -29,6 +29,7 @@ export const ui = {
     repairEncrypted: 'この画面ではパスワードを使った再構築を扱いません。', encryptedKept: '暗号化された項目が残る場合、再構築は失敗します。',
   },
   shared: {
+    language: '言語', security: 'セキュリティ',
     required: '必須', close: '閉じる', themeLabel: 'テーマ', themeToLight: '明るいテーマに切り替え', themeToDark: '暗いテーマに切り替え',
     dropTitle: 'ファイルをドロップ', dropHint: 'ファイルやフォルダをここに移動', processing: 'ファイルを確認中: {count} 件', wait: 'しばらくお待ちください',
     installTitle: 'アプリをインストール', installBody: 'この端末に追加できます。', install: 'インストール', later: '後で',

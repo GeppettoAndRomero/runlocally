@@ -5,13 +5,8 @@ import type { PageContent } from '../i18n/types';
 export const SITE_ORIGIN = 'https://runlocally.app';
 export type PublicPage = 'top' | AvailableOpId;
 
-const OG_LOCALES: Record<Locale, string> = {
-  ja: 'ja_JP',
-  en: 'en_US',
-};
-
 export function ogLocale(locale: Locale): string {
-  const value = OG_LOCALES[locale];
+  const value = LOCALES.find(entry => entry.code === locale)?.ogLocale;
   if (!value) throw new Error(`Unknown OG locale: ${locale}`);
   return value;
 }
@@ -34,13 +29,17 @@ export function publicPageFromUrl(value: string): { locale: Locale; page: Public
   let url: URL;
   try { url = new URL(value); } catch { return undefined; }
   if (url.origin !== SITE_ORIGIN || url.search || url.hash) return undefined;
+  return publicPageFromPath(url.pathname);
+}
+
+export function publicPageFromPath(pathname: string): { locale: Locale; page: PublicPage } | undefined {
   for (const locale of LOCALES) {
-    if (url.pathname === pagePath(locale.code, 'top')) return { locale: locale.code, page: 'top' };
+    if (pathname === pagePath(locale.code, 'top')) return { locale: locale.code, page: 'top' };
     const prefix = locale.code === DEFAULT_LOCALE ? '/' : `/${locale.code}/`;
-    if (!url.pathname.startsWith(prefix)) continue;
-    const slug = url.pathname.slice(prefix.length, -1);
+    if (!pathname.startsWith(prefix)) continue;
+    const slug = pathname.slice(prefix.length, -1);
     const page = opBySlug.get(slug);
-    if (page && url.pathname === pagePath(locale.code, page)) return { locale: locale.code, page };
+    if (page && pathname === pagePath(locale.code, page)) return { locale: locale.code, page };
   }
   return undefined;
 }

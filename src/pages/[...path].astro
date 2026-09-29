@@ -1,0 +1,30 @@
+---
+import { LOCALES, type Locale } from '../i18n/locales';
+import { AVAILABLE_OPS } from '../i18n/ops';
+import { pageContent } from '../i18n/pages';
+import { pagePath, type PublicPage } from '../seo/page';
+import Page from '../layouts/Page.astro';
+import { Workbench } from '../app/Workbench';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap(({ code }) => (['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[]).map(page => {
+    const path = pagePath(code, page);
+    return { params: { path: path === '/' ? undefined : path.slice(1, -1) }, props: { locale: code, page } };
+  }));
+}
+
+const { locale, page } = Astro.props as { locale: Locale; page: PublicPage };
+const content = pageContent(locale, page);
+---
+<Page locale={locale} page={page} content={content}>
+  <main>
+    <div class="page-identity" aria-live="polite"><h1 id="page-heading">{content.h1}</h1></div>
+    <Workbench locale={locale} page={page} op={page === 'top' ? 'browse' : page} client:load />
+    <section id="page-content" class="page-content" aria-label={content.h1}>
+      <p class="page-lead">{content.lead}</p>
+      <ol>{content.steps.map(step => <li><h2>{step.heading}</h2><p>{step.body}</p></li>)}</ol>
+      <dl>{content.faq.map(item => <><dt>{item.question}</dt><dd>{item.answer}</dd></>)}</dl>
+      <ul>{content.limits.map(limit => <li>{limit}</li>)}</ul>
+    </section>
+  </main>
+</Page>
