@@ -16,7 +16,7 @@
     "preview": "astro preview",
     "typecheck": "astro check",
     "lint": "eslint .",
-    "license:check": "license-checker --production --excludePrivatePackages --summary --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Unlicense;LGPL-3.0;LGPL-3.0-or-later;LGPL-2.1;LGPL-2.1-or-later;Python-2.0;CC-BY-4.0\"",
+    "license:check": "license-checker --production --excludePrivatePackages --summary --onlyAllow \"MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;0BSD;CC0-1.0;Unlicense;LGPL-3.0;LGPL-3.0-or-later;LGPL-2.1;LGPL-2.1-or-later;Python-2.0;CC-BY-4.0;BlueOak-1.0.0\"",
     "notice:generate": "node scripts/gen-notice.mjs",
     "notice:check": "node scripts/gen-notice.mjs --check",
     "check-leaks": "bash scripts/check-leaks.sh",
@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@astrojs/preact": "^3.5.3",
+    "@astrojs/sitemap": "3.2.1",
     "@zip.js/zip.js": "^2.18.2",
     "astro": "^4.16.18",
     "comlink": "4.4.2",

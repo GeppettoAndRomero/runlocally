@@ -22,7 +22,7 @@ The internal engine implements ZIP listing, extraction, rewriting, creation, spl
 
 ## 運営と公開
 
-運営は Geppetto 名義の匿名運営です。架空のユーザー、レビュー、利用者数を作らず、実在性を演出しません。AI 利用の開示は README の colophon のみです。リンク獲得を KPI にしません。
+匿名で運営します。架空のユーザー、レビュー、利用者数を作らず、実在性を演出しません。支援を受けたコードに関する開示は README の colophon と各ページの共通フッターに置きます。リンク獲得を KPI にしません。
 
 Cloudflare Web Analytics と NEL は採用しません。Web Analytics はエッジで JS beacon を挿入するため公約 1 に反します。
 
