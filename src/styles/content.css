@@ -1,0 +1,113 @@
+#page-content,
+.operation-cards {
+  width: min(100% - 2rem, 68ch);
+  max-width: none;
+  margin: var(--space-6) auto;
+  padding: 0;
+  min-width: 0;
+}
+
+main section#page-content {
+  padding: 0;
+  background: var(--color-bg);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+#page-content > .page-lead {
+  margin-bottom: var(--space-6);
+}
+
+#page-content > ol {
+  padding-inline-start: 2em;
+  margin-bottom: var(--space-6);
+}
+
+#page-content > ol > li {
+  padding-inline-start: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+#page-content > ol > li::marker {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+#page-content > ol > li > h2 {
+  margin-bottom: var(--space-2);
+}
+
+#page-content > ol > li > p {
+  margin-bottom: 0;
+}
+
+#page-content > dl {
+  margin-bottom: var(--space-6);
+}
+
+#page-content > dl > dt {
+  font-weight: 600;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-control-border);
+}
+
+#page-content > dl > dd {
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+#page-content > ul {
+  padding: var(--space-5) var(--space-5) var(--space-5) calc(var(--space-5) + 1.5em);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+#page-content > ul > li:last-child {
+  margin-bottom: 0;
+}
+
+.operation-cards {
+  display: none;
+}
+
+html:not([data-session="open"]):has([data-chrome-home][aria-current="page"])[lang="ja"] .operation-cards[data-lang="ja"],
+html:not([data-session="open"]):has([data-chrome-home][aria-current="page"])[lang="en"] .operation-cards[data-lang="en"] {
+  display: block;
+}
+
+.operation-cards__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.operation-cards__card {
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--color-control-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow-wrap: anywhere;
+}
+
+.operation-cards__card h2 {
+  margin-bottom: var(--space-3);
+}
+
+.operation-cards__card a {
+  color: var(--color-link);
+  text-decoration: underline;
+}
+
+.operation-cards__card p {
+  color: var(--color-subtle);
+  margin-bottom: 0;
+}
+
+@media (max-width: 40rem) {
+  .operation-cards__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

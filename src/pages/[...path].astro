@@ -5,6 +5,8 @@ import { pageContent } from '../i18n/pages';
 import { pagePath, type PublicPage } from '../seo/page';
 import Page from '../layouts/Page.astro';
 import { Workbench } from '../app/Workbench';
+import OperationCards from '../ui/OperationCards.astro';
+import '../styles/content.css';
 
 export function getStaticPaths() {
   return LOCALES.flatMap(({ code }) => (['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[]).map(page => {
@@ -20,6 +22,7 @@ const content = pageContent(locale, page);
   <main>
     <div class="page-identity" aria-live="polite"><h1 id="page-heading">{content.h1}</h1></div>
     <Workbench locale={locale} page={page} op={page === 'top' ? 'browse' : page} client:load />
+    <OperationCards />
     <section id="page-content" class="page-content" aria-label={content.h1}>
       <p class="page-lead">{content.lead}</p>
       <ol>{content.steps.map(step => <li><h2>{step.heading}</h2><p>{step.body}</p></li>)}</ol>
