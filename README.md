@@ -8,10 +8,10 @@
 
 1. クライアントからの追加送信なし — DevTools の Network タブで確認できます。
 2. オフラインで動作する — DevTools の Offline モードで確認できます。
-3. PWA としてインストール可能 — ブラウザのインストール導線と Lighthouse PWA audit で確認できます。
+3. PWA としてインストール可能 — ブラウザのインストール導線と DevTools の Application → Manifest で確認できます。
 4. 脆弱性報告経路を維持する — [SECURITY.md](SECURITY.md) と GitHub Private Vulnerability Reporting で確認できます。
 
-正確な文言は [原則](docs/PRINCIPLES.md) を参照してください。Service Worker は初回の事前保存完了後に公開中の10ページと操作資産をオフラインで提供します。対応ブラウザではインストール案内が表示されます。実際のオフライン操作とインストールは実機確認が必要です。画面の状態と操作は [UI 文書](docs/UI.md) を参照してください。日本語・英語の top と4つの操作ページを公開し、言語や操作の切り替えで現在の File と処理結果を保持します。言語とページの追加手順は [I18N 文書](docs/I18N.md) を参照してください。公約全体の自動検証は P5 で CI に追加予定です。
+正確な文言は [原則](docs/PRINCIPLES.md) を参照してください。Service Worker は初回の事前保存完了後に公開中の10ページと操作資産をオフラインで提供します。対応ブラウザではインストール案内が表示されます。実際のオフライン操作とインストールは実機確認が必要です。画面の状態と操作は [UI 文書](docs/UI.md) を参照してください。日本語・英語の top と4つの操作ページを公開し、言語や操作の切り替えで現在の File と処理結果を保持します。言語とページの追加手順は [I18N 文書](docs/I18N.md) を参照してください。Service Worker・更新・ヘッダ・旧 URL の仕組みは [PWA 文書](docs/PWA.md) を参照してください。公約全体の自動検証は P5 で CI に追加予定です。
 
 ### 開発
 
@@ -35,7 +35,7 @@ Colophon: Some code was written with AI assistance; all review and decisions are
 
 **ZIP Workbench** is an app being developed to open, fix and repack ZIP files entirely in the browser, without uploading files. Its internal engine supports ZIP listing, extraction, rewriting, creation, splitting, merging and recovery, plus listing and extraction of RAR, 7z, tar and tar.gz archives. The screen supports ZIP browsing, extraction, removal, and name repair. RAR, 7z, and tar support browsing and extraction only.
 
-The four promises are no additional client requests, offline use, PWA installation and a maintained vulnerability reporting path. Check them through DevTools Network, DevTools Offline, the browser install prompt and Lighthouse PWA audit, and [SECURITY.md](SECURITY.md) with Private Vulnerability Reporting, respectively. See the exact wording in [Principles](docs/PRINCIPLES.md). After initial precaching completes, the Service Worker serves the ten public pages and operation assets offline. Supported browsers can show an install prompt. Offline operations and installation still need device verification. Automated checks for the full promises are planned for P5 CI. Japanese and English top and operation pages share the Workbench. Switching language or operation keeps the current File and results. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages.
+The four promises are no additional client requests, offline use, PWA installation and a maintained vulnerability reporting path. Check them through DevTools Network, DevTools Offline, the browser install prompt and DevTools Application → Manifest, and [SECURITY.md](SECURITY.md) with Private Vulnerability Reporting, respectively. See the exact wording in [Principles](docs/PRINCIPLES.md). After initial precaching completes, the Service Worker serves the ten public pages and operation assets offline. Supported browsers can show an install prompt. Offline operations and installation still need device verification. Automated checks for the full promises are planned for P5 CI. Japanese and English top and operation pages share the Workbench. Switching language or operation keeps the current File and results. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
 
 Development requires Node.js 24 or newer: run `npm ci`, `npm run dev` and `npm run ci`. Self-hosting with Docker is planned for v0.4.0. License: [MIT](LICENSE).
 
