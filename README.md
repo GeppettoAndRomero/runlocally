@@ -14,7 +14,9 @@
 
 ### スクリーンショット
 
-実画面の画像1枚を `docs/images/` に追加後、ここに掲載予定です。
+![名前修復の画面: 文字化けしたファイル名の候補を、修復前と修復後で並べて確認できる](docs/images/screenshot.png)
+
+実際の画面です（加工なし）。ファイル名が文字化けした ZIP を入れ、名前修復で候補を確認しているところです。
 
 ### 4 つの公約
 
@@ -57,7 +59,9 @@ Encrypted ZIP entries cannot be extracted; batch extraction skips them. Removal 
 
 ### Screenshot
 
-The same image of the actual interface will be added here after it is captured and placed in `docs/images/`.
+![Name repair screen: candidates for garbled file names shown before and after repair](docs/images/screenshot.png)
+
+The actual screen, unedited: a ZIP with garbled file names has been added and the name repair candidates are being reviewed.
 
 The four promises are no additional client requests, offline use, PWA installation and a maintained vulnerability reporting path. Check them through DevTools Network, DevTools Offline, the browser install prompt and DevTools Application → Manifest, and [SECURITY.md](SECURITY.md) with Private Vulnerability Reporting, respectively. See the exact wording in [Principles](docs/PRINCIPLES.md). After initial precaching completes, the Service Worker serves the ten public pages and operation assets offline. Supported browsers can show an install prompt. Offline operations and installation still need device verification. See [Covenant verification](docs/COVENANTS.md) for the automated checks, their limits, and device verification steps. Japanese and English top and operation pages share the Workbench. Switching language or operation keeps the current File and results. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
 
