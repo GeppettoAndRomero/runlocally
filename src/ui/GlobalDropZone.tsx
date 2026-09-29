@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ENGLISH_LOCALE, type Locale } from '@/i18n/locales';
 import { ui } from '@/i18n/ui';
+import { Status } from './WorkbenchFeedback';
 
 function readAll(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
   return new Promise((resolve, reject) => {
@@ -100,9 +101,9 @@ export function GlobalDropZone({ locale = ENGLISH_LOCALE, disabled = false }: { 
   }, [disabled]);
   if (!dragging && !processing) return null;
   const t = ui[locale].shared;
-  return <div class="global-drop-zone" role="status">
+  return <Status className="global-drop-zone" bare>
     <span aria-hidden="true">{processing ? '⏳' : '📁'}</span>
     <strong>{processing ? t.processing.replace('{count}', String(count)) : t.dropTitle}</strong>
     <span>{processing ? t.wait : t.dropHint}</span>
-  </div>;
+  </Status>;
 }

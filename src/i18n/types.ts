@@ -111,7 +111,9 @@ export type SharedStrings = { [K in SharedStringKey]: string };
 export type UpdateStrings = { [K in 'title' | 'now' | 'busy' | 'work' | 'tabs' | 'coordination' | 'error' | 'retry' | 'applying' | 'reloadDeferred']: string };
 export type ChromeStringKey = 'navigation' | 'home' | 'languages';
 export type ChromeStrings = { [K in ChromeStringKey]: string };
-export interface UiStrings { workbench: WorkbenchStrings; shared: SharedStrings; chrome: ChromeStrings }
+export type InputStateKey = 'dropHint' | 'emptyResults' | 'progressLabel';
+export type InputStateStrings = { [K in InputStateKey]: string };
+export interface UiStrings { workbench: WorkbenchStrings; shared: SharedStrings; chrome: ChromeStrings; inputState: InputStateStrings }
 
 // Every engine code must have localized text in the workbench dictionary.
 export type MissingEngineText = Exclude<EngineErrorCode, WorkbenchStringKey>;

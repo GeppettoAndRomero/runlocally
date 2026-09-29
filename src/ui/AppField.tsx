@@ -1,6 +1,7 @@
 import type { JSX } from 'preact';
 import { ENGLISH_LOCALE, type Locale } from '@/i18n/locales';
 import { ui } from '@/i18n/ui';
+import { Alert } from './WorkbenchFeedback';
 
 export interface AppFieldProps {
   label: string; id: string; type?: 'text' | 'number' | 'email' | 'password';
@@ -20,7 +21,7 @@ export function AppField({ label, id, type = 'text', value, onChange, required =
     <input id={id} type={type} class="app-field__input" value={value} onInput={handleInput}
       disabled={disabled} placeholder={placeholder} min={min} max={max} step={step} required={required}
       aria-invalid={!!error} aria-describedby={description} />
-    {error && <div id={`${id}-error`} class="app-field__error" role="alert"><span aria-hidden="true">⚠</span>{error}</div>}
+    {error && <Alert id={`${id}-error`} className="app-field__error">{error}</Alert>}
     {helpText && <div id={`${id}-help`} class="app-field__help">{helpText}</div>}
   </div>;
 }

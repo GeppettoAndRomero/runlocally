@@ -9,6 +9,8 @@ import { InstallPrompt } from '../ui/InstallPrompt';
 import { UpdatePrompt } from '../ui/UpdatePrompt';
 import { isUpdateApplying, subscribeUpdate } from './registerSW';
 import { GlobalDropZone } from '../ui/GlobalDropZone';
+import { Alert, Status } from '../ui/WorkbenchFeedback';
+import { inputStateCopy } from '../ui/input-state-copy';
 import { downloadBlob } from './download';
 import { initialSession, sessionReducer } from './state/reducer';
 import { directoryState, keptFileCount } from './state/reducer';
@@ -45,6 +47,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   const [removePage, setRemovePage] = useState(0);
   const [repairPage, setRepairPage] = useState(0);
   const t = ui[route.locale].workbench;
+  const copy = inputStateCopy[route.locale];
   const requestedOp = (value: PublicPage): AvailableOpId => value === 'top' ? 'browse' : value;
   const navigate = (next: { locale: Locale; page: PublicPage }, mode: 'push' | 'replace' | 'pop' = 'push') => {
     const current = routeRef.current;
@@ -161,29 +164,30 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   const busy = controllerBusy || isWorkbenchBusy(session, controllerRef.current);
   const isSafeToUpdate = () => isWorkbenchUpdateSafe(sessionRef.current, controllerRef.current);
   const results = session.results;
+  const canReset = busy || Boolean(session.source || session.inputFailure || results.length || session.listing.status !== 'idle' || session.job.status !== 'idle');
   return <div class="workbench">
     <InstallPrompt locale={route.locale} />
     <UpdatePrompt locale={route.locale} busy={busy} hasWork={Boolean(session.source || results.length)} isSafe={isSafeToUpdate} />
     <GlobalDropZone locale={route.locale} disabled={updating} />
-    {updating && <p role="status">{updateUi[route.locale].applying}</p>}
+    {updating && <Status>{updateUi[route.locale].applying}</Status>}
     <label class="workbench__language">{ui[route.locale].shared.language} <select aria-label={ui[route.locale].shared.language} value={route.locale} onChange={event => {
       const next = LOCALES.find(entry => entry.code === event.currentTarget.value);
       if (next) navigate({ locale: next.code, page: routeRef.current.page });
     }}>{LOCALES.map(entry => <option key={entry.code} value={entry.code}>{entry.name}</option>)}</select></label>
-    <AppCard title={t.input}>
-      <label class="workbench__picker">{t.choose}<input type="file" aria-label={t.choose} disabled={busy || updating} onChange={event => {
+    <AppCard title={t.input} className="workbench__input-card">
+      <label class="workbench__picker"><span>{t.choose}</span><span id="workbench-drop-hint" class="workbench__hint">{copy.dropHint}</span><input type="file" aria-label={t.choose} aria-describedby="workbench-drop-hint" disabled={busy || updating} onChange={event => {
         const input = event.currentTarget;
         const files = Array.from(input.files ?? []);
         input.value = '';
         if (files.length && !isUpdateApplying()) void controllerRef.current?.accept(files, session);
       }} /></label>
-      {session.source && <p>{t.source}: <span>{session.source.file.name}</span> ({session.source.kind})</p>}
-      {session.source?.kind === 'unknown' && <p role="alert">{t.unknown}</p>}
-      {inputError && <p role="alert">{inputError}</p>}
-      <AppButton variant="secondary" ariaLabel={`${t.reset}: ${session.source?.file.name ?? t.input}`} onClick={() => controllerRef.current?.reset()}>{t.reset}</AppButton>
+      {session.source && <p class="workbench__source">{t.source}: <span class="workbench__filename">{session.source.file.name}</span> <span class="workbench__kind">({session.source.kind})</span></p>}
+      {session.source?.kind === 'unknown' && <Alert>{t.unknown}</Alert>}
+      {inputError && <Alert>{inputError}</Alert>}
+      {canReset && <AppButton variant="secondary" ariaLabel={`${t.reset}: ${session.source?.file.name ?? t.input}`} onClick={() => controllerRef.current?.reset()}>{t.reset}</AppButton>}
     </AppCard>
-    {session.listing.status === 'reading' && <p role="status">{t.busy}</p>}
-    {session.listing.status === 'error' && <div><p role="alert">{failureText(session.listing.failure, t, 'listing')} {session.source?.kind === 'zip' ? t.listingZip : session.source?.kind === 'rar' || session.source?.kind === '7z' ? t.listingArchive : session.source?.kind === 'tar' ? t.listingTar : t.listingUnknown}</p>
+    {session.listing.status === 'reading' && <Status spinning>{t.busy}</Status>}
+    {session.listing.status === 'error' && <div><Alert>{failureText(session.listing.failure, t, 'listing')} {session.source?.kind === 'zip' ? t.listingZip : session.source?.kind === 'rar' || session.source?.kind === '7z' ? t.listingArchive : session.source?.kind === 'tar' ? t.listingTar : t.listingUnknown}</Alert>
       <AppButton variant="secondary" ariaLabel={`${t.retryListing}: ${session.source?.file.name}`} disabled={busy} onClick={() => void controllerRef.current?.retryListing(session)}>{t.retryListing}</AppButton></div>}
     {ready && <>
       <div class="workbench__tabs" role="tablist" aria-label={t.source} onKeyDown={event => {
@@ -257,7 +261,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
       {zip && <section id="panel-fix-names" role="tabpanel" aria-labelledby="tab-fix-names" hidden={session.op !== 'fix-names'}>
         <AppCard title={t['fix-names']}>
           <p>{t.repairGuide}</p><p>{t.plannedRepair}: {repair.changes.length}{t.entriesUnit}</p>
-          {repair.collision && <p role="alert">{t.collision}{repair.collision}</p>}
+          {repair.collision && <Alert>{t.collision}{repair.collision}</Alert>}
           <div class="workbench__list" role="list" aria-label={t['fix-names']}>{repair.changes.slice(repairPage * PAGE_SIZE, (repairPage + 1) * PAGE_SIZE).map((change, index) =>
             <div role="listitem" class="workbench__row" key={`${repairPage}-${index}`}><span>{t.repairBefore}: {change.before}</span><span>{t.repairAfter}: {change.after}</span></div>)}</div>
           <nav class="workbench__pages" aria-label={`${t['fix-names']} ${t.page}`}><AppButton variant="secondary" ariaLabel={`${t.previous}: ${t['fix-names']} ${t.page}`} disabled={repairPage === 0} onClick={() => setRepairPage(repairPage - 1)}>{t.previous}</AppButton>
@@ -266,11 +270,12 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
           <AppButton ariaLabel={`${t.repairRun}: ${session.source?.file.name}`} disabled={busy || updating || repair.changes.length === 0 || Boolean(repair.collision)} onClick={() => { if (!isUpdateApplying()) void controllerRef.current?.run(session); }}>{t.repairRun}</AppButton>
         </AppCard>
       </section>}
-      {session.job.status === 'running' && session.job.progress?.kind === 'extract' && <p role="status">{t.progress}: {session.job.progress.done} / {session.job.progress.total}</p>}
-      {session.job.status === 'running' && session.job.progress?.kind === 'rewrite' && <p role="status">{t.processingEntry}: {session.job.progress.progress.index + 1} / {session.job.progress.progress.total} {session.job.progress.progress.name}</p>}
-      {session.job.status === 'failed' && <p role="alert">{t[session.job.op]}: {failureText(session.job.failure, t, 'job', session.job.op)}</p>}
+      {session.job.status === 'running' && session.job.progress?.kind === 'extract' && <Status progress={{ done: session.job.progress.done, total: session.job.progress.total }} label={copy.progressLabel}>{t.progress}: {session.job.progress.done} / {session.job.progress.total}</Status>}
+      {session.job.status === 'running' && session.job.progress?.kind === 'rewrite' && <Status spinning>{t.processingEntry}: {session.job.progress.progress.index + 1} / {session.job.progress.progress.total} {session.job.progress.progress.name}</Status>}
+      {session.job.status === 'failed' && <Alert>{t[session.job.op]}: {failureText(session.job.failure, t, 'job', session.job.op)}</Alert>}
     </>}
     <AppCard title={t.results}>
+      {results.length === 0 && <p class="workbench__empty">{copy.emptyResults}</p>}
       {results.map(result => <article class="workbench__result" key={result.id}>
         <h3>{t[result.op]}</h3>
         <p>{t.source}: {result.sourceFile.name}</p>
