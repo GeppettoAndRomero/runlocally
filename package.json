@@ -26,10 +26,13 @@
     "test:component": "vitest run tests/component",
     "size": "size-limit",
     "prepare": "git config core.hooksPath .githooks || true",
-    "ci": "npm run typecheck && npm run lint && npm run license:check && npm run check-leaks && npm run check:engine-dom && npm run test:unit -- --coverage && npm run build && npm run notice:check && npm run size",
+    "ci": "npm run typecheck && npm run lint && npm run license:check && npm run check-leaks && npm run check:engine-dom && npm run test:unit -- --coverage && npm run build && npm run headers:check && npm run notice:check && npm run size",
     "postinstall": "node scripts/vendor-libarchive.mjs",
     "prebuild": "node scripts/vendor-libarchive.mjs",
-    "predev": "node scripts/vendor-libarchive.mjs"
+    "predev": "node scripts/vendor-libarchive.mjs",
+    "headers:generate": "node scripts/gen-headers.mjs",
+    "headers:check": "node scripts/gen-headers.mjs --check",
+    "postbuild": "npm run headers:generate"
   },
   "dependencies": {
     "@astrojs/preact": "^3.5.3",
