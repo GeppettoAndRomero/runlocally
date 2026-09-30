@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/preact';
 import { Workbench } from '../../src/app/Workbench';
+import { menuName } from './_menu';
 
 const mock = vi.hoisted(() => ({ list: vi.fn(), one: vi.fn(), all: vi.fn(), terminate: vi.fn(), open: vi.fn(), download: vi.fn() }));
 vi.mock('../../src/app/engine', () => ({ createZipEngine: () => ({ listEntries: mock.list, extractEntry: mock.one, extractAll: mock.all, terminate: mock.terminate }), openArchive: mock.open }));
@@ -44,7 +45,7 @@ describe('Workbench', () => {
     mock.list.mockResolvedValue([zipEntry('inner.zip')]);
     render(<Workbench locale="en" />); await choose(zipFile());
     await waitFor(() => expect(screen.getAllByText('inner.zip')[0]).toBeTruthy());
-    fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
+    fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'extract') }));
     fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
     await waitFor(() => expect(screen.getByText('0 files')).toBeTruthy());
     expect(mock.download).not.toHaveBeenCalled();
@@ -77,7 +78,7 @@ describe('extraction controls', () => {
     render(<Workbench locale="en" />); await choose(zipFile('many.zip'));
     await waitFor(() => expect(screen.getByText(/Total entries: 501/)).toBeTruthy());
     fireEvent.click(screen.getByRole('button', { name: /^Next:/ }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
+    fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'extract') }));
     fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
     await waitFor(() => expect(screen.getByText('501 files')).toBeTruthy());
     expect(mock.all).toHaveBeenCalledTimes(1);
@@ -91,7 +92,7 @@ describe('extraction controls', () => {
     render(<Workbench locale="en" />); await choose(zipFile());
     const choice = await screen.findByRole('button', { name: /Select for extraction:/ });
     choice.focus(); fireEvent.click(choice);
-    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Extract' }));
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: menuName('en', 'extract') }));
     expect((screen.getByRole('combobox', { name: 'One' }) as HTMLSelectElement).value).toBe('chosen.txt');
   });
   it('extracts one ZIP entry through the worker and saves it by name', async () => {

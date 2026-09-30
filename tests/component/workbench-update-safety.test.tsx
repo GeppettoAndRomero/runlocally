@@ -6,6 +6,7 @@ import { initialSession, sessionReducer } from '../../src/app/state/reducer';
 import { applyUpdate, registerSW } from '../../src/app/registerSW';
 import type { Session } from '../../src/app/state/session';
 import type { ZipEntry } from '../../src/engine/types';
+import { menuName } from './_menu';
 
 const mock = vi.hoisted(() => ({ list: vi.fn(), extractAll: vi.fn(), terminate: vi.fn(), download: vi.fn() }));
 vi.mock('../../src/app/engine', () => ({ createZipEngine: () => ({ listEntries: mock.list, extractAll: mock.extractAll, terminate: mock.terminate }) }));
@@ -75,7 +76,7 @@ it('blocks update while the file header and listing are pending, then while work
   await waitFor(() => expect(screen.getByText(/Total entries: 1/)).toBeTruthy());
   expect(update).toHaveProperty('disabled', true);
   mock.extractAll.mockResolvedValue([{ name: 'part.txt', blob: new Blob(['saved']) }]);
-  fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'extract') }));
   fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByRole('button', { name: 'Save file: part.txt' })).toBeTruthy());
   expect(update).toHaveProperty('disabled', true);

@@ -5,6 +5,7 @@ import { displayPage } from '../../src/app/page-display';
 import { pageContent } from '../../src/i18n/pages';
 import { pagePath } from '../../src/seo/page';
 import type { ZipPage } from '../../src/seo/url-model';
+import { menuName } from './_menu';
 
 vi.mock('../../src/seo/page', async importOriginal => {
   const page = await importOriginal<typeof import('../../src/seo/page')>();
@@ -71,7 +72,7 @@ it('captures ZIP operation and locale links and ignores hub history', async () =
   await waitFor(() => expect(document.getElementById('page-heading')?.textContent).toBe(pageContent('en', 'extract').h1));
   const input = source();
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [input] } });
-  await waitFor(() => expect(screen.getByRole('tab', { name: 'Extract' }).getAttribute('aria-selected')).toBe('true'));
+  await waitFor(() => expect(screen.getByRole('tab', { name: menuName('en', 'extract') }).getAttribute('aria-selected')).toBe('true'));
   const body = document.getElementById('page-content')?.textContent;
   expect(push).toHaveBeenCalledTimes(2);
   window.history.replaceState(null, '', '/en/');
@@ -80,7 +81,7 @@ it('captures ZIP operation and locale links and ignores hub history', async () =
   expect(document.getElementById('page-heading')?.textContent).toBe(pageContent('en', 'extract').h1);
   expect(document.getElementById('page-content')?.textContent).toBe(body);
   expect(screen.getByLabelText('Language')).toHaveProperty('value', 'en');
-  expect(screen.getByRole('tab', { name: 'Extract' }).getAttribute('aria-selected')).toBe('true');
+  expect(screen.getByRole('tab', { name: menuName('en', 'extract') }).getAttribute('aria-selected')).toBe('true');
   expect(push).toHaveBeenCalledTimes(2);
   expect(replace).not.toHaveBeenCalled();
   fireEvent.change(screen.getByLabelText('Language'), { target: { value: 'ja' } });
@@ -100,15 +101,17 @@ it('keeps one File, listing, and result across ZIP language, operation, and hist
   const input = source();
   render(<Workbench locale="en" page="extract" op="extract" />);
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [input] } });
-  await waitFor(() => expect(screen.getByRole('tab', { name: 'Extract' }).getAttribute('aria-selected')).toBe('true'));
-  fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
+  await waitFor(() => expect(screen.getByRole('tab', { name: menuName('en', 'extract') }).getAttribute('aria-selected')).toBe('true'));
+  const extract = await screen.findByRole('button', { name: /^Extract:/ });
+  await waitFor(() => expect(extract).not.toHaveProperty('disabled', true));
+  fireEvent.click(extract);
   await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
   expect(engine.all.mock.calls[0][0]).toBe(input);
   expect(clickPath('[data-chrome-locale="ja"]', pagePath('ja', 'extract'))).toBe(true);
   expect(clickPath('[data-chrome-page="extract"]', pagePath('ja', 'browse'))).toBe(true);
   window.history.replaceState(null, '', pagePath('en', 'top'));
   window.dispatchEvent(new PopStateEvent('popstate'));
-  await waitFor(() => expect(screen.getByRole('tab', { name: 'Browse' }).getAttribute('aria-selected')).toBe('true'));
+  await waitFor(() => expect(screen.getByRole('tab', { name: menuName('en', 'browse') }).getAttribute('aria-selected')).toBe('true'));
   await waitFor(() => expect(document.getElementById('page-heading')?.textContent).toBe(pageContent('en', 'top').h1));
   expect(screen.getByText('source.zip')).toBeTruthy();
   expect(screen.getByText('1 files')).toBeTruthy();
