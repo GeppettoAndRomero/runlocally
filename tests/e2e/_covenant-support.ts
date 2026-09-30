@@ -3,12 +3,13 @@ import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { LOCALES } from '../../src/i18n/locales';
 import { AVAILABLE_OPS, type AvailableOpId } from '../../src/i18n/ops';
-import { pagePath, type PublicPage } from '../../src/seo/page';
-import { ready } from './_helpers';
+import { pagePath } from '../../src/seo/page';
+import { PUBLIC_PAGES } from '../../src/seo/url-model';
+import { observePwaStartup, publicReady } from './_helpers';
 
 export const origin = new URL(process.env.BASE_URL || 'http://localhost:8788').origin;
 export const publicPaths = LOCALES.flatMap(locale =>
-  (['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[]).map(page => pagePath(locale.code, page)));
+  PUBLIC_PAGES.map(page => pagePath(locale.code, page)));
 export const publicPathSet = new Set(publicPaths);
 export const fixtures: Record<AvailableOpId, readonly string[]> = {
   browse: ['zip/sample.zip', 'archive/sample.7z', 'zip/nested.zip'],
@@ -25,8 +26,9 @@ export async function assertOperationSupport() {
 }
 export function url(path: string) { return new URL(path, origin).href; }
 export async function visit(page: Page, path: string) {
+  await observePwaStartup(page);
   await page.goto(url(path));
-  await ready(page);
+  await publicReady(page);
 }
 export async function activeRootWorker(page: Page) {
   await expect.poll(() => page.evaluate(async () => {
@@ -44,7 +46,7 @@ export async function activeRootWorker(page: Page) {
     return false;
   }), { timeout: 60_000 }).toBe(true);
   if (!await page.evaluate(() => Boolean(navigator.serviceWorker.controller))) {
-    await page.reload(); await ready(page);
+    await page.reload(); await publicReady(page);
   }
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
   const registration = await page.evaluate(async () => {

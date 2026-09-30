@@ -1,14 +1,12 @@
 import { test, expect, type BrowserContext, type Request } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-import { LOCALES } from '../../src/i18n/locales';
-import { AVAILABLE_OPS } from '../../src/i18n/ops';
-import { pagePath } from '../../src/seo/page';
 import { ready, roundTrip } from './_helpers';
+import { publicPaths, visit } from './_covenant-support';
 import { zipHome } from './_paths';
 
 const baseURL = process.env.BASE_URL || 'http://localhost:8788';
 const origin = new URL(baseURL).origin;
-const pages = new Set(LOCALES.flatMap(locale => ['top', ...AVAILABLE_OPS.map(op => op.id)].map(op => pagePath(locale.code, op as 'top' | typeof AVAILABLE_OPS[number]['id']))));
+const pages = new Set(publicPaths);
 const fixed = new Set(['/sw.js', '/manifest.webmanifest', '/SECURITY.md']);
 const asset = (path: string) => ['/_astro/', '/vendor/', '/icons/'].some(prefix => path.startsWith(prefix));
 
@@ -102,8 +100,12 @@ test('online operations and observed communication', async ({ browser: engine, b
   const monitorState = await monitor(context, await revisionsFromBuild());
   try {
     const page = await context.newPage();
-    await page.goto(new URL(zipHome('en'), origin).href);
-    await ready(page);
+    for (const path of publicPaths) {
+      monitorState.setOperation(`online visit ${path}`);
+      await visit(page, path);
+      monitorState.assertClean();
+    }
+    await visit(page, zipHome('en'));
     if (browserName === 'chromium') {
       await precached(context, page);
       expect(monitorState.events.some(event => event.owner === 'service-worker' &&

@@ -2,10 +2,40 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { AVAILABLE_OPS, type AvailableOpId } from '../../src/i18n/ops';
+import { publicPageFromPath } from '../../src/seo/page';
 
 const fixture = (path: string) => join(process.cwd(), 'tests/fixtures', path);
 export async function ready(page: Page) {
   await page.waitForFunction(() => window.__toolReady === true, undefined, { timeout: 30_000 });
+}
+const observedPages = new WeakSet<Page>();
+export async function observePwaStartup(page: Page) {
+  if (observedPages.has(page)) return;
+  await page.addInitScript(() => {
+    const calls: { script: string; scope: string | undefined }[] = [];
+    Object.assign(window, { __pwaRegisterCalls: calls });
+    const worker = navigator.serviceWorker;
+    if (!worker) return;
+    const register = worker.register;
+    worker.register = function (...args) {
+      calls.push({ script: String(args[0]), scope: args[1]?.scope });
+      return Reflect.apply(register, this, args);
+    };
+  });
+  observedPages.add(page);
+}
+export async function publicReady(page: Page) {
+  const path = new URL(page.url()).pathname;
+  const route = publicPageFromPath(path);
+  if (!route || new URL(page.url()).search || new URL(page.url()).hash) throw new Error(`Unknown public page: ${page.url()}`);
+  await page.waitForLoadState('load');
+  await expect(page.locator('#page-heading')).toBeVisible();
+  await expect(page.locator('#page-content')).toBeVisible();
+  if (route.page !== 'hub') return ready(page);
+  await page.waitForFunction(() => {
+    const calls = (window as typeof window & { __pwaRegisterCalls?: { script: string; scope?: string }[] }).__pwaRegisterCalls;
+    return calls?.some(call => new URL(call.script, location.href).pathname === '/sw.js' && call.scope === '/');
+  }, undefined, { timeout: 30_000 });
 }
 export async function drop(page: Page, path: string) {
   const bytes = await readFile(fixture(path));
