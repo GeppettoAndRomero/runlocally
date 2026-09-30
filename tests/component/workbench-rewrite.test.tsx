@@ -2,6 +2,8 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/preact';
 import { EngineError } from '../../src/engine/errors';
 import { Workbench } from '../../src/app/Workbench';
+import { ui } from '../../src/i18n/ui';
+import { menuName } from './_menu';
 
 const mock = vi.hoisted(() => ({ list: vi.fn(), rewrite: vi.fn(), all: vi.fn(), one: vi.fn(), terminate: vi.fn(), download: vi.fn(), open: vi.fn() }));
 vi.mock('../../src/app/engine', () => ({ createZipEngine: () => ({ listEntries: mock.list, rewriteZip: mock.rewrite, extractAll: mock.all, extractEntry: mock.one, terminate: mock.terminate }), openArchive: mock.open }));
@@ -14,7 +16,8 @@ function source(name = 'source.ZIP') {
 }
 async function choose(file = source()) {
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file] } });
-  await screen.findByRole('tab', { name: 'Remove' });
+  expect(screen.getByRole('tab', { name: menuName('en', 'remove') })).toBeTruthy();
+  await screen.findByText(new RegExp(`^${ui.en.workbench.entries}: `));
 }
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -23,7 +26,7 @@ it('removes unchecked entries, uses actual counts and shares the derived name fo
   const blob = new Blob(['result']);
   mock.rewrite.mockResolvedValue({ blob, total: 3, kept: 2, removed: 1, renamed: 0, encryptedCount: 0 });
   render(<Workbench locale="en" />); await choose();
-  fireEvent.click(screen.getByRole('tab', { name: 'Remove' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'remove') }));
   expect((screen.getByRole('checkbox', { name: 'keep.txt: Keep' }) as HTMLInputElement).checked).toBe(true);
   fireEvent.click(screen.getByRole('checkbox', { name: 'remove.txt: Keep' }));
   fireEvent.click(screen.getByRole('button', { name: /^Create new ZIP:/ }));
@@ -45,7 +48,7 @@ it('removes unchecked entries, uses actual counts and shares the derived name fo
 it('blocks zero exclusions, zero kept files, and keeps selection across pages', async () => {
   mock.list.mockResolvedValue(Array.from({ length: 501 }, (_, i) => entry(`item-${i}.txt`)));
   render(<Workbench locale="en" />); await choose();
-  fireEvent.click(screen.getByRole('tab', { name: 'Remove' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'remove') }));
   expect((screen.getByRole('button', { name: /^Create new ZIP:/ }) as HTMLButtonElement).disabled).toBe(true);
   const list = screen.getByRole('list', { name: 'Remove' });
   expect(within(list).getAllByRole('listitem')).toHaveLength(500);
@@ -63,7 +66,7 @@ it('matches directory keep state and rewritten entries for all children, directo
   mock.list.mockResolvedValue([entry('folder/', { directory: true }), entry('folder/a.txt'), entry('folder/b.txt'), entry('outside.txt')]);
   mock.rewrite.mockResolvedValue({ blob: new Blob(['zip']), total: 4, kept: 2, removed: 2, renamed: 0, encryptedCount: 0 });
   render(<Workbench locale="en" />); await choose();
-  fireEvent.click(screen.getByRole('tab', { name: 'Remove' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'remove') }));
   const folder = screen.getByRole('checkbox', { name: 'folder/: Keep' }) as HTMLInputElement;
   const a = screen.getByRole('checkbox', { name: 'folder/a.txt: Keep' });
   const b = screen.getByRole('checkbox', { name: 'folder/b.txt: Keep' });
@@ -108,8 +111,9 @@ it('labels the keep choice and bulk result in Japanese', async () => {
   mock.list.mockResolvedValue([entry('残す.txt'), entry('外す.txt')]);
   render(<Workbench locale="ja" />);
   fireEvent.change(screen.getByLabelText('アーカイブを選択'), { target: { files: [source()] } });
-  await screen.findByRole('tab', { name: '削除' });
-  fireEvent.click(screen.getByRole('tab', { name: '削除' }));
+  expect(screen.getByRole('tab', { name: menuName('ja', 'remove') })).toBeTruthy();
+  await screen.findByText(new RegExp(`^${ui.ja.workbench.entries}: `));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('ja', 'remove') }));
   expect((screen.getByRole('checkbox', { name: '残す.txt: 残す' }) as HTMLInputElement).checked).toBe(true);
   fireEvent.click(screen.getByRole('button', { name: /^現在の入力のすべての項目を除外対象にする:/ }));
   expect((screen.getByRole('checkbox', { name: '残す.txt: 残す' }) as HTMLInputElement).checked).toBe(false);
@@ -122,7 +126,7 @@ it('previews bytes, rejects a new collision, and uses entry metadata for rename'
   mock.list.mockResolvedValue([entry('garbled.txt', { name: 'ƒƒ‚’ .txt', utf8: false, rawFilename: bytes }), entry('plain.txt')]);
   mock.rewrite.mockResolvedValue({ blob: new Blob(['zip']), total: 2, kept: 2, removed: 0, renamed: 1, encryptedCount: 0 });
   render(<Workbench locale="en" />); await choose();
-  fireEvent.click(screen.getByRole('tab', { name: 'Repair names' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'fix-names') }));
   const preview = screen.getByRole('list', { name: 'Repair names' });
   expect(within(preview).getByText(/Candidate:/)).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /^Repair names into a new ZIP:/ }));
@@ -138,7 +142,7 @@ it('keeps prior results after an encrypted rewrite failure and permits selection
   mock.list.mockResolvedValue([entry('plain.txt'), entry('secret.txt', { encrypted: true })]);
   mock.rewrite.mockRejectedValueOnce(new EngineError('encrypted-entry')).mockResolvedValueOnce({ blob: new Blob(['zip']), total: 2, kept: 1, removed: 1, renamed: 0, encryptedCount: 1 });
   render(<Workbench locale="en" />); await choose();
-  fireEvent.click(screen.getByRole('tab', { name: 'Remove' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'remove') }));
   fireEvent.click(screen.getByRole('checkbox', { name: 'plain.txt: Keep' }));
   fireEvent.click(screen.getByRole('button', { name: /^Create new ZIP:/ }));
   await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('Encrypted entries are selected to remain'));
@@ -160,9 +164,14 @@ it('retries a failed ZIP listing with the same input and no job while it is fail
   expect(alert).toContain('Could not read the ZIP directory information.');
   expect(alert).not.toContain('could not be listed');
   expect(alert.match(/Could not read/g)).toHaveLength(1);
-  expect(screen.queryByRole('tab', { name: 'Extract' })).toBeNull();
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'extract') }));
+  expect(screen.queryByRole('button', { name: /^Extract:/ })).toBeNull();
+  expect(mock.all).not.toHaveBeenCalled();
+  expect(mock.one).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: /^Retry listing:/ }));
-  await screen.findByRole('tab', { name: 'Extract' });
+  await screen.findByRole('button', { name: /^Extract:/ });
+  expect(within(document.getElementById('panel-browse')!).getByText('ok.txt')).toBeTruthy();
+  expect((screen.getByRole('button', { name: /^Extract:/ }) as HTMLButtonElement).disabled).toBe(false);
   expect(mock.list.mock.calls[0][0]).toBe(mock.list.mock.calls[1][0]);
 });
 
@@ -185,24 +194,28 @@ it('retries an archive listing before exposing extraction and never offers rewri
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file] } });
   await screen.findByRole('button', { name: /^Retry listing:/ });
   expect(screen.getByRole('alert').textContent).toContain('RAR/7z extraction');
-  expect(screen.queryByRole('tab', { name: 'Extract' })).toBeNull();
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'extract') }));
+  expect(screen.queryByRole('button', { name: /^Extract:/ })).toBeNull();
+  expect(mock.open).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole('button', { name: /^Retry listing:/ }));
-  await screen.findByRole('tab', { name: 'Extract' });
-  expect(screen.queryByRole('tab', { name: 'Remove' })).toBeNull();
+  await screen.findByRole('button', { name: /^Extract:/ });
+  expect(within(document.getElementById('panel-browse')!).getByText('ok.txt')).toBeTruthy();
+  expect((screen.getByRole('button', { name: /^Extract:/ }) as HTMLButtonElement).disabled).toBe(false);
+  expect(screen.queryByRole('tab', { name: menuName('en', 'remove') })).toBeNull();
   expect(mock.open.mock.calls[0][0]).toBe(mock.open.mock.calls[1][0]);
 });
 
 it('moves focus among four ZIP tabs with arrow keys', async () => {
   mock.list.mockResolvedValue([entry('a.txt')]);
   render(<Workbench locale="en" />); await choose();
-  const browse = screen.getByRole('tab', { name: 'Browse' });
+  const browse = screen.getByRole('tab', { name: menuName('en', 'browse') });
   browse.focus();
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
-  expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Extract' }));
+  expect(document.activeElement).toBe(screen.getByRole('tab', { name: menuName('en', 'extract') }));
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
-  expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Remove' }));
+  expect(document.activeElement).toBe(screen.getByRole('tab', { name: menuName('en', 'remove') }));
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
-  expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Repair names' }));
+  expect(document.activeElement).toBe(screen.getByRole('tab', { name: menuName('en', 'fix-names') }));
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
   expect(document.activeElement).toBe(browse);
 });
@@ -211,7 +224,7 @@ it('shows a new repair-name collision and blocks rewriting', async () => {
   const rawFilename = new Uint8Array([0x83,0x81,0x83,0x82,0x92,0xa0,0x2e,0x74,0x78,0x74]);
   mock.list.mockResolvedValue([entry('ƒƒ‚’ .txt', { utf8: false, rawFilename }), entry('メモ帳.txt')]);
   render(<Workbench locale="en" />); await choose();
-  fireEvent.click(screen.getByRole('tab', { name: 'Repair names' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'fix-names') }));
   expect(screen.getByRole('alert').textContent).toContain('メモ帳.txt');
   expect((screen.getByRole('button', { name: /^Repair names into a new ZIP:/ }) as HTMLButtonElement).disabled).toBe(true);
   expect(mock.rewrite).not.toHaveBeenCalled();

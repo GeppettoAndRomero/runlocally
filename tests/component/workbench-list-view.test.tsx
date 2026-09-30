@@ -1,6 +1,8 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/preact';
 import { Workbench } from '../../src/app/Workbench';
+import { ui } from '../../src/i18n/ui';
+import { menuName } from './_menu';
 
 const mock = vi.hoisted(() => ({ list: vi.fn(), open: vi.fn() }));
 vi.mock('../../src/app/engine', () => ({ createZipEngine: () => ({ listEntries: mock.list, terminate: vi.fn() }), openArchive: mock.open }));
@@ -9,7 +11,8 @@ async function load() {
   const file = new File(['zip'], 'sample.zip');
   vi.spyOn(file, 'slice').mockReturnValue({ arrayBuffer: async () => Uint8Array.from([80, 75, 3, 4]).buffer } as Blob);
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file] } });
-  await screen.findByRole('tab', { name: 'Remove' });
+  expect(screen.getByRole('tab', { name: menuName('en', 'remove') })).toBeTruthy();
+  await screen.findByText(new RegExp(`^${ui.en.workbench.entries}: `));
 }
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
@@ -55,8 +58,9 @@ it('keeps two available tabs for a non-ZIP archive', async () => {
   vi.spyOn(file, 'slice').mockReturnValue({ arrayBuffer: async () => Uint8Array.from([55, 122, 188, 175, 39, 28]).buffer } as Blob);
   render(<Workbench locale="en" />);
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file] } });
-  await screen.findByRole('tab', { name: 'Extract' });
+  expect(screen.getByRole('tab', { name: menuName('en', 'extract') })).toBeTruthy();
+  await screen.findByText('note.txt');
   expect(screen.getAllByRole('tab')).toHaveLength(2);
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowLeft' });
-  expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Extract' }));
+  expect(document.activeElement).toBe(screen.getByRole('tab', { name: menuName('en', 'extract') }));
 });

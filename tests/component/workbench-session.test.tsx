@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/preact';
 import { Workbench } from '../../src/app/Workbench';
+import { menuName } from './_menu';
 
 const mock = vi.hoisted(() => ({ list: vi.fn(), all: vi.fn(), one: vi.fn(), terminate: vi.fn(), open: vi.fn() }));
 vi.mock('../../src/app/engine', () => ({ createZipEngine: () => ({ listEntries: mock.list, extractAll: mock.all, extractEntry: mock.one, terminate: mock.terminate }), openArchive: mock.open }));
@@ -11,14 +12,14 @@ function file(): File {
   return value;
 }
 const entry = { name: 'a.txt', size: 1, compressedSize: 1, directory: false, encrypted: false, utf8: true };
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); vi.resetAllMocks(); });
 it('retains listing and result through failure, then allows retry without duplicate starts', async () => {
   mock.list.mockResolvedValue([entry]);
   mock.all.mockResolvedValueOnce([{ name: 'a.txt', blob: new Blob(['ok']) }]).mockRejectedValueOnce(Error('failed')).mockResolvedValueOnce([]);
   render(<Workbench locale="en" />);
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file()] } });
   await waitFor(() => expect(screen.getByText(/Total entries: 1/)).toBeTruthy());
-  fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'extract') }));
   fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
   fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
@@ -64,7 +65,7 @@ it('lists and extracts an archive through a newly opened handle', async () => {
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [source] } });
   await waitFor(() => expect(screen.getByText('dir/a.txt')).toBeTruthy());
   expect(closeListing).toHaveBeenCalledTimes(1);
-  fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'extract') }));
   fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
   expect(mock.open).toHaveBeenCalledTimes(2);
@@ -76,13 +77,13 @@ it('keeps the first result while listing a derived ZIP input', async () => {
   render(<Workbench locale="en" />);
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file()] } });
   await waitFor(() => expect(screen.getByText(/Total entries: 1/)).toBeTruthy());
-  fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'extract') }));
   fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
   vi.spyOn(File.prototype, 'slice').mockReturnValue({ arrayBuffer: async () => Uint8Array.from([80, 75, 3, 4]).buffer } as Blob);
   fireEvent.click(screen.getByRole('button', { name: 'Use as next input: inner.zip' }));
   await waitFor(() => expect(mock.list).toHaveBeenCalledTimes(2));
-  fireEvent.click(screen.getByRole('tab', { name: 'Browse' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'browse') }));
   expect(screen.getAllByText('inside.txt')[0]).toBeTruthy();
   expect(screen.getByText('1 files')).toBeTruthy();
 });
@@ -96,7 +97,7 @@ it('restarts intake and actions after a BFCache return', async () => {
   expect(window.__toolReady).toBe(true);
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file()] } });
   await waitFor(() => expect(screen.getByText(/Total entries: 1/)).toBeTruthy());
-  fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'extract') }));
   mock.all.mockResolvedValue([{ name: 'a.txt', blob: new Blob(['a']) }]);
   fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(screen.getByText('1 files')).toBeTruthy());
@@ -115,7 +116,7 @@ it('blocks repeated runs, ignores late progress and releases a running worker on
   const view = render(<Workbench locale="en" />);
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file()] } });
   await waitFor(() => expect(screen.getByText(/Total entries: 1/)).toBeTruthy());
-  fireEvent.click(screen.getByRole('tab', { name: 'Extract' }));
+  fireEvent.click(screen.getByRole('tab', { name: menuName('en', 'extract') }));
   const run = screen.getByRole('button', { name: /^Extract:/ });
   fireEvent.click(run); fireEvent.click(run);
   await waitFor(() => expect(mock.all).toHaveBeenCalledTimes(1));
