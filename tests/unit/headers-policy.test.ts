@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { caddyHeaders, headerModel, pagesHeaders } from '../../scripts/gen-headers.mjs';
+import { pagePath } from '../../src/seo/page';
 
 const roots: string[] = [];
 afterEach(async () => { await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true }))); });
@@ -54,7 +55,8 @@ describe('effective policy', () => {
     const rules = await model();
     const pages = parsePages(pagesHeaders(rules));
     const caddy = parseCaddy(caddyHeaders(rules));
-    for (const path of ['/', '/en/zip-viewer/', '/_astro/app.js', '/vendor/libarchive/libarchive.wasm', '/sw.js']) {
+    const topPath = pagePath('ja', 'top');
+    for (const path of [topPath, pagePath('en', 'browse'), '/_astro/app.js', '/vendor/libarchive/libarchive.wasm', '/sw.js']) {
       expect(effective(caddy, path)).toEqual(effective(pages, path));
       const cache = effective(pages, path)['Cache-Control'];
       expect(cache?.length ?? 0).toBeLessThanOrEqual(1);
@@ -63,15 +65,15 @@ describe('effective policy', () => {
       else if (path.startsWith('/vendor/')) expect(cache).toEqual(['no-cache']);
       else expect(cache).toBeUndefined();
     }
-    const csp = effective(pages, '/')['Content-Security-Policy'][0];
+    const csp = effective(pages, topPath)['Content-Security-Policy'][0];
     expect(csp).toContain(`'sha256-${createHash('sha256').update('start()').digest('base64')}'`);
     expect(csp).toContain("img-src 'self' blob: data:");
     for (const directive of ['script-src', 'worker-src', 'connect-src']) {
       expect(csp.split('; ').find((part) => part.startsWith(directive))).not.toContain('blob:');
     }
     expect(csp).toContain("frame-ancestors 'none'");
-    expect(effective(pages, '/')['X-Frame-Options']).toEqual(['DENY']);
-    expect(effective(pages, '/')['X-Content-Type-Options']).toEqual(['nosniff']);
+    expect(effective(pages, topPath)['X-Frame-Options']).toEqual(['DENY']);
+    expect(effective(pages, topPath)['X-Content-Type-Options']).toEqual(['nosniff']);
   });
 
   it('keeps hashed Astro assets immutable but revalidates fixed vendor worker and WASM URLs', async () => {

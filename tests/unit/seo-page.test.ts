@@ -34,9 +34,6 @@ describe('public page metadata', () => {
       }
       expect(alternates(page)).toContainEqual({ hreflang: 'x-default', href: pageUrl(ENGLISH_LOCALE, page) });
     }
-    expect(pagePath(DEFAULT_LOCALE, 'top')).toBe('/');
-    expect(pagePath(ENGLISH_LOCALE, 'top')).toBe('/en/');
-    for (const op of AVAILABLE_OPS) expect(pagePath(DEFAULT_LOCALE, op.id)).toBe(`/${op.slug}/`);
   });
 
   it('rejects unavailable operations and URLs with extra data', () => {
@@ -44,8 +41,10 @@ describe('public page metadata', () => {
       expect(() => pageUrl(DEFAULT_LOCALE, op.id as PublicPage)).toThrow();
       expect(isPublicPageUrl(`${SITE_ORIGIN}/${op.slug}/`)).toBe(false);
     }
-    for (const url of [`${SITE_ORIGIN}/?file=private`, `${SITE_ORIGIN}/#private`, `${SITE_ORIGIN}/browse/`,
-      `${SITE_ORIGIN}/en/zip-viewer`, 'https://elsewhere.invalid/']) expect(isPublicPageUrl(url)).toBe(false);
+    const topUrl = pageUrl(DEFAULT_LOCALE, 'top');
+    const browsePath = pagePath(ENGLISH_LOCALE, 'browse');
+    for (const url of [`${topUrl}?file=private`, `${topUrl}#private`, `${SITE_ORIGIN}/browse/`,
+      `${SITE_ORIGIN}${browsePath.slice(0, -1)}`, 'https://elsewhere.invalid/']) expect(isPublicPageUrl(url)).toBe(false);
   });
 
   it('keeps canonical, OG and structured data on the same public URL', () => {

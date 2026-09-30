@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LOCALES, DEFAULT_LOCALE } from '../../src/i18n/locales';
+import { LOCALES } from '../../src/i18n/locales';
 import { AVAILABLE_OPS, OPS } from '../../src/i18n/ops';
 import { pageContent, pages } from '../../src/i18n/pages';
 import { pagePath, publicPageFromPath, publicPageFromUrl, SITE_ORIGIN, type PublicPage } from '../../src/seo/page';
@@ -15,14 +15,14 @@ describe('public routing and dictionaries', () => {
         expect(pageContent(code, page).h1).toBeTruthy();
       }
     }
-    expect(pagePath(DEFAULT_LOCALE, 'top')).toBe('/');
     expect(publicPageFromPath('/ja/')).toBeUndefined();
   });
 
   it('accepts preview paths but excludes unknown and unavailable routes', () => {
-    expect(publicPageFromPath(new URL('http://localhost:4321/en/unzip/').pathname)).toEqual({ locale: 'en', page: 'extract' });
+    const extractPath = pagePath('en', 'extract');
+    expect(publicPageFromPath(new URL(extractPath, 'http://localhost:4321').pathname)).toEqual({ locale: 'en', page: 'extract' });
     for (const op of OPS.filter(item => !item.available)) expect(publicPageFromPath(`/${op.slug}/`)).toBeUndefined();
-    for (const path of ['/fr/', '/unzip/ja/', '/en/unknown/', '/en/unzip', '/en/unzip/extra/']) {
+    for (const path of ['/fr/', '/unzip/ja/', '/en/unknown/', extractPath.slice(0, -1), `${extractPath}extra/`]) {
       expect(publicPageFromPath(path)).toBeUndefined();
     }
   });

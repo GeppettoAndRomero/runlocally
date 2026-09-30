@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { pagePath } from '../../src/seo/page';
 
 afterEach(() => {
   window.dispatchEvent(new Event('pagehide'));
@@ -55,7 +56,7 @@ async function settled() { await Promise.resolve(); await Promise.resolve(); awa
 describe('service worker migration and update', () => {
   it('removes prior scope and cache before registering once', async () => {
     const root = `${location.origin}/`;
-    const prior = { scope: `${root}zip-viewer/`, unregister: vi.fn(async () => true) };
+    const prior = { scope: new URL(pagePath('ja', 'browse'), location.origin).href, unregister: vi.fn(async () => true) };
     const env = setup({ registrations: [{ scope: root, unregister: vi.fn(async () => true) }, prior], cacheNames: ['old', 'workbox-precache'] });
     const { registerSW } = await import('../../src/app/registerSW');
     await Promise.all([registerSW(), registerSW()]);
@@ -63,7 +64,7 @@ describe('service worker migration and update', () => {
     expect(env.order).toEqual(['delete:old', 'register']);
   });
   it('continues when another tab has already removed a registration and cache', async () => {
-    const prior = { scope: `${location.origin}/zip-viewer/`, unregister: vi.fn(async () => false) };
+    const prior = { scope: new URL(pagePath('ja', 'browse'), location.origin).href, unregister: vi.fn(async () => false) };
     const env = setup({ registrations: [prior], cacheNames: ['old'] });
     vi.mocked(env.serviceWorker.getRegistrations as () => Promise<unknown[]>).mockResolvedValueOnce([prior]).mockResolvedValue([]);
     vi.mocked(caches.delete).mockResolvedValue(false);

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/preact';
 import { Workbench } from '../../src/app/Workbench';
 import { displayPage } from '../../src/app/page-display';
-import { alternates, headData } from '../../src/seo/page';
+import { alternates, headData, pagePath } from '../../src/seo/page';
 import { pageContent } from '../../src/i18n/pages';
 
 const mock = vi.hoisted(() => ({ list: vi.fn(), all: vi.fn(), terminate: vi.fn(), open: vi.fn() }));
@@ -15,7 +15,7 @@ function source(): File {
   return file;
 }
 beforeEach(() => {
-  window.history.replaceState(null, '', '/');
+  window.history.replaceState(null, '', pagePath('ja', 'top'));
   mock.list.mockResolvedValue([entry]);
   mock.all.mockResolvedValue([{ name: 'one.txt', blob: new Blob(['ok']) }]);
   mock.open.mockResolvedValue({ entries: [{ path: 'one.txt', size: 1 }], close: vi.fn() });
@@ -23,7 +23,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.clearAllMocks(); delete document.documentElement.dataset.session; });
 
 it('keeps the initial operation and File through locale and history changes', async () => {
-  window.history.replaceState(null, '', '/unzip/');
+  window.history.replaceState(null, '', pagePath('ja', 'extract'));
   const input = source();
   const push = vi.spyOn(window.history, 'pushState');
   const view = render(<Workbench locale="ja" page="extract" op="extract" />);
@@ -32,14 +32,14 @@ it('keeps the initial operation and File through locale and history changes', as
   expect(document.documentElement.dataset.session).toBe('open');
   expect(screen.getByRole('heading', { level: 2, name: '入力' })).toBeTruthy();
   fireEvent.change(screen.getByLabelText('言語'), { target: { value: 'en' } });
-  expect(window.location.pathname).toBe('/en/unzip/');
+  expect(window.location.pathname).toBe(pagePath('en', 'extract'));
   expect(screen.getByRole('tab', { name: 'Extract' }).getAttribute('aria-selected')).toBe('true');
   fireEvent.click(screen.getByRole('button', { name: /^Extract:/ }));
   await waitFor(() => expect(mock.all).toHaveBeenCalledTimes(1));
   expect(mock.all.mock.calls[0][0]).toBe(input);
   expect(screen.getByText('1 files')).toBeTruthy();
   expect(screen.getByRole('heading', { level: 3, name: 'Extract' })).toBeTruthy();
-  window.history.replaceState(null, '', '/zip-viewer/');
+  window.history.replaceState(null, '', pagePath('ja', 'browse'));
   window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
   await waitFor(() => expect(screen.getByRole('tab', { name: '閲覧' }).getAttribute('aria-selected')).toBe('true'));
   expect(push).toHaveBeenCalledTimes(1);
@@ -57,11 +57,11 @@ it('routes tab, arrow, and entry changes through history without duplicate selec
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [source()] } });
   await waitFor(() => expect(screen.getByRole('tab', { name: 'Browse' })).toBeTruthy());
   fireEvent.click(screen.getByRole('button', { name: /^Select for extraction:/ }));
-  expect(window.location.pathname).toBe('/en/unzip/');
+  expect(window.location.pathname).toBe(pagePath('en', 'extract'));
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
-  expect(window.location.pathname).toBe('/en/remove-from-zip/');
+  expect(window.location.pathname).toBe(pagePath('en', 'remove'));
   fireEvent.click(screen.getByRole('tab', { name: 'Browse' }));
-  expect(window.location.pathname).toBe('/en/zip-viewer/');
+  expect(window.location.pathname).toBe(pagePath('en', 'browse'));
   expect(push).toHaveBeenCalledTimes(3);
   fireEvent.click(screen.getByRole('tab', { name: 'Browse' }));
   expect(push).toHaveBeenCalledTimes(3);
@@ -69,19 +69,19 @@ it('routes tab, arrow, and entry changes through history without duplicate selec
 });
 
 it('replaces an unsupported operation URL for an archive and restores the current page after reset', async () => {
-  window.history.replaceState(null, '', '/en/remove-from-zip/');
+  window.history.replaceState(null, '', pagePath('en', 'remove'));
   const replace = vi.spyOn(window.history, 'replaceState');
   render(<Workbench locale="en" page="remove" op="remove" />);
   const file = new File(['rar'], 'source.rar');
   vi.spyOn(file, 'slice').mockReturnValue({ arrayBuffer: async () => Uint8Array.from([82, 97, 114, 33, 26, 7, 0]).buffer } as Blob);
   fireEvent.change(screen.getByLabelText('Choose an archive'), { target: { files: [file] } });
-  await waitFor(() => expect(window.location.pathname).toBe('/en/zip-viewer/'));
-  expect(replace).toHaveBeenCalledWith(null, '', '/en/zip-viewer/');
+  await waitFor(() => expect(window.location.pathname).toBe(pagePath('en', 'browse')));
+  expect(replace).toHaveBeenCalledWith(null, '', pagePath('en', 'browse'));
   expect(screen.queryByRole('tab', { name: 'Remove' })).toBeNull();
   expect(document.documentElement.dataset.session).toBe('open');
   fireEvent.click(screen.getByRole('button', { name: /^Reset:/ }));
   await waitFor(() => expect(document.documentElement.dataset.session).toBeUndefined());
-  expect(window.location.pathname).toBe('/en/zip-viewer/');
+  expect(window.location.pathname).toBe(pagePath('en', 'browse'));
   replace.mockRestore();
 });
 
