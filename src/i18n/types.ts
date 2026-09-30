@@ -1,4 +1,5 @@
 import type { EngineErrorCode } from '../engine/errors';
+import type { AvailableOp } from './ops';
 
 export interface PageContent {
   title: string;
@@ -113,7 +114,11 @@ export type ChromeStringKey = 'navigation' | 'home' | 'languages';
 export type ChromeStrings = { [K in ChromeStringKey]: string };
 export type InputStateKey = 'dropHint' | 'emptyResults' | 'progressLabel';
 export type InputStateStrings = { [K in InputStateKey]: string };
-export interface UiStrings { workbench: WorkbenchStrings; shared: SharedStrings; chrome: ChromeStrings; inputState: InputStateStrings }
+export type MenuStringKey = AvailableOp['i18nKey'];
+// verb is the primary label and description is supporting text; consumers use menuUi.
+export type MenuEntryStrings = { verb: string; description: string };
+export type MenuStrings = { [K in MenuStringKey]: MenuEntryStrings };
+export interface UiStrings { workbench: WorkbenchStrings; shared: SharedStrings; chrome: ChromeStrings; inputState: InputStateStrings; menu: MenuStrings }
 
 // Every engine code must have localized text in the workbench dictionary.
 export type MissingEngineText = Exclude<EngineErrorCode, WorkbenchStringKey>;

@@ -12,6 +12,12 @@ export const update = {
 export const ui = {
   chrome: { navigation: '操作', home: 'ホーム', languages: '翻訳版' },
   inputState: { dropHint: 'アーカイブを1つここへドラッグするか、クリップボードのファイルを貼り付けてください。', emptyResults: 'アーカイブを選び、操作を実行すると、ここに結果が表示されます。', progressLabel: '処理状況' },
+  menu: {
+    browse: { verb: '中身を確認する', description: 'ファイルの一覧を表示する' },
+    extract: { verb: 'ファイルを取り出す', description: '取り出したファイルを保存する' },
+    remove: { verb: '不要な項目を削除する', description: '不要な項目を除いた新しい ZIP を作成する' },
+    'fix-names': { verb: '名前を修復する', description: '文字化けした名前の修復候補を確認する' },
+  },
   workbench: {
     input: '入力', choose: 'アーカイブを選択', busy: '処理中です。完了後に入力してください。', single: '1つのアーカイブを選んでください。',
     large: '入力は1 GB（1,000,000,000 bytes）以下にしてください。', unknown: '形式を確認できません。ZIP、RAR、7z、tar を選んでください。',
