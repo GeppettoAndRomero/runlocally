@@ -31,10 +31,10 @@ async function check(page: Page, locale: Locale, current: ZipPage) {
   await expect(page.locator('[data-chrome-nav]')).toHaveAttribute('aria-label', dictionaries[locale].chrome.navigation);
   await expect(page.locator('[data-chrome-languages]')).toHaveAttribute('aria-label', dictionaries[locale].chrome.languages);
   const home = page.locator('[data-chrome-home]');
-  await expect(home).toHaveAttribute('href', pagePath(locale, 'top'));
+  await expect(home).toHaveCount(1);
+  await expect(home).toHaveAttribute('href', pagePath(locale, 'hub'));
   await expect(home).toHaveAttribute('aria-label', dictionaries[locale].chrome.home);
-  if (current === 'top') await expect(home).toHaveAttribute('aria-current', 'page');
-  else await expect(home).not.toHaveAttribute('aria-current');
+  await expect(home).not.toHaveAttribute('aria-current');
   for (const op of AVAILABLE_OPS) {
     const link = page.locator(`[data-chrome-page="${op.id}"]`);
     await expect(link).toHaveAttribute('href', pagePath(locale, op.id));
@@ -56,6 +56,7 @@ test('all published pages render the same chrome contract', async ({ page, conte
     const response = await context.request.get(pagePath(locale.code, current));
     expect(response.ok()).toBe(true);
     const html = await response.text();
+    expect(html).toContain(`data-chrome-home href="${pagePath(locale.code, 'hub')}" aria-label="${dictionaries[locale.code].chrome.home}"`);
     for (const op of AVAILABLE_OPS) {
       expect(html).toContain(`data-chrome-page="${op.id}" href="${pagePath(locale.code, op.id)}"`);
     }
@@ -98,11 +99,11 @@ test('header, language, select, tabs and history keep the route in sync', async 
   await check(page, 'ja', 'extract');
   await page.goForward();
   await check(page, 'ja', 'remove');
-  await page.locator('[data-chrome-home]').click();
-  await check(page, 'ja', 'top');
   const length = await page.evaluate(() => history.length);
-  await page.locator('[data-chrome-home]').click();
+  await page.locator('[data-chrome-page="remove"]').click();
   expect(await page.evaluate(() => history.length)).toBe(length);
+  await page.locator('[data-chrome-home]').click();
+  await expect(page).toHaveURL(new RegExp(`${pagePath('ja', 'hub').replaceAll('/', '\\/')}$`));
 });
 
 test('the chrome is complete in the initial HTML without JavaScript', async ({ browser, baseURL }) => {

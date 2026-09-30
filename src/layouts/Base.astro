@@ -59,7 +59,7 @@ const og = metadata?.og ?? {
   <body>
     <header class="site-header">
       <div class="site-header__inner">
-        <a class="site-header__brand" data-chrome-home href={pagePath(lang, 'top')} aria-label={chromeUi[lang].home} aria-current={page === 'top' ? 'page' : undefined}>runlocally</a>
+        <a class="site-header__brand" data-chrome-home href={pagePath(lang, 'hub')} aria-label={chromeUi[lang].home} aria-current={page === 'hub' ? 'page' : undefined}>runlocally</a>
         {page !== 'hub' && <nav class="site-nav" aria-label={chromeUi[lang].navigation} data-chrome-nav>
           {AVAILABLE_OPS.map(op => <a data-chrome-page={op.id} href={pagePath(lang, op.id)} aria-current={page === op.id ? 'page' : undefined}>{ui[lang].workbench[op.i18nKey]}</a>)}
         </nav>}

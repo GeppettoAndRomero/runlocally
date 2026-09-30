@@ -8,6 +8,7 @@ import { ui as jaUi } from '../../src/i18n/ja/ui';
 import { pagePath } from '../../src/seo/page';
 import { ZIP_PAGES, type ZipPage } from '../../src/seo/url-model';
 import { ready } from './_helpers';
+import { hubContent } from '../../src/i18n/hub';
 import { zipHome } from './_paths';
 
 const paths = ZIP_PAGES;
@@ -92,6 +93,10 @@ test('hydration, route changes, input, and reset update content and cards', asyn
   await page.goForward();
   await assertContent(page, 'ja', 'extract');
   await page.locator('[data-chrome-home]').click();
+  await expect(page).toHaveURL(new RegExp(`${pagePath('ja', 'hub').replaceAll('/', '\\/')}$`));
+  await expect(page.locator('#page-heading')).toHaveText(hubContent('ja').h1);
+  await page.locator('.hub-card h2 a').click();
+  await ready(page);
   await assertContent(page, 'ja', 'top');
   await assertCards(page, 'ja', 'top');
   await page.locator('input[type="file"]').setInputFiles('tests/fixtures/zip/sample.zip');
@@ -102,7 +107,10 @@ test('hydration, route changes, input, and reset update content and cards', asyn
   await assertContent(page, 'ja', 'extract');
   await expect(page.locator('#page-content')).toBeHidden();
   await assertCards(page, 'ja', 'extract', true);
-  await page.locator('[data-chrome-home]').click();
+  await page.goBack();
+  await assertContent(page, 'ja', 'top');
+  await expect(page.locator('#page-content')).toBeHidden();
+  await assertCards(page, 'ja', 'top', true);
   await page.getByRole('button', { name: /^リセット/ }).click();
   await expect(page.locator('html')).not.toHaveAttribute('data-session', 'open');
   await assertContent(page, 'ja', 'top');

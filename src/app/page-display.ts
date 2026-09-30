@@ -24,10 +24,9 @@ export function displayPage(locale: Locale, page: ZipPage): void {
   if (securityLink) securityLink.textContent = ui[locale].shared.security;
   const home = document.querySelector<HTMLAnchorElement>('[data-chrome-home]');
   if (home) {
-    home.href = pagePath(locale, 'top');
+    home.href = pagePath(locale, 'hub');
     home.setAttribute('aria-label', chromeUi[locale].home);
-    if (page === 'top') home.setAttribute('aria-current', 'page');
-    else home.removeAttribute('aria-current');
+    home.removeAttribute('aria-current');
   }
   document.querySelector('[data-chrome-nav]')?.setAttribute('aria-label', chromeUi[locale].navigation);
   document.querySelector('[data-chrome-languages]')?.setAttribute('aria-label', chromeUi[locale].languages);
