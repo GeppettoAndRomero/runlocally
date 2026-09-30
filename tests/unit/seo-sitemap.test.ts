@@ -1,14 +1,15 @@
+import { checkBuiltSitemap } from './_sitemap-output-checks';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { LOCALES } from '../../src/i18n/locales';
-import { AVAILABLE_OPS, OPS } from '../../src/i18n/ops';
+import { OPS } from '../../src/i18n/ops';
 import { pageContent } from '../../src/i18n/pages';
 import { ui } from '../../src/i18n/ui';
-import type { PublicPage } from '../../src/seo/page';
 import { ogLocale, pageUrl, SITE_ORIGIN } from '../../src/seo/page';
+import { PUBLIC_PAGES, ZIP_PAGES } from '../../src/seo/url-model';
 
 function htmlPaths(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
@@ -33,10 +34,10 @@ describe('built sitemap', () => {
         const route = relative(output, path).replace(/(^|\/)index\.html$/, '$1');
         return new URL(`/${route}`, SITE_ORIGIN).href;
       });
-      const expected = LOCALES.flatMap(({ code }) => (['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[]).map(page => pageUrl(code, page)));
-      expect(expected).toHaveLength(LOCALES.length * (AVAILABLE_OPS.length + 1));
+      const expected = LOCALES.flatMap(({ code }) => PUBLIC_PAGES.map(page => pageUrl(code, page)));
+      expect(expected).toHaveLength(12);
       expect(generatedPages.sort()).toEqual(expected.sort());
-      for (const { code } of LOCALES) for (const page of ['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[]) {
+      for (const { code } of LOCALES) for (const page of ZIP_PAGES) {
         const html = readFileSync(join(output, new URL(pageUrl(code, page)).pathname.slice(1), 'index.html'), 'utf8');
         const content = pageContent(code, page);
         for (const value of [content.h1, content.lead, ...content.steps.flatMap(step => [step.heading, step.body]), ...content.faq.flatMap(item => [item.question, item.answer]), ...content.limits]) {
@@ -51,6 +52,8 @@ describe('built sitemap', () => {
       const childNames = readdirSync(output).filter(name => /^sitemap-\d+\.xml$/.test(name));
       expect(childNames.length).toBeGreaterThan(0);
       expect(locations(index).sort()).toEqual(childNames.map(name => `${SITE_ORIGIN}/${name}`).sort());
+
+      checkBuiltSitemap(output);
 
       const listedPages = childNames.flatMap(name => locations(readFileSync(join(output, name), 'utf8')));
       expect(listedPages.sort()).toEqual(generatedPages.sort());

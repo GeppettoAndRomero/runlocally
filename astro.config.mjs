@@ -22,15 +22,25 @@ const pwaOutput = { name: 'pwa-output', hooks: { 'astro:config:setup': ({ config
   pwaOptions.outDir = fileURLToPath(config.outDir);
 } } };
 import { DEFAULT_LOCALE, LOCALES } from './src/i18n/locales.ts';
-import { isPublicPageUrl, sitemapI18n, SITE_ORIGIN } from './src/seo/page.ts';
+import { alternates, isPublicPageUrl, publicPageFromUrl, sitemapI18n, SITE_ORIGIN } from './src/seo/page.ts';
 import { libarchiveVendorPlugin } from './scripts/libarchive-vendor-plugin.mjs';
+
+export const sitemapOptions = {
+  filter: isPublicPageUrl,
+  i18n: sitemapI18n,
+  serialize(item) {
+    const route = publicPageFromUrl(item.url);
+    if (!route) throw new Error(`Unexpected sitemap URL: ${item.url}`);
+    return { ...item, links: alternates(route.page).map(({ hreflang, href }) => ({ lang: hreflang, url: href })) };
+  },
+};
 
 export default defineConfig({
   ...(process.env.NOTICE_ANALYZE === '1' ? {
     outDir: '.notice-build',
   } : {}),
   site: SITE_ORIGIN,
-  integrations: [preact(), sitemap({ filter: isPublicPageUrl, i18n: sitemapI18n }), pwaOutput, pwa(pwaOptions), buildMetaIntegration()],
+  integrations: [preact(), sitemap(sitemapOptions), pwaOutput, pwa(pwaOptions), buildMetaIntegration()],
   vite: {
     ...(process.env.NOTICE_ANALYZE === '1' ? { build: { sourcemap: true } } : {}),
     plugins: [libarchiveVendorPlugin()],
