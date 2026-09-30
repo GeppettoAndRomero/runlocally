@@ -62,23 +62,9 @@ const LEGACY_SLUGS = [
   "zip-filename-fix",
   "zip-viewer"
 ];
-const OLD_JA_REDIRECT_PATHS = [
-  "/remove-from-zip/ja/",
-  "/unzip/ja/",
-  "/zip-filename-fix/ja/",
-  "/zip-viewer/ja/"
-];
-const NEW_SITE_SLUGS = [
-  "remove-from-zip",
-  "unzip",
-  "zip-filename-fix",
-  "zip-viewer"
-];
 // END GENERATED LEGACY TABLES
 
 const LEGACY_SLUG_SET = new Set(LEGACY_SLUGS);
-const OLD_JA_REDIRECT_PATH_SET = new Set(OLD_JA_REDIRECT_PATHS);
-const NEW_SITE_SLUG_SET = new Set(NEW_SITE_SLUGS);
 const GONE_ROOTS = new Set(['blog', 'privacy', 'ja', 'zh', 'de', 'es', 'hub-sitemap.xml']);
 
 function withHostHeader(response, hostname) {
@@ -99,30 +85,14 @@ function gone() {
   });
 }
 
-function moved(location) {
-  return new Response(null, {
-    status: 301,
-    headers: { Location: location },
-  });
-}
-
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   const parts = url.pathname.split('/').filter(Boolean);
   const slug = parts[0];
   let response;
 
-  if (LEGACY_SLUG_SET.has(slug)) {
-    if (parts.length === 2 && parts[1] === 'sw.js') {
-      response = gone();
-    } else if (parts.length === 2 && parts[1] === 'ja' &&
-               OLD_JA_REDIRECT_PATH_SET.has(`/${slug}/ja/`)) {
-      response = moved(`/${slug}/`);
-    } else if (parts.length === 1 && NEW_SITE_SLUG_SET.has(slug)) {
-      response = await context.next();
-    } else {
-      response = gone();
-    }
+  if (LEGACY_SLUG_SET.has(slug) || (slug === 'en' && LEGACY_SLUG_SET.has(parts[1]))) {
+    response = gone();
   } else if (GONE_ROOTS.has(slug)) {
     response = gone();
   } else {
