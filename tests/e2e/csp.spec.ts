@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { test, expect, type BrowserContext } from '@playwright/test';
 import { ready, roundTrip } from './_helpers';
 import { activeRootWorker, assertOperationSupport, offline, publicPaths, url, visit } from './_covenant-support';
+import { zipHome } from './_paths';
 
 type Violation = { directive: string; blockedURI: string; source: string; line: number; phase: string };
 async function observe(context: BrowserContext) {
@@ -51,7 +52,7 @@ test('published operations have no policy violations or reporting injection', as
       observed.clean();
     }
     observed.setPhase('online operations');
-    await visit(page, '/en/');
+    await visit(page, zipHome('en'));
     await roundTrip(page, observed.clean);
     observed.clean();
     if (browserName === 'chromium') {
@@ -78,7 +79,7 @@ for (const probe of [
     observed.setPhase(probe.name);
     const path = '/__csp_probe__/';
     try {
-      const source = await context.request.get(url('/en/'));
+      const source = await context.request.get(url(zipHome('en')));
       const policy = source.headers()['content-security-policy'];
       expect(policy).toBeTruthy();
       const allowBootstrap = probe.name !== 'inline script';

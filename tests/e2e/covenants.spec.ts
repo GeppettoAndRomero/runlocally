@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { LOCALES } from '../../src/i18n/locales';
 import { AVAILABLE_OPS } from '../../src/i18n/ops';
-import { pagePath } from '../../src/seo/page';
 import { ready, roundTrip } from './_helpers';
 import { activeRootWorker, assertOperationSupport, offline, origin, publicPaths, publicPathSet, url, visit } from './_covenant-support';
+import { zipHome, zipOp } from './_paths';
 
 test.beforeEach(assertOperationSupport);
 
@@ -73,7 +73,7 @@ test('session URLs and offline operations', async ({ browser, browserName }) => 
     }
   };
   try {
-    await visit(page, pagePath('en', 'top'));
+    await visit(page, zipHome('en'));
     await roundTrip(page, clean);
     const beforeLanguage = changes.length;
     await page.getByLabel('Language').selectOption('ja');
@@ -82,14 +82,14 @@ test('session URLs and offline operations', async ({ browser, browserName }) => 
     await page.goBack(); await ready(page); clean();
     await page.goForward(); await ready(page); clean();
     for (const locale of LOCALES) for (const op of AVAILABLE_OPS) {
-      await visit(page, pagePath(locale.code, op.id)); clean();
+      await visit(page, zipOp(locale.code, op.id)); clean();
     }
     if (browserName === 'chromium') {
-      await visit(page, pagePath('en', 'top'));
+      await visit(page, zipHome('en'));
       await activeRootWorker(page);
       await offline(context, async () => {
         for (const path of publicPaths) { await visit(page, path); clean(); }
-        await visit(page, pagePath('en', 'top'));
+        await visit(page, zipHome('en'));
         await page.reload(); await ready(page);
         await roundTrip(page, clean);
       });

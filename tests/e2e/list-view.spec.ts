@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { BlobWriter, TextReader, ZipWriter, configure } from '@zip.js/zip.js';
 import { ready, select } from './_helpers';
+import { zipHome } from './_paths';
 
 configure({ useWebWorkers: false });
 const fixture = (name: string) => readFile(join(process.cwd(), 'tests/fixtures/zip', name));
@@ -27,7 +28,7 @@ for (const locale of ['en', 'ja'] as const) for (const width of [360, 768, 1280]
   test(`${locale} ${width}px ${colorScheme} panels, pager, result`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ colorScheme });
-    await page.goto(locale === 'en' ? '/en/' : '/');
+    await page.goto(zipHome(locale));
     await ready(page);
     await intake(page, await longZip(), 'source'.repeat(50) + '.zip');
     const tabs = page.getByRole('tab');
@@ -85,7 +86,7 @@ for (const locale of ['en', 'ja'] as const) for (const width of [360, 768, 1280]
 
 test('repair preview wraps and directory selection shows a mixed native checkbox', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 900 });
-  await page.goto('/en/'); await ready(page);
+  await page.goto(zipHome('en')); await ready(page);
   await intake(page, await fixture('rewrite/mojibake.zip'), 'mojibake.zip');
   await select(page, 'fix-names');
   await expect(page.locator('#panel-fix-names .workbench__repair-row').first()).toContainText('Candidate:');

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ready } from './_helpers';
+import { zipHome } from './_paths';
 
 const widths = [360, 768, 1280];
 const themes = ['light', 'dark'] as const;
@@ -14,7 +15,7 @@ for (const locale of locales) for (const width of widths) for (const colorScheme
   test(`${locale} ${width}px ${colorScheme} input states`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ colorScheme });
-    await page.goto(locale === 'ja' ? '/' : '/en/');
+    await page.goto(zipHome(locale));
     await ready(page);
     const picker = page.locator('label.workbench__picker');
     const input = picker.locator('input[type="file"]');
@@ -45,7 +46,7 @@ for (const locale of locales) for (const width of widths) for (const colorScheme
   });
 }
 test('DOM drop and document paste each accept one archive', async ({ page }) => {
-  await page.goto('/en/'); await ready(page);
+  await page.goto(zipHome('en')); await ready(page);
   const data = [...await sample()];
   await page.evaluate(() => {
     const counts = { dropped: 0, processed: 0 };
@@ -79,7 +80,7 @@ test('DOM drop and document paste each accept one archive', async ({ page }) => 
 
 test('follows a color scheme change without reloading', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/en/'); await ready(page);
+  await page.goto(zipHome('en')); await ready(page);
   const background = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   const light = await background();
   await page.emulateMedia({ colorScheme: 'dark' });

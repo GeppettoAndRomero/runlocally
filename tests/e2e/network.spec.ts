@@ -4,6 +4,7 @@ import { LOCALES } from '../../src/i18n/locales';
 import { AVAILABLE_OPS } from '../../src/i18n/ops';
 import { pagePath } from '../../src/seo/page';
 import { ready, roundTrip } from './_helpers';
+import { zipHome } from './_paths';
 
 const baseURL = process.env.BASE_URL || 'http://localhost:8788';
 const origin = new URL(baseURL).origin;
@@ -101,7 +102,7 @@ test('online operations and observed communication', async ({ browser: engine, b
   const monitorState = await monitor(context, await revisionsFromBuild());
   try {
     const page = await context.newPage();
-    await page.goto(new URL('/en/', origin).href);
+    await page.goto(new URL(zipHome('en'), origin).href);
     await ready(page);
     if (browserName === 'chromium') {
       await precached(context, page);
@@ -131,7 +132,7 @@ test('chromium: offline repeats the same operations', async ({ browser, browserN
   const monitorState = await monitor(context, await revisionsFromBuild());
   try {
     const page = await context.newPage();
-    await page.goto(new URL('/en/', origin).href);
+    await page.goto(new URL(zipHome('en'), origin).href);
     await ready(page);
     await precached(context, page);
     monitorState.setOperation('online round trip');
@@ -165,7 +166,7 @@ test('chromium: monitor rejects page and service-worker probes', async ({ browse
   const monitorState = await monitor(context, await revisionsFromBuild());
   try {
     const page = await context.newPage();
-    await page.goto(new URL('/en/', origin).href);
+    await page.goto(new URL(zipHome('en'), origin).href);
     await precached(context, page);
     monitorState.setOperation('isolated probe');
     await page.evaluate(() => fetch('/__egress_probe__', { method: 'POST', body: 'probe' }).catch(() => undefined));
