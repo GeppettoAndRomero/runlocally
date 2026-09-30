@@ -6,8 +6,7 @@ import type { ZipPage } from '../seo/url-model';
 import { displayPage } from './page-display';
 import { AppButton } from '../ui/AppButton';
 import { AppCard } from '../ui/AppCard';
-import { InstallPrompt } from '../ui/InstallPrompt';
-import { UpdatePrompt } from '../ui/UpdatePrompt';
+import { PwaStartup } from '../ui/PwaStartup';
 import { isUpdateApplying, subscribeUpdate } from './registerSW';
 import { GlobalDropZone } from '../ui/GlobalDropZone';
 import { Alert, Status } from '../ui/WorkbenchFeedback';
@@ -172,8 +171,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   const results = session.results;
   const canReset = busy || Boolean(session.source || session.inputFailure || results.length || session.listing.status !== 'idle' || session.job.status !== 'idle');
   return <div class="workbench">
-    <InstallPrompt locale={route.locale} />
-    <UpdatePrompt locale={route.locale} busy={busy} hasWork={Boolean(session.source || results.length)} isSafe={isSafeToUpdate} />
+    <PwaStartup locale={route.locale} busy={busy} hasWork={Boolean(session.source || results.length)} isSafe={isSafeToUpdate} />
     <GlobalDropZone locale={route.locale} disabled={updating} />
     {updating && <Status>{updateUi[route.locale].applying}</Status>}
     <label class="workbench__language">{ui[route.locale].shared.language} <select aria-label={ui[route.locale].shared.language} value={route.locale} onChange={event => {

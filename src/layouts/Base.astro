@@ -9,6 +9,7 @@ import type { PageContent } from '../i18n/types';
 import type { HubContent } from '../i18n/hub';
 import { alternates, checkMetadataLength, headData, ogLocale, pagePath, pageUrl, type PublicPage } from '../seo/page';
 import { chromeUi, ui } from '../i18n/ui';
+import { PwaStartup } from '../ui/PwaStartup';
 
 interface Props {
   lang: Locale;
@@ -68,6 +69,7 @@ const og = metadata?.og ?? {
       </div>
     </header>
     <slot />
+    {page === 'hub' && <PwaStartup locale={lang} client:load />}
     <footer class="site-footer">
       <p>Some code was written with AI assistance; all review and decisions are the maintainer's.</p>
       <a id="footer-security" href="/SECURITY.md">{ui[lang].shared.security}</a>
