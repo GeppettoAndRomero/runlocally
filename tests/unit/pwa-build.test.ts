@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { publicPagePaths } from '../../scripts/pwa-manifest.mjs';
+import { LOCALES } from '../../src/i18n/locales';
+import { PUBLIC_PAGES, pagePath } from '../../src/seo/url-model';
 
 function files(path: string): string[] {
   return readdirSync(path).flatMap(name => {
@@ -18,7 +19,9 @@ describe('production PWA output', () => {
     const sw = readFileSync('dist/sw.js', 'utf8');
     expect(sw).not.toContain('importScripts(');
     expect(sw).toContain('SKIP_WAITING');
-    for (const url of publicPagePaths()) expect(sw).toContain(`url:${JSON.stringify(url)}`);
+    for (const locale of LOCALES) for (const page of PUBLIC_PAGES) {
+      expect(sw).toContain(`url:${JSON.stringify(pagePath(locale.code, page))}`);
+    }
     expect(sw).not.toContain('zip-viewer/index.html');
     const pair = ['worker-bundle.js', 'libarchive.wasm'].map(name => {
       const match = sw.match(new RegExp(`url:"vendor/libarchive/${name.replace('.', '\\.')}"\\,revision:"([a-f0-9]+)"\\,integrity:"sha256-([^"]+)"`));

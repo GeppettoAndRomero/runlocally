@@ -4,7 +4,10 @@ import { tmpdir } from 'node:os';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { hashesFromHtml, generateHeaders } from '../../scripts/gen-headers.mjs';
-import { publicPagePaths } from '../../scripts/pwa-manifest.mjs';
+import { LOCALES } from '../../src/i18n/locales';
+import { PUBLIC_PAGES, pagePath } from '../../src/seo/url-model';
+
+const expectedPages = LOCALES.flatMap(locale => PUBLIC_PAGES.map(page => pagePath(locale.code, page)));
 
 const shaA = 'a'.repeat(40);
 const shaB = 'b'.repeat(40);
@@ -72,7 +75,7 @@ describe('build hook ordering and update meaning', () => {
       const b = snapshot(join(root, 'dist'));
       expect([...a.keys()]).toEqual([...b.keys()]);
       const htmlPaths = [...a.keys()].filter(path => path.endsWith('.html'));
-      expect(htmlPaths).toHaveLength(publicPagePaths().size);
+      expect(htmlPaths).toHaveLength(expectedPages.length);
       for (const path of htmlPaths) {
         const left = a.get(path)!.toString();
         const right = b.get(path)!.toString();
@@ -88,7 +91,7 @@ describe('build hook ordering and update meaning', () => {
       const swB = b.get('sw.js')!.toString();
       expect(swB).toBe(swA);
       expect(revisions(swA)).toEqual(revisions(swB));
-      for (const url of publicPagePaths()) expect(revisions(swA).has(url), url).toBe(true);
+      for (const url of expectedPages) expect(revisions(swA).has(url), url).toBe(true);
       expect(a.get('_headers')).toEqual(b.get('_headers'));
       expect(firstCaddy).toEqual(readFileSync(join(root, 'docker/headers.caddy')));
 
@@ -97,11 +100,11 @@ describe('build hook ordering and update meaning', () => {
       build(root, shaA);
       const changedSw = readFileSync(join(root, 'dist/sw.js'), 'utf8');
       expect(changedSw).not.toBe(swA);
-      expect([...publicPagePaths()].some(url => revisions(changedSw).get(url) !== revisions(swA).get(url))).toBe(true);
+      expect(expectedPages.some(url => revisions(changedSw).get(url) !== revisions(swA).get(url))).toBe(true);
       build(root, shaA, true);
       const noticeHtml = readFileSync(join(root, '.notice-build/index.html'), 'utf8');
       expect(noticeHtml.match(/<meta name="build" content="[^"]+">/g)).toEqual([`<meta name="build" content="${shaA}">`]);
-      expect(files(join(root, '.notice-build')).filter(path => path.endsWith('.html'))).toHaveLength(publicPagePaths().size);
+      expect(files(join(root, '.notice-build')).filter(path => path.endsWith('.html'))).toHaveLength(expectedPages.length);
     } finally {
       rmSync(parent, { recursive: true, force: true });
     }

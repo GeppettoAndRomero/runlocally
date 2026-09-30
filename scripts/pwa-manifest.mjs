@@ -2,12 +2,11 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { LOCALES } from '../src/i18n/locales.ts';
-import { AVAILABLE_OPS } from '../src/i18n/ops.ts';
-import { pagePath } from '../src/seo/page.ts';
+import { PUBLIC_PAGES, pagePath } from '../src/seo/url-model.ts';
 
 const vendorPaths = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js'];
 export const publicPagePaths = () => new Set(LOCALES.flatMap(locale =>
-  ['top', ...AVAILABLE_OPS.map(op => op.id)].map(page => pagePath(locale.code, page))));
+  PUBLIC_PAGES.map(page => pagePath(locale.code, page))));
 
 export async function transformPrecache(entries, root = 'public') {
   const expected = publicPagePaths();
