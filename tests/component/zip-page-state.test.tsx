@@ -133,7 +133,8 @@ it('follows header links, locale links, history, intake, and reset', async () =>
   visible('en', true, true);
   click('[data-chrome-page="browse"]');
   await waitFor(() => visible('en', false, true));
-  click('[data-chrome-home]');
+  window.history.replaceState(null, '', pagePath('en', 'top'));
+  window.dispatchEvent(new PopStateEvent('popstate'));
   await waitFor(() => visible('en', true, true));
   fireEvent.click(screen.getByRole('button', { name: /^Reset:/ }));
   await waitFor(() => visible('en', true));
