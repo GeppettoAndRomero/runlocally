@@ -14,7 +14,7 @@ describe('Page layout rendering', () => {
       mkdirSync(join(root, 'src/pages'), { recursive: true });
       symlinkSync(join(repository, 'node_modules'), join(root, 'node_modules'), 'dir');
       writeFileSync(join(root, 'astro.config.mjs'),
-        "import { defineConfig } from 'astro/config'; export default defineConfig({ site: 'https://runlocally.app' });\n");
+        `import { defineConfig } from 'astro/config'; export default defineConfig({ site: 'https://runlocally.app', vite: { resolve: { alias: { '@': ${JSON.stringify(join(repository, 'src'))} } } } });\n`);
       writeFileSync(join(root, 'src/pages/index.astro'), `---
 import Page from ${JSON.stringify(join(repository, 'src/layouts/Page.astro'))};
 import { ENGLISH_LOCALE } from ${JSON.stringify(join(repository, 'src/i18n/locales.ts'))};
