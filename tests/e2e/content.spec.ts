@@ -5,16 +5,17 @@ import { pages as enPages } from '../../src/i18n/en/pages';
 import { pages as jaPages } from '../../src/i18n/ja/pages';
 import { ui as enUi } from '../../src/i18n/en/ui';
 import { ui as jaUi } from '../../src/i18n/ja/ui';
-import { pagePath, type PublicPage } from '../../src/seo/page';
+import { pagePath } from '../../src/seo/page';
+import { ZIP_PAGES, type ZipPage } from '../../src/seo/url-model';
 import { ready } from './_helpers';
 import { zipHome } from './_paths';
 
-const paths = ['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[];
+const paths = ZIP_PAGES;
 const contents = { ja: jaPages, en: enPages };
 const dictionaries = { ja: jaUi, en: enUi };
 const visibleCards = (page: Page) => page.locator('[data-operation-cards]:visible');
 
-async function assertContent(page: Page, locale: Locale, current: PublicPage) {
+async function assertContent(page: Page, locale: Locale, current: ZipPage) {
   const content = contents[locale][current];
   await expect(page.locator('html')).toHaveAttribute('lang', locale);
   await expect(page.locator('h1')).toHaveCount(1);
@@ -33,7 +34,7 @@ async function assertContent(page: Page, locale: Locale, current: PublicPage) {
   await expect(region.locator(':scope > ul > li')).toHaveText(content.limits);
 }
 
-async function assertCards(page: Page, locale: Locale, current: PublicPage, session = false) {
+async function assertCards(page: Page, locale: Locale, current: ZipPage, session = false) {
   const cards = visibleCards(page);
   if (current !== 'top' || session) {
     await expect(cards).toHaveCount(0);

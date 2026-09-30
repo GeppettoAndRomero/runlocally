@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { LOCALES, type Locale } from '../../src/i18n/locales';
 import { AVAILABLE_OPS } from '../../src/i18n/ops';
-import { headData, pagePath, type PublicPage } from '../../src/seo/page';
+import { headData, pagePath } from '../../src/seo/page';
+import { ZIP_PAGES, type ZipPage } from '../../src/seo/url-model';
 import { pages as enPages } from '../../src/i18n/en/pages';
 import { pages as jaPages } from '../../src/i18n/ja/pages';
 import { ui as enUi } from '../../src/i18n/en/ui';
@@ -13,7 +14,7 @@ import { zipHome, zipOp } from './_paths';
 const dictionaries = { ja: jaUi, en: enUi };
 const contents = { ja: jaPages, en: enPages };
 
-async function check(page: Page, locale: Locale, current: PublicPage) {
+async function check(page: Page, locale: Locale, current: ZipPage) {
   const path = pagePath(locale, current);
   const content = contents[locale][current];
   const head = headData(locale, current, content);
@@ -51,7 +52,7 @@ async function check(page: Page, locale: Locale, current: PublicPage) {
 }
 
 test('all published pages render the same chrome contract', async ({ page, context }) => {
-  for (const locale of LOCALES) for (const current of ['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[]) {
+  for (const locale of LOCALES) for (const current of ZIP_PAGES) {
     const response = await context.request.get(pagePath(locale.code, current));
     expect(response.ok()).toBe(true);
     const html = await response.text();
@@ -108,7 +109,7 @@ test('the chrome is complete in the initial HTML without JavaScript', async ({ b
   const context = await browser.newContext({ javaScriptEnabled: false, serviceWorkers: 'block', baseURL });
   const page = await context.newPage();
   try {
-    for (const locale of LOCALES) for (const current of ['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[]) {
+    for (const locale of LOCALES) for (const current of ZIP_PAGES) {
       await page.goto(pagePath(locale.code, current));
       await check(page, locale.code, current);
     }
