@@ -6,6 +6,7 @@ import '../styles/chrome.css';
 import { LOCALES, type Locale } from '../i18n/locales';
 import { AVAILABLE_OPS } from '../i18n/ops';
 import type { PageContent } from '../i18n/types';
+import type { HubContent } from '../i18n/hub';
 import { alternates, checkMetadataLength, headData, ogLocale, pagePath, pageUrl, type PublicPage } from '../seo/page';
 import { chromeUi, ui } from '../i18n/ui';
 
@@ -14,7 +15,7 @@ interface Props {
   title?: string;
   description?: string;
   page?: PublicPage;
-  content?: PageContent;
+  content?: PageContent | HubContent;
 }
 
 const { lang, page = 'top', content } = Astro.props;
@@ -58,9 +59,9 @@ const og = metadata?.og ?? {
     <header class="site-header">
       <div class="site-header__inner">
         <a class="site-header__brand" data-chrome-home href={pagePath(lang, 'top')} aria-label={chromeUi[lang].home} aria-current={page === 'top' ? 'page' : undefined}>runlocally</a>
-        <nav class="site-nav" aria-label={chromeUi[lang].navigation} data-chrome-nav>
+        {page !== 'hub' && <nav class="site-nav" aria-label={chromeUi[lang].navigation} data-chrome-nav>
           {AVAILABLE_OPS.map(op => <a data-chrome-page={op.id} href={pagePath(lang, op.id)} aria-current={page === op.id ? 'page' : undefined}>{ui[lang].workbench[op.i18nKey]}</a>)}
-        </nav>
+        </nav>}
         <nav class="site-languages" aria-label={chromeUi[lang].languages} data-chrome-languages>
           {LOCALES.map(locale => <a data-chrome-locale={locale.code} href={pagePath(locale.code, page)} aria-current={lang === locale.code ? 'page' : undefined}>{locale.name}</a>)}
         </nav>

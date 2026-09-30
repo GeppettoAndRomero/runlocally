@@ -1,33 +1,55 @@
 ---
 import { LOCALES, type Locale } from '../i18n/locales';
-import { AVAILABLE_OPS } from '../i18n/ops';
+import { hubContent } from '../i18n/hub';
 import { pageContent } from '../i18n/pages';
 import { pagePath, type PublicPage } from '../seo/page';
+import { PUBLIC_PAGES } from '../seo/url-model';
+import Base from '../layouts/Base.astro';
 import Page from '../layouts/Page.astro';
 import { Workbench } from '../app/Workbench';
 import OperationCards from '../ui/OperationCards.astro';
 import '../styles/content.css';
 
 export function getStaticPaths() {
-  return LOCALES.flatMap(({ code }) => (['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[]).map(page => {
+  return LOCALES.flatMap(({ code }) => PUBLIC_PAGES.map(page => {
     const path = pagePath(code, page);
     return { params: { path: path === '/' ? undefined : path.slice(1, -1) }, props: { locale: code, page } };
   }));
 }
 
 const { locale, page } = Astro.props as { locale: Locale; page: PublicPage };
-const content = pageContent(locale, page);
+const zipPage = page === 'hub' ? undefined : page;
+const zipContent = zipPage ? pageContent(locale, zipPage) : undefined;
+const hub = page === 'hub' ? hubContent(locale) : undefined;
 ---
-<Page locale={locale} page={page} content={content}>
+{hub ? <Base lang={locale} page="hub" content={hub}>
   <main>
-    <div class="page-identity" aria-live="polite"><h1 id="page-heading">{content.h1}</h1></div>
-    <Workbench locale={locale} page={page} op={page === 'top' ? 'browse' : page} client:load />
-    <OperationCards />
-    <section id="page-content" class="page-content" aria-label={content.h1}>
-      <p class="page-lead">{content.lead}</p>
-      <ol>{content.steps.map(step => <li><h2>{step.heading}</h2><p>{step.body}</p></li>)}</ol>
-      <dl>{content.faq.map(item => <><dt>{item.question}</dt><dd>{item.answer}</dd></>)}</dl>
-      <ul>{content.limits.map(limit => <li>{limit}</li>)}</ul>
+    <div class="page-identity"><h1 id="page-heading">{hub.h1}</h1></div>
+    <section id="page-content" class="page-content" aria-label={hub.h1}>
+      <p class="page-lead">{hub.lead}</p>
+      <article class="hub-card">
+        <h2><a href={pagePath(locale, 'top')}>{hub.zipCardTitle}</a></h2>
+        <p>{hub.zipCardDescription}</p>
+      </article>
     </section>
   </main>
-</Page>
+</Base> : zipPage && zipContent ? <Page locale={locale} page={zipPage} content={zipContent}>
+  <main>
+    <div class="page-identity" aria-live="polite"><h1 id="page-heading">{zipContent.h1}</h1></div>
+    <Workbench locale={locale} page={zipPage} op={zipPage === 'top' ? 'browse' : zipPage} client:load />
+    <OperationCards />
+    <section id="page-content" class="page-content" aria-label={zipContent.h1}>
+      <p class="page-lead">{zipContent.lead}</p>
+      <ol>{zipContent.steps.map(step => <li><h2>{step.heading}</h2><p>{step.body}</p></li>)}</ol>
+      <dl>{zipContent.faq.map(item => <><dt>{item.question}</dt><dd>{item.answer}</dd></>)}</dl>
+      <ul>{zipContent.limits.map(limit => <li>{limit}</li>)}</ul>
+    </section>
+  </main>
+</Page> : null}
+
+<style>
+  .hub-card { padding: var(--space-5); border: 1px solid var(--color-control-border); border-radius: var(--radius-md); background: var(--color-surface); }
+  .hub-card h2 { margin-bottom: var(--space-3); }
+  .hub-card a { color: var(--color-link); text-decoration: underline; }
+  .hub-card p { margin-bottom: 0; color: var(--color-subtle); }
+</style>

@@ -1,10 +1,11 @@
 import { DEFAULT_LOCALE, ENGLISH_LOCALE, LOCALES, type Locale } from '../i18n/locales';
 import type { PageContent } from '../i18n/types';
-import { pagePath as modelPagePath, zipPageFromPath, type ZipPage } from './url-model';
+import type { HubContent } from '../i18n/hub';
+import { pagePath as modelPagePath, publicPageFromPath, zipPageFromPath, type PublicPage } from './url-model';
 
 export const SITE_ORIGIN = 'https://runlocally.app';
-export type PublicPage = ZipPage;
-export { zipPageFromPath, zipPageFromPath as publicPageFromPath };
+export type { PublicPage } from './url-model';
+export { publicPageFromPath, zipPageFromPath };
 
 export function ogLocale(locale: Locale): string {
   const value = LOCALES.find(entry => entry.code === locale)?.ogLocale;
@@ -23,8 +24,8 @@ export function pageUrl(locale: Locale, page: PublicPage): string {
 export function publicPageFromUrl(value: string): { locale: Locale; page: PublicPage } | undefined {
   let url: URL;
   try { url = new URL(value); } catch { return undefined; }
-  if (url.origin !== SITE_ORIGIN || url.search || url.hash) return undefined;
-  return zipPageFromPath(url.pathname);
+  if (url.origin !== SITE_ORIGIN || url.search || url.hash || value !== url.href) return undefined;
+  return publicPageFromPath(url.pathname);
 }
 
 export function isPublicPageUrl(value: string): boolean {
@@ -61,21 +62,23 @@ export function safeJsonLd(value: object): string {
     .replace(/\u2029/g, '\\u2029');
 }
 
-export function headData(locale: Locale, page: PublicPage, content: PageContent) {
+export function headData(locale: Locale, page: PublicPage, content: PageContent | HubContent) {
   const title = content.title;
   const description = content.description;
   checkMetadataLength(locale, page, title, description);
   const url = pageUrl(locale, page);
   const localeInfo = LOCALES.find(entry => entry.code === locale)!;
-  const application = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: content.h1,
-    description,
-    url,
-    inLanguage: localeInfo.hreflang,
-    featureList: page === 'top' ? [] : content.steps.map(step => step.heading).filter(Boolean),
-  };
+  const common = { '@context': 'https://schema.org', name: content.h1, description, url, inLanguage: localeInfo.hreflang };
+  let application: typeof common & { '@type': 'WebSite'; featureList?: never } |
+    typeof common & { '@type': 'SoftwareApplication'; featureList: string[] };
+  if (page === 'hub') {
+    if ('steps' in content) throw new Error('Hub requires hub content');
+    application = { ...common, '@type': 'WebSite' };
+  } else {
+    if (!('steps' in content) || !Array.isArray(content.steps)) throw new Error('ZIP page requires steps');
+    application = { ...common, '@type': 'SoftwareApplication',
+      featureList: page === 'top' ? [] : content.steps.map(step => step.heading).filter(Boolean) };
+  }
   return {
     title,
     description,
