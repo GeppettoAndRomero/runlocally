@@ -1,0 +1,28 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+
+const expectedManifest = {
+  id: '/',
+  start_url: '/zip/',
+  scope: '/',
+  display: 'standalone',
+  lang: 'ja',
+  name: 'runlocally — ZIPワークベンチ',
+  short_name: 'runlocally',
+  description: 'ファイルを送信せず、ブラウザでZIPを閲覧・取り出し・修正できます。',
+  theme_color: '#4f46e5',
+  background_color: '#ffffff',
+  icons: [
+    { src: '/icons/app-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+    { src: '/icons/app-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+  ],
+};
+
+describe('PWA launch manifest', () => {
+  for (const path of ['public/manifest.webmanifest', 'dist/manifest.webmanifest']) {
+    it(`${path} matches the published manifest`, () => {
+      const manifest = JSON.parse(readFileSync(path, 'utf8'));
+      expect(manifest).toEqual(expectedManifest);
+    });
+  }
+});

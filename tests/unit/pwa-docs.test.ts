@@ -54,7 +54,7 @@ describe('docs/PWA.md stays true', () => {
     expect(config).not.toContain('runtimeCaching');
     const manifest = JSON.parse(read('public/manifest.webmanifest')) as Record<string, string>;
     expect(manifest.scope).toBe('/');
-    expect(manifest.start_url).toBe('/');
+    expect(manifest.start_url).toBe('/zip/');
     expect(manifest.display).toBe('standalone');
   });
 
@@ -87,8 +87,12 @@ describe('docs/PWA.md stays true', () => {
     expect(seconds).toBe(365 * 24 * 60 * 60);
     expect(doc).toMatch(/`\/_astro\/\*` is `immutable` for a year/);
     // The manifest display mode and the header names listed in the page.
-    const manifest = JSON.parse(read('public/manifest.webmanifest')) as { display: string; start_url: string; scope: string };
+    const manifest = JSON.parse(read('public/manifest.webmanifest')) as { id: string; display: string; start_url: string; scope: string };
     expect(doc).toContain(`\`display: ${manifest.display}\``);
+    for (const field of ['id', 'start_url', 'scope'] as const) {
+      expect(doc).toContain(`\`${field}: ${manifest[field]}\``);
+    }
+    expect(doc).not.toMatch(/uses `\/` as `id`, `start_url` and `scope`/);
     for (const header of ['X-Content-Type-Options', 'Referrer-Policy', 'Permissions-Policy']) {
       expect(generator, header).toContain(header);
       expect(doc, header).toContain(`\`${header}\``);

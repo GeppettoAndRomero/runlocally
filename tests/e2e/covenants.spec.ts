@@ -11,7 +11,7 @@ test('published pages, manifest and reporting path', async ({ page, context, bro
   const manifestResponse = await context.request.get(url('/manifest.webmanifest'));
   expect(manifestResponse.ok()).toBe(true);
   const manifest = await manifestResponse.json();
-  expect([manifest.id, manifest.start_url, manifest.scope]).toEqual(['/', '/', '/']);
+  expect([manifest.id, manifest.start_url, manifest.scope]).toEqual(['/', '/zip/', '/']);
   expect(manifest.display).toBe('standalone');
   expect(manifest.theme_color).toBe('#4f46e5');
   for (const size of [192, 512]) {
