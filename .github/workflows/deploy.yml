@@ -98,6 +98,8 @@ jobs:
         with:
           name: verified-deploy
           if-no-files-found: error
+          # dist and functions must reach the publish job exactly as they were sealed, hidden files included.
+          include-hidden-files: true
           retention-days: 1
           path: |
             dist/
