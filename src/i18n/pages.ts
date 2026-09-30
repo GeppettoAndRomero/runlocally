@@ -1,7 +1,7 @@
 import { LOCALES, type Locale } from './locales';
 import { AVAILABLE_OPS } from './ops';
 import type { PageContent } from './types';
-import type { PublicPage } from '../seo/page';
+import type { ZipPage } from '../seo/url-model';
 
 const modules = import.meta.glob<{ pages: Record<string, PageContent> }>('./*/pages.ts', { eager: true });
 export const pages = Object.fromEntries(LOCALES.map(({ code }) => {
@@ -17,7 +17,7 @@ export const pages = Object.fromEntries(LOCALES.map(({ code }) => {
   return [code, dictionary];
 })) as Record<Locale, Record<string, PageContent>>;
 
-export function pageContent(locale: Locale, page: PublicPage): PageContent {
+export function pageContent(locale: Locale, page: ZipPage): PageContent {
   const key = page === 'top' ? 'top' : AVAILABLE_OPS.find(op => op.id === page)?.i18nKey;
   const content = key && pages[locale]?.[key];
   if (!content) throw new Error(`Missing page content: ${locale}/${page}`);

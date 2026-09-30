@@ -1,7 +1,8 @@
 import { useEffect, useReducer, useRef, useState } from 'preact/hooks';
 import { LOCALES, type Locale } from '../i18n/locales';
 import { AVAILABLE_OPS, type AvailableOpId } from '../i18n/ops';
-import { pagePath, publicPageFromPath, type PublicPage } from '../seo/page';
+import { pagePath, zipPageFromPath } from '../seo/page';
+import type { ZipPage } from '../seo/url-model';
 import { displayPage } from './page-display';
 import { AppButton } from '../ui/AppButton';
 import { AppCard } from '../ui/AppCard';
@@ -34,8 +35,8 @@ export function isWorkbenchBusy(session: Session, controller: WorkbenchControlle
 export function isWorkbenchUpdateSafe(session: Session, controller: WorkbenchController | null): boolean {
   return !isWorkbenchBusy(session, controller) && !session.source && session.results.length === 0;
 }
-export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: { locale: Locale; page?: PublicPage; op?: AvailableOpId }) {
-  const [route, setRoute] = useState<{ locale: Locale; page: PublicPage }>({ locale, page: initialPage });
+export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: { locale: Locale; page?: ZipPage; op?: AvailableOpId }) {
+  const [route, setRoute] = useState<{ locale: Locale; page: ZipPage }>({ locale, page: initialPage });
   const routeRef = useRef(route);
   routeRef.current = route;
   const [session, publish] = useReducer(sessionReducer, undefined, () => initialSession(0, op));
@@ -53,8 +54,8 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   const [repairPage, setRepairPage] = useState(0);
   const t = ui[route.locale].workbench;
   const copy = inputStateCopy[route.locale];
-  const requestedOp = (value: PublicPage): AvailableOpId => value === 'top' ? 'browse' : value;
-  const navigate = (next: { locale: Locale; page: PublicPage }, mode: 'push' | 'replace' | 'pop' = 'push') => {
+  const requestedOp = (value: ZipPage): AvailableOpId => value === 'top' ? 'browse' : value;
+  const navigate = (next: { locale: Locale; page: ZipPage }, mode: 'push' | 'replace' | 'pop' = 'push') => {
     const current = routeRef.current;
     const path = pagePath(next.locale, next.page);
     if (mode === 'push' && current.locale === next.locale && current.page === next.page) return;
@@ -74,7 +75,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
       if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
       const url = new URL(link.href);
       if (url.origin !== window.location.origin || url.search || url.hash) return;
-      const next = publicPageFromPath(url.pathname);
+      const next = zipPageFromPath(url.pathname);
       if (!next) return;
       event.preventDefault();
       navigate(next);
@@ -84,7 +85,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   }, []);
   useEffect(() => {
     const pop = () => {
-      const next = publicPageFromPath(window.location.pathname);
+      const next = zipPageFromPath(window.location.pathname);
       if (next) navigate(next, 'pop');
     };
     window.addEventListener('popstate', pop);

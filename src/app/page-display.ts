@@ -2,7 +2,8 @@ import { pageContent } from '../i18n/pages';
 import { chromeUi, ui } from '../i18n/ui';
 import { LOCALES, type Locale } from '../i18n/locales';
 import { AVAILABLE_OPS } from '../i18n/ops';
-import { headData, pagePath, type PublicPage } from '../seo/page';
+import { headData, pagePath } from '../seo/page';
+import type { ZipPage } from '../seo/url-model';
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, value: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -14,7 +15,7 @@ function setMeta(selector: string, value: string): void {
   document.querySelector<HTMLMetaElement>(selector)?.setAttribute('content', value);
 }
 
-export function displayPage(locale: Locale, page: PublicPage): void {
+export function displayPage(locale: Locale, page: ZipPage): void {
   const content = pageContent(locale, page);
   const head = headData(locale, page, content);
   document.documentElement.lang = locale;
