@@ -25,7 +25,18 @@
 3. PWA としてインストール可能 — ブラウザのインストール導線と DevTools の Application → Manifest で確認できます。
 4. 脆弱性報告経路を維持する — [SECURITY.md](SECURITY.md) と GitHub Private Vulnerability Reporting で確認できます。
 
-正確な文言は [原則](docs/PRINCIPLES.md) を参照してください。Service Worker は初回の事前保存完了後に公開中の10ページと操作資産をオフラインで提供します。対応ブラウザではインストール案内が表示されます。実際のオフライン操作とインストールは実機確認が必要です。画面の状態と操作は [UI 文書](docs/UI.md) を参照してください。日本語・英語の top と4つの操作ページを公開し、言語や操作の切り替えで現在の File と処理結果を保持します。言語とページの追加手順は [I18N 文書](docs/I18N.md) を参照してください。Service Worker・更新・ヘッダ・旧 URL の仕組みは [PWA 文書](docs/PWA.md) を参照してください。公約と自動検証の対応、検証の限界、実ブラウザ確認の手順は [公約の検証](docs/COVENANTS.md) を参照してください。
+正確な文言は [原則](docs/PRINCIPLES.md) を参照してください。Service Worker は初回の事前保存完了後に公開中の12ページ（ハブ2ページと ZIP 10ページ）と操作資産をオフラインで提供します。対応ブラウザではインストール案内が表示されます。実際のオフライン操作とインストールは実機確認が必要です。画面の状態と操作は [UI 文書](docs/UI.md) を参照してください。
+
+| ページ | 日本語 | 英語 |
+| --- | --- | --- |
+| ハブ | `/` | `/en/` |
+| ZIP top | `/zip/` | `/en/zip/` |
+| 閲覧 | `/zip/view/` | `/en/zip/view/` |
+| 取り出し | `/zip/extract/` | `/en/zip/extract/` |
+| 削除 | `/zip/remove/` | `/en/zip/remove/` |
+| 名前修復 | `/zip/fix-names/` | `/en/zip/fix-names/` |
+
+各ハブには同じ言語の ZIP top へ進むカードがあります。Workbench は ZIP ページだけに載ります。ZIP 内の操作・言語切替では現在の File と処理結果を保持しますが、ハブへの通常遷移と再読込では保持しません。旧操作 URL は410を返し、新 URL へ301転送しません。言語とページの追加手順は [I18N 文書](docs/I18N.md) を参照してください。Service Worker・更新・ヘッダ・旧 URL の仕組みは [PWA 文書](docs/PWA.md) を参照してください。公約と自動検証の対応、検証の限界、実ブラウザ確認の手順は [公約の検証](docs/COVENANTS.md) を参照してください。
 
 ### 開発
 
@@ -63,7 +74,18 @@ Encrypted ZIP entries cannot be extracted; batch extraction skips them. Removal 
 
 The actual screen, unedited: a ZIP with garbled file names has been added and the name repair candidates are being reviewed.
 
-The four promises are no additional client requests, offline use, PWA installation and a maintained vulnerability reporting path. Check them through DevTools Network, DevTools Offline, the browser install prompt and DevTools Application → Manifest, and [SECURITY.md](SECURITY.md) with Private Vulnerability Reporting, respectively. See the exact wording in [Principles](docs/PRINCIPLES.md). After initial precaching completes, the Service Worker serves the ten public pages and operation assets offline. Supported browsers can show an install prompt. Offline operations and installation still need device verification. See [Covenant verification](docs/COVENANTS.md) for the automated checks, their limits, and device verification steps. Japanese and English top and operation pages share the Workbench. Switching language or operation keeps the current File and results. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
+The four promises are no additional client requests, offline use, PWA installation and a maintained vulnerability reporting path. Check them through DevTools Network, DevTools Offline, the browser install prompt and DevTools Application → Manifest, and [SECURITY.md](SECURITY.md) with Private Vulnerability Reporting, respectively. See the exact wording in [Principles](docs/PRINCIPLES.md). After initial precaching completes, the Service Worker serves the twelve public pages (two hubs and ten ZIP pages) and operation assets offline. Supported browsers can show an install prompt. Offline operations and installation still need device verification. See [Covenant verification](docs/COVENANTS.md) for the automated checks, their limits, and device verification steps.
+
+| Page | Japanese | English |
+| --- | --- | --- |
+| Hub | `/` | `/en/` |
+| ZIP top | `/zip/` | `/en/zip/` |
+| Browse | `/zip/view/` | `/en/zip/view/` |
+| Extract | `/zip/extract/` | `/en/zip/extract/` |
+| Remove | `/zip/remove/` | `/en/zip/remove/` |
+| Fix names | `/zip/fix-names/` | `/en/zip/fix-names/` |
+
+Each hub has a card linking to ZIP top in the same language. Only ZIP pages mount the Workbench. Switching operations or languages within ZIP keeps the current File and results; ordinary navigation to a hub and reloading start a new session. Old operation URLs return 410 rather than redirecting to the new URLs with 301. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
 
 Development requires Node.js 24 or newer: run `npm ci`, `npm run dev` and `npm run ci`. Self-hosting with Docker is planned for v0.4.0. License: [MIT](LICENSE).
 
