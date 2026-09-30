@@ -1,4 +1,7 @@
-.workbench { max-width: 72rem; margin: 2rem auto; padding: 0 1rem 3rem; display: grid; gap: var(--space-4); min-width: 0; }
+.workbench { max-width: var(--size-container); margin: 2rem auto; padding: 0 1rem 3rem; display: grid; gap: var(--space-4); min-width: 0; }
+.workbench__layout { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: var(--space-4); min-width: 0; }
+.workbench__workspace { display: grid; align-content: start; gap: var(--space-4); min-width: 0; }
+.workbench__layout > * { min-width: 0; }
 .workbench .app-card { margin: 0; min-width: 0; }
 .workbench .workbench__picker { display: grid; gap: var(--space-2); margin-bottom: var(--space-4); margin-right: 0; padding: var(--space-4); border: 1px solid var(--color-control-border); border-radius: var(--radius-md); background: var(--color-bg); min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 .workbench__picker:focus-within { outline: 2px solid var(--color-focus); outline-offset: 2px; }
@@ -9,11 +12,14 @@
 .workbench__kind { flex: none; color: var(--color-subtle); }
 .workbench .workbench__language { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; margin-right: 0; }
 .workbench__language select { min-width: 0; }
-.workbench__tabs { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) var(--space-2) 0; border-bottom: 1px solid var(--color-border); min-width: 0; }
-.workbench__tabs button { min-width: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border); border-bottom: 3px solid transparent; border-radius: var(--radius-sm) var(--radius-sm) 0 0; background: var(--color-surface); overflow-wrap: anywhere; }
-.workbench__tabs button:hover { background: var(--color-bg); }
-.workbench__tabs button[aria-selected="true"] { border-bottom-color: currentColor; font-weight: 700; background: var(--color-bg); }
-.workbench > section[role="tabpanel"] { min-width: 0; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: var(--color-bg); }
+.workbench__menu { display: flex; flex-direction: column; align-self: start; gap: var(--space-2); min-width: 0; }
+.workbench__menu button { display: grid; gap: var(--space-2); width: 100%; min-width: 0; min-height: var(--size-control-min); padding: var(--space-3); text-align: left; color: var(--color-text); border: 1px solid var(--color-control-border); border-inline-start: 3px solid transparent; border-radius: var(--radius-sm); background: var(--color-surface); overflow-wrap: anywhere; }
+.workbench__menu button:hover { background: var(--color-bg); }
+.workbench__menu button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.workbench__menu button[aria-selected="true"] { border-inline-start-color: var(--color-text); font-weight: 700; background: var(--color-bg); }
+.workbench__menu-description { color: var(--color-subtle); font-size: var(--fs-2); font-weight: 400; }
+.workbench__workspace > section[role="tabpanel"] { min-width: 0; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; background: var(--color-bg); }
+.workbench__not-ready { margin: 0; padding: var(--space-4); color: var(--color-subtle); }
 .workbench__list { min-width: 0; }
 .workbench__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); min-width: 0; padding: var(--space-3) var(--space-2); border-bottom: 1px solid var(--color-border); }
 .workbench__entry { flex: 1 1 18rem; display: flex; align-items: flex-start; gap: var(--space-2); min-width: 0; }
@@ -37,3 +43,8 @@
 .workbench__result h3, .workbench__result-source, .workbench__result-summary { overflow-wrap: anywhere; }
 .workbench__result-summary { padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border); }
 @media (max-width: 640px) { .workbench__input-card { padding: var(--space-4); } }
+@media (max-width: 47.999rem) {
+  .workbench__layout { grid-template-columns: minmax(0, 1fr); }
+  .workbench__menu { flex-direction: row; flex-wrap: wrap; }
+  .workbench__menu button { width: auto; flex: 1 1 10rem; }
+}
