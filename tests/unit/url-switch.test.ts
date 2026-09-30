@@ -9,18 +9,21 @@ import {
 } from '../../src/seo/page';
 import { publicPageFromPath as modelPageFromPath } from '../../src/seo/url-model';
 
-const zipRoutes = [
+const publicRoutes = [
+  { locale: 'ja', page: 'hub', path: '/' },
   { locale: 'ja', page: 'top', path: '/zip/' },
   { locale: 'ja', page: 'browse', path: '/zip/view/' },
   { locale: 'ja', page: 'extract', path: '/zip/extract/' },
   { locale: 'ja', page: 'remove', path: '/zip/remove/' },
   { locale: 'ja', page: 'fix-names', path: '/zip/fix-names/' },
+  { locale: 'en', page: 'hub', path: '/en/' },
   { locale: 'en', page: 'top', path: '/en/zip/' },
   { locale: 'en', page: 'browse', path: '/en/zip/view/' },
   { locale: 'en', page: 'extract', path: '/en/zip/extract/' },
   { locale: 'en', page: 'remove', path: '/en/zip/remove/' },
   { locale: 'en', page: 'fix-names', path: '/en/zip/fix-names/' },
 ] as const;
+const zipRoutes = publicRoutes.filter(route => route.page !== 'hub');
 
 const oldOperationPaths = [
   '/zip-viewer/', '/unzip/', '/remove-from-zip/', '/zip-filename-fix/',
@@ -34,15 +37,16 @@ const content: PageContent = {
 };
 
 describe('ZIP URL connection', () => {
-  it('generates and parses the ten concrete ZIP URLs through the public module', () => {
+  it('generates and parses the twelve concrete public URLs through the public module', () => {
+    expect(publicRoutes).toHaveLength(12);
     expect(zipRoutes).toHaveLength(10);
-    for (const { locale, page, path } of zipRoutes) {
+    for (const { locale, page, path } of publicRoutes) {
       const route = { locale, page };
       const url = `${SITE_ORIGIN}${path}`;
       expect(pagePath(locale, page)).toBe(path);
       expect(pageUrl(locale, page)).toBe(url);
       expect(publicPageFromPath(path)).toEqual(route);
-      expect(zipPageFromPath(path)).toEqual(route);
+      expect(zipPageFromPath(path)).toEqual(page === 'hub' ? undefined : route);
       expect(publicPageFromUrl(url)).toEqual(route);
       expect(isPublicPageUrl(url)).toBe(true);
     }
@@ -52,7 +56,7 @@ describe('ZIP URL connection', () => {
     const unpublished = LOCALES.flatMap(({ code }) => OPS.filter(op => !op.available)
       .map(op => `${code === 'ja' ? '' : `/${code}`}/zip/${ZIP_SLUGS[op.id]}/`));
     const invalidPaths = [
-      '/', '/en/', ...oldOperationPaths, ...unpublished,
+      ...oldOperationPaths, ...unpublished,
       '/ja/zip/', '/fr/zip/', '/zip', '/en/zip', '/zip/view',
       '/zip/view/extra/', '/en/zip/view/extra/', '/zip/view/?file=x',
       '/en/zip/view/#section',
@@ -71,11 +75,13 @@ describe('ZIP URL connection', () => {
     }
   });
 
-  it('keeps hub recognition in the model and outside the ZIP parser', () => {
+  it('recognizes hubs through the model and public module but not the ZIP parser', () => {
     expect(modelPageFromPath('/')).toEqual({ locale: 'ja', page: 'hub' });
     expect(modelPageFromPath('/en/')).toEqual({ locale: 'en', page: 'hub' });
-    expect(publicPageFromPath('/')).toBeUndefined();
-    expect(publicPageFromPath('/en/')).toBeUndefined();
+    expect(publicPageFromPath('/')).toEqual({ locale: 'ja', page: 'hub' });
+    expect(publicPageFromPath('/en/')).toEqual({ locale: 'en', page: 'hub' });
+    expect(zipPageFromPath('/')).toBeUndefined();
+    expect(zipPageFromPath('/en/')).toBeUndefined();
   });
 
   it('uses one distinct registry slug per operation and publishes four operations', () => {

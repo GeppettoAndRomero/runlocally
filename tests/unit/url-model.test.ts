@@ -7,6 +7,7 @@ import {
 } from '../../src/seo/url-model';
 import {
   pagePath as currentPagePath, publicPageFromPath as currentPageFromPath,
+  zipPageFromPath as currentZipPageFromPath,
   type PublicPage as CurrentPage,
 } from '../../src/seo/page';
 
@@ -123,23 +124,27 @@ describe('connected ZIP routes', () => {
     ]);
   });
 
-  it('uses the ten ZIP URLs and round trips', () => {
-    const pages: CurrentPage[] = ['top', ...AVAILABLE_OPS.map(op => op.id)];
-    const zipRoutes = expectedRoutes.filter(route => route.page !== 'hub');
-    expect(zipRoutes).toHaveLength(LOCALES.length * pages.length);
-    for (const { locale, page, path } of zipRoutes) {
+  it('uses the twelve public URLs and round trips', () => {
+    const pages: CurrentPage[] = ['hub', 'top', ...AVAILABLE_OPS.map(op => op.id)];
+    expect(expectedRoutes).toHaveLength(LOCALES.length * pages.length);
+    for (const { locale, page, path } of expectedRoutes) {
       expect(currentPagePath(locale, page)).toBe(path);
       expect(currentPageFromPath(path)).toEqual({ locale, page });
+      expect(currentZipPageFromPath(path)).toEqual(page === 'hub' ? undefined : { locale, page });
     }
     for (const { code } of LOCALES) for (const page of pages) {
       expect(currentPageFromPath(currentPagePath(code, page))).toEqual({ locale: code, page });
     }
   });
 
-  it('excludes hub and legacy routes from the ZIP parser', () => {
+  it('accepts hubs only in the public parser and rejects legacy operations', () => {
     for (const { path } of expectedRoutes.filter(route => route.page === 'hub')) {
-      expect(currentPageFromPath(path)).toBeUndefined();
+      expect(currentPageFromPath(path)).toEqual(publicPageFromPath(path));
+      expect(currentZipPageFromPath(path)).toBeUndefined();
     }
-    for (const { path } of legacyRoutes) expect(currentPageFromPath(path)).toBeUndefined();
+    for (const { path } of legacyRoutes.filter(route => route.page !== 'top')) {
+      expect(currentPageFromPath(path)).toBeUndefined();
+      expect(currentZipPageFromPath(path)).toBeUndefined();
+    }
   });
 });

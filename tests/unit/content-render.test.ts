@@ -7,11 +7,12 @@ import { LOCALES } from '../../src/i18n/locales';
 import { AVAILABLE_OPS } from '../../src/i18n/ops';
 import { pageContent } from '../../src/i18n/pages';
 import { chromeUi, ui } from '../../src/i18n/ui';
-import { pagePath, type PublicPage } from '../../src/seo/page';
+import { pagePath } from '../../src/seo/page';
+import { ZIP_PAGES } from '../../src/seo/url-model';
 
 const output = join(process.cwd(), 'dist');
 
-for (const { code } of LOCALES) for (const current of ['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[]) {
+for (const { code } of LOCALES) for (const current of ZIP_PAGES) {
   test(`${code}/${current} preserves the initial content and operation links`, () => {
     const html = readFileSync(join(output, pagePath(code, current).slice(1), 'index.html'), 'utf8');
     const document: Document = new JSDOM(html).window.document;

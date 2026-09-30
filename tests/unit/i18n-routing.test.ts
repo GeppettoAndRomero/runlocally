@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { LOCALES } from '../../src/i18n/locales';
-import { AVAILABLE_OPS, OPS } from '../../src/i18n/ops';
+import { OPS } from '../../src/i18n/ops';
 import { pageContent, pages } from '../../src/i18n/pages';
-import { pagePath, publicPageFromPath, publicPageFromUrl, SITE_ORIGIN, type PublicPage } from '../../src/seo/page';
+import { pagePath, publicPageFromPath, publicPageFromUrl, SITE_ORIGIN } from '../../src/seo/page';
+import { ZIP_PAGES } from '../../src/seo/url-model';
 
 describe('public routing and dictionaries', () => {
   it('round trips every locale and available page without a default prefix', () => {
     for (const { code } of LOCALES) {
       expect(pages[code]).toBeDefined();
-      for (const page of ['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[]) {
+      for (const page of ZIP_PAGES) {
         const path = pagePath(code, page);
         expect(publicPageFromPath(path)).toEqual({ locale: code, page });
         expect(publicPageFromUrl(`${SITE_ORIGIN}${path}`)).toEqual({ locale: code, page });
