@@ -72,8 +72,8 @@ main section#page-content {
   display: none;
 }
 
-html:not([data-session="open"]):has([data-chrome-home][aria-current="page"])[lang="ja"] .operation-cards[data-lang="ja"],
-html:not([data-session="open"]):has([data-chrome-home][aria-current="page"])[lang="en"] .operation-cards[data-lang="en"] {
+html[data-zip-top]:not([data-session="open"])[lang="ja"] .operation-cards[data-lang="ja"],
+html[data-zip-top]:not([data-session="open"])[lang="en"] .operation-cards[data-lang="en"] {
   display: block;
 }
 

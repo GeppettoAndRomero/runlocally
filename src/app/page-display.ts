@@ -19,6 +19,7 @@ export function displayPage(locale: Locale, page: ZipPage): void {
   const content = pageContent(locale, page);
   const head = headData(locale, page, content);
   document.documentElement.lang = locale;
+  document.documentElement.toggleAttribute('data-zip-top', page === 'top');
   const securityLink = document.getElementById('footer-security');
   if (securityLink) securityLink.textContent = ui[locale].shared.security;
   const home = document.querySelector<HTMLAnchorElement>('[data-chrome-home]');

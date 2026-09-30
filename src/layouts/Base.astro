@@ -32,7 +32,7 @@ const og = metadata?.og ?? {
 };
 ---
 <!doctype html>
-<html lang={localeInfo.code}>
+<html lang={localeInfo.code} data-zip-top={page === 'top' ? '' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
