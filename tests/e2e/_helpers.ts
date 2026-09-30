@@ -3,6 +3,17 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { AVAILABLE_OPS, type AvailableOpId } from '../../src/i18n/ops';
 import { publicPageFromPath } from '../../src/seo/page';
+import { ui as jaUi } from '../../src/i18n/ja/ui';
+import { ui as enUi } from '../../src/i18n/en/ui';
+
+const menuUi = { ja: jaUi.menu, en: enUi.menu };
+function tab(page: Page, opId: AvailableOpId) {
+  const route = publicPageFromPath(new URL(page.url()).pathname);
+  if (!route || route.page === 'hub') throw new Error(`Unknown ZIP page: ${page.url()}`);
+  const op = AVAILABLE_OPS.find(entry => entry.id === opId);
+  if (!op) throw new Error(`Unknown operation: ${opId}`);
+  return page.getByRole('tab', { name: menuUi[route.locale][op.i18nKey].verb, exact: true });
+}
 
 const fixture = (path: string) => join(process.cwd(), 'tests/fixtures', path);
 export async function ready(page: Page) {
@@ -52,11 +63,14 @@ export async function drop(page: Page, path: string) {
   }, { data: [...bytes], name });
   await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await expect(page.getByRole('tab', { name: 'Browse' })).toBeEnabled();
+  await expect(tab(page, 'browse')).toBeEnabled();
+  await expect(page.locator('#panel-browse [role="list"]')).toHaveCount(1);
+  await expect(page.locator('.workbench__picker input')).toBeEnabled();
 }
 export async function select(page: Page, op: AvailableOpId) {
-  await page.locator(`[data-op="${op}"]`).click();
-  await expect(page.locator(`[data-op="${op}"]`)).toHaveAttribute('aria-selected', 'true');
+  const target = tab(page, op);
+  await target.click();
+  await expect(target).toHaveAttribute('aria-selected', 'true');
 }
 const resultCards = (page: Page) => page.locator('article.workbench__result');
 
@@ -81,7 +95,10 @@ export async function save(page: Page, card: Locator, name: string) {
 }
 export async function reinput(page: Page, card: Locator, name: string) {
   await card.getByRole('button', { name: `Use as next input: ${name}` }).click();
-  await expect(page.getByRole('tab', { name: 'Browse' })).toBeVisible();
+  await expect(tab(page, 'browse')).toBeVisible();
+  await expect(page.locator('.workbench__filename')).toHaveText(name);
+  await expect(page.locator('#panel-browse [role="list"]')).toHaveCount(1);
+  await expect(page.locator('.workbench__picker input')).toBeEnabled();
 }
 async function browse(page: Page, names: string[]) {
   await select(page, 'browse');

@@ -6,6 +6,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { ready, select, save, reinput, roundTrip } from './_helpers';
 import { visit } from './_covenant-support';
 import { zipHome } from './_paths';
+import { AVAILABLE_OPS, type AvailableOp } from '../../src/i18n/ops';
+import { ui as enUi } from '../../src/i18n/en/ui';
 
 configure({ useWebWorkers: false });
 const fixture = (path: string) => readFile(join(process.cwd(), 'tests/fixtures', path));
@@ -56,6 +58,26 @@ function watchDownloads(page: Page) {
   let count = 0;
   page.on('download', () => { count++; });
   return () => count;
+}
+async function inertMenu(page: Page, ops: readonly AvailableOp[], guidance: string) {
+  const tabs = page.getByRole('tab');
+  await expect(tabs).toHaveCount(ops.length);
+  expect(await tabs.allTextContents()).toEqual(ops.map(op =>
+    `${enUi.menu[op.i18nKey].verb}${enUi.menu[op.i18nKey].description}`));
+  await expect(page.locator('[role="tabpanel"]')).toHaveCount(ops.length);
+  await expect(page.locator('[role="tabpanel"] button, [role="tabpanel"] input, [role="tabpanel"] select')).toHaveCount(0);
+  for (const op of ops) {
+    await select(page, op.id);
+    const panel = page.locator(`#panel-${op.id}`);
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText(guidance);
+    await expect(panel.locator('.workbench__not-ready')).toBeVisible();
+    await expect(panel.getByRole('button')).toHaveCount(0);
+    await expect(panel.getByRole('checkbox')).toHaveCount(0);
+    await expect(panel.getByRole('radio')).toHaveCount(0);
+    await expect(panel.getByRole('combobox')).toHaveCount(0);
+    await expect(page.locator('[role="tabpanel"]:not([hidden])')).toHaveCount(1);
+  }
 }
 async function noOutput(page: Page, downloads: () => number) {
   await expect(cards(page)).toHaveCount(0);
@@ -219,7 +241,7 @@ test('unreadable ZIP reports listing error and preserves input', async ({ page }
   const downloads = watchDownloads(page);
   const hash = await intake(page, await fixture(path), 'bad-central.zip');
   await expect(page.getByRole('alert')).toContainText('Could not read the ZIP directory information.');
-  await expect(page.getByRole('tab')).toHaveCount(0);
+  await inertMenu(page, AVAILABLE_OPS, enUi.workbench.retryListing);
   await noOutput(page, downloads);
   await unchanged(page, path, hash);
 });
@@ -303,12 +325,12 @@ for (const count of [500, 501]) test(String(count) + ' entries page correctly in
   await select(page, 'remove');
   await paging(page, 'remove', count);
 });
-for (const name of ['unknown.bin', 'unknown.zip']) test('unrecognized bytes in ' + name + ' show no operation or output', async ({ page }) => {
+for (const name of ['unknown.bin', 'unknown.zip']) test('unrecognized bytes in ' + name + ' show guidance without executable controls or output', async ({ page }) => {
   await visit(page, zipHome('en'));
   const downloads = watchDownloads(page);
   const hash = await intake(page, new Uint8Array([0x13, 0x37, 0x00, 0x42, 0x19]), name);
   await expect(page.getByRole('alert')).toContainText('Format could not be identified.');
-  await expect(page.getByRole('tab')).toHaveCount(0);
+  await inertMenu(page, AVAILABLE_OPS.filter(op => op.archive), enUi.workbench.choose);
   await noOutput(page, downloads);
   await heldUnchanged(page, hash);
 });

@@ -34,10 +34,14 @@ for (const locale of ['en', 'ja'] as const) for (const width of [360, 768, 1280]
     const tabs = page.getByRole('tab');
     await expect(tabs).toHaveCount(4);
     const selected = page.locator('[role="tab"][aria-selected="true"]');
-    const tabStyle = await selected.evaluate(node => { const s = getComputedStyle(node); return { weight: s.fontWeight, border: s.borderBottomWidth, color: s.borderBottomColor, background: s.backgroundColor }; });
+    const tabStyle = await selected.evaluate(node => { const s = getComputedStyle(node); return { weight: s.fontWeight, border: s.borderInlineStartWidth, color: s.borderInlineStartColor }; });
+    const otherStyle = await page.locator('[role="tab"][aria-selected="false"]').first().evaluate(node => { const s = getComputedStyle(node); return { weight: s.fontWeight, border: s.borderInlineStartWidth, color: s.borderInlineStartColor }; });
     expect(Number(tabStyle.weight)).toBeGreaterThanOrEqual(700);
+    expect(Number(tabStyle.weight)).toBeGreaterThan(Number(otherStyle.weight));
     expect(parseFloat(tabStyle.border)).toBeGreaterThan(0);
     expect(tabStyle.color).not.toBe('rgba(0, 0, 0, 0)');
+    expect(tabStyle.color).not.toBe(otherStyle.color);
+    expect(tabStyle.border).toBe(otherStyle.border);
     const hover = page.locator('[data-op="extract"]');
     const initialBackground = await hover.evaluate(node => getComputedStyle(node).backgroundColor);
     await hover.hover();
@@ -66,14 +70,17 @@ for (const locale of ['en', 'ja'] as const) for (const width of [360, 768, 1280]
     await page.keyboard.press('Space');
     await expect(checkbox).not.toBeChecked();
     await expect(page.locator('#panel-remove [data-keep-state="unchecked"]')).toHaveCount(1);
-    expect((await checkbox.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+    const checkboxBox = await checkbox.boundingBox();
+    expect(checkboxBox).not.toBeNull();
+    expect(Number(checkboxBox?.height.toFixed(4))).toBeGreaterThanOrEqual(44);
     await select(page, 'extract');
     const radio = page.getByRole('radio').last();
     await radio.check();
     await expect(page.getByRole('combobox').last()).toBeVisible();
     for (const control of [radio.locator('..'), page.getByRole('combobox').last()]) {
       const box = await control.boundingBox();
-      expect(box?.height).toBeGreaterThanOrEqual(44);
+      expect(box).not.toBeNull();
+      expect(Number(box?.height.toFixed(4))).toBeGreaterThanOrEqual(44);
     }
     await page.locator('#panel-extract .app-button--primary').click();
     const result = page.locator('article.workbench__result').first();
