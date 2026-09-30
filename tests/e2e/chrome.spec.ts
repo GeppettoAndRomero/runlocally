@@ -8,6 +8,7 @@ import { ui as enUi } from '../../src/i18n/en/ui';
 import { ui as jaUi } from '../../src/i18n/ja/ui';
 import { activeRootWorker, visit } from './_covenant-support';
 import { drop } from './_helpers';
+import { zipHome, zipOp } from './_paths';
 
 const dictionaries = { ja: jaUi, en: enUi };
 const contents = { ja: jaPages, en: enPages };
@@ -80,7 +81,7 @@ test('all published pages render the same chrome contract', async ({ page, conte
 });
 
 test('header, language, select, tabs and history keep the route in sync', async ({ page }) => {
-  await visit(page, '/');
+  await visit(page, zipHome('ja'));
   await page.locator('[data-chrome-page="extract"]').click();
   await check(page, 'ja', 'extract');
   await page.locator('[data-chrome-locale="en"]').click();
@@ -115,7 +116,7 @@ test('the chrome is complete in the initial HTML without JavaScript', async ({ b
 });
 
 test('header navigation retains input and results without requests', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   await activeRootWorker(page);
   await drop(page, 'zip/sample.zip');
   await page.locator('[data-op="extract"]').click();
@@ -137,7 +138,7 @@ test('header navigation retains input and results without requests', async ({ pa
 });
 
 test('archive format corrects unavailable operation and chrome', async ({ page }) => {
-  await visit(page, '/en/remove-from-zip/');
+  await visit(page, zipOp('en', 'remove'));
   await drop(page, 'archive/sample.7z');
   await check(page, 'en', 'browse');
 });

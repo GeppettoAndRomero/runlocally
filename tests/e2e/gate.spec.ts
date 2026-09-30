@@ -5,6 +5,7 @@ import { configure, BlobWriter, TextReader, ZipWriter } from '@zip.js/zip.js';
 import { expect, test, type Page } from '@playwright/test';
 import { ready, select, save, reinput, roundTrip } from './_helpers';
 import { visit } from './_covenant-support';
+import { zipHome } from './_paths';
 
 configure({ useWebWorkers: false });
 const fixture = (path: string) => readFile(join(process.cwd(), 'tests/fixtures', path));
@@ -104,7 +105,7 @@ async function paging(page: Page, op: 'browse' | 'remove', total: number) {
 }
 
 test('Japanese extraction and repair preserve the source', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   const samplePath = 'zip/sample.zip';
   const sample = await fixture(samplePath);
   const sampleHash = await intake(page, sample, 'sample.zip');
@@ -134,7 +135,7 @@ test('Japanese extraction and repair preserve the source', async ({ page }) => {
 });
 
 test('empty ZIP has one inert page and zero-file extraction', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   const bytes = new Uint8Array(22);
   bytes.set([0x50, 0x4b, 0x05, 0x06]);
   await intake(page, bytes, 'empty.zip');
@@ -157,7 +158,7 @@ const mixed = () => zip([
   { name: 'drop.txt', text: 'drop' },
 ]);
 test('encrypted entries are listed but excluded from extraction', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   await intake(page, await mixed(), 'mixed.zip');
   await expect(page.locator('#panel-browse')).toContainText('Total entries: 3 / Files: 3 / Extractable files: 2');
   await expect(list(page, 'browse').getByText('locked.txt', { exact: true })).toBeVisible();
@@ -175,7 +176,7 @@ test('encrypted entries are listed but excluded from extraction', async ({ page 
   await expect(cards(page).first().getByRole('button', { name: 'Save file: locked.txt' })).toHaveCount(0);
 });
 test('keeping an encrypted entry makes removal fail without output', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   const bytes = await mixed();
   const hash = await intake(page, bytes, 'mixed.zip');
   const downloads = watchDownloads(page);
@@ -189,7 +190,7 @@ test('keeping an encrypted entry makes removal fail without output', async ({ pa
   await heldUnchanged(page, hash);
 });
 test('excluding an encrypted entry produces a plain ZIP', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   const bytes = await mixed();
   const hash = await intake(page, bytes, 'mixed.zip');
   await select(page, 'remove');
@@ -213,7 +214,7 @@ test('excluding an encrypted entry produces a plain ZIP', async ({ page }) => {
   }
 });
 test('unreadable ZIP reports listing error and preserves input', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   const path = 'zip/recover/bad-central.zip';
   const downloads = watchDownloads(page);
   const hash = await intake(page, await fixture(path), 'bad-central.zip');
@@ -223,7 +224,7 @@ test('unreadable ZIP reports listing error and preserves input', async ({ page }
   await unchanged(page, path, hash);
 });
 for (const mode of ['one', 'all'] as const) test('CRC-damaged ZIP ' + mode + ' extraction reports error without output', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   const path = 'zip/recover/crc-broken.zip';
   const downloads = watchDownloads(page);
   const hash = await intake(page, await fixture(path), 'crc-broken.zip');
@@ -239,7 +240,7 @@ for (const mode of ['one', 'all'] as const) test('CRC-damaged ZIP ' + mode + ' e
   await unchanged(page, path, hash);
 });
 test('removal rejects kept CRC damage and succeeds when excluded', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   const path = 'zip/recover/crc-broken.zip';
   const bytes = await fixture(path);
   const downloads = watchDownloads(page);
@@ -250,7 +251,7 @@ test('removal rejects kept CRC damage and succeeds when excluded', async ({ page
   await expect(page.getByRole('alert')).toContainText('A file in the ZIP is corrupted and could not be extracted.');
   await noOutput(page, downloads);
   await unchanged(page, path, hash);
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   await intake(page, bytes, 'crc-broken.zip');
   await select(page, 'remove');
   await page.getByRole('checkbox', { name: 'broken.txt: Keep' }).uncheck();
@@ -275,7 +276,7 @@ test('removal rejects kept CRC damage and succeeds when excluded', async ({ page
   }
 });
 test('name repair rejects a damaged payload without output', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   const bytes = Uint8Array.from(await fixture('zip/rewrite/mojibake.zip'));
   const central = bytes.findIndex((_, index) => bytes[index] === 0x50 && bytes[index + 1] === 0x4b &&
     bytes[index + 2] === 0x01 && bytes[index + 3] === 0x02);
@@ -293,7 +294,7 @@ test('name repair rejects a damaged payload without output', async ({ page }) =>
   await heldUnchanged(page, hash);
 });
 for (const count of [500, 501]) test(String(count) + ' entries page correctly in browse and removal', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   const bytes = await zip(Array.from({ length: count }, (_, index) => ({
     name: 'file-' + String(index).padStart(3, '0') + '.txt', text: String(index),
   })));
@@ -303,7 +304,7 @@ for (const count of [500, 501]) test(String(count) + ' entries page correctly in
   await paging(page, 'remove', count);
 });
 for (const name of ['unknown.bin', 'unknown.zip']) test('unrecognized bytes in ' + name + ' show no operation or output', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   const downloads = watchDownloads(page);
   const hash = await intake(page, new Uint8Array([0x13, 0x37, 0x00, 0x42, 0x19]), name);
   await expect(page.getByRole('alert')).toContainText('Format could not be identified.');
@@ -312,7 +313,7 @@ for (const name of ['unknown.bin', 'unknown.zip']) test('unrecognized bytes in '
   await heldUnchanged(page, hash);
 });
 test('existing public operation round trip remains available', async ({ page }) => {
-  await visit(page, '/en/');
+  await visit(page, zipHome('en'));
   await roundTrip(page);
 });
 
