@@ -30,6 +30,21 @@ export const OPS = [
 export type RegistryOpId = typeof OPS[number]['id'];
 export type AvailableOp = Extract<typeof OPS[number], { available: true }>;
 export type AvailableOpId = AvailableOp['id'];
+/** Slugs for the planned ZIP routes. OPS.slug remains the current public route. */
+export const ZIP_SLUGS = {
+  browse: 'view',
+  extract: 'extract',
+  remove: 'remove',
+  'fix-names': 'fix-names',
+  recover: 'recover',
+  split: 'split',
+  merge: 'merge',
+  unlock: 'unlock',
+  encrypt: 'encrypt',
+  create: 'create',
+  'rar-7z': 'rar-7z',
+} as const satisfies Record<RegistryOpId, string>;
+
 export const AVAILABLE_OPS: readonly AvailableOp[] = OPS.filter((op): op is AvailableOp => op.available);
 export function archiveAvailable(op: AvailableOpId): boolean {
   return AVAILABLE_OPS.find(entry => entry.id === op)?.archive ?? false;
