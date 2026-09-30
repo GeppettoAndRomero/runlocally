@@ -1,9 +1,10 @@
 import { DEFAULT_LOCALE, ENGLISH_LOCALE, LOCALES, type Locale } from '../i18n/locales';
-import { AVAILABLE_OPS, type AvailableOpId } from '../i18n/ops';
 import type { PageContent } from '../i18n/types';
+import { pagePath as modelPagePath, zipPageFromPath, type ZipPage } from './url-model';
 
 export const SITE_ORIGIN = 'https://runlocally.app';
-export type PublicPage = 'top' | AvailableOpId;
+export type PublicPage = ZipPage;
+export { zipPageFromPath, zipPageFromPath as publicPageFromPath };
 
 export function ogLocale(locale: Locale): string {
   const value = LOCALES.find(entry => entry.code === locale)?.ogLocale;
@@ -11,14 +12,8 @@ export function ogLocale(locale: Locale): string {
   return value;
 }
 
-const opById = new Map<string, string>(AVAILABLE_OPS.map(op => [op.id, op.slug]));
-const opBySlug = new Map<string, AvailableOpId>(AVAILABLE_OPS.map(op => [op.slug, op.id]));
-
 export function pagePath(locale: Locale, page: PublicPage): string {
-  if (!LOCALES.some(entry => entry.code === locale)) throw new Error(`Unknown locale: ${locale}`);
-  if (page !== 'top' && !opById.has(page)) throw new Error(`Unavailable page: ${page}`);
-  const prefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
-  return page === 'top' ? `${prefix}/` : `${prefix}/${opById.get(page)}/`;
+  return modelPagePath(locale, page);
 }
 
 export function pageUrl(locale: Locale, page: PublicPage): string {
@@ -29,19 +24,7 @@ export function publicPageFromUrl(value: string): { locale: Locale; page: Public
   let url: URL;
   try { url = new URL(value); } catch { return undefined; }
   if (url.origin !== SITE_ORIGIN || url.search || url.hash) return undefined;
-  return publicPageFromPath(url.pathname);
-}
-
-export function publicPageFromPath(pathname: string): { locale: Locale; page: PublicPage } | undefined {
-  for (const locale of LOCALES) {
-    if (pathname === pagePath(locale.code, 'top')) return { locale: locale.code, page: 'top' };
-    const prefix = locale.code === DEFAULT_LOCALE ? '/' : `/${locale.code}/`;
-    if (!pathname.startsWith(prefix)) continue;
-    const slug = pathname.slice(prefix.length, -1);
-    const page = opBySlug.get(slug);
-    if (page && pathname === pagePath(locale.code, page)) return { locale: locale.code, page };
-  }
-  return undefined;
+  return zipPageFromPath(url.pathname);
 }
 
 export function isPublicPageUrl(value: string): boolean {

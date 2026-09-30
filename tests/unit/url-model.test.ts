@@ -31,14 +31,7 @@ const expectedSlugs = {
   encrypt: 'encrypt', create: 'create', 'rar-7z': 'rar-7z',
 };
 
-const currentSlugs = {
-  browse: 'zip-viewer', extract: 'unzip', remove: 'remove-from-zip',
-  'fix-names': 'zip-filename-fix', recover: 'recover-zip', split: 'split-zip',
-  merge: 'merge-zip', unlock: 'unlock-zip', encrypt: 'encrypt-zip',
-  create: 'create-zip', 'rar-7z': 'extract-rar-7z',
-};
-
-const currentRoutes = [
+const legacyRoutes = [
   { locale: 'ja', page: 'top', path: '/' },
   { locale: 'ja', page: 'browse', path: '/zip-viewer/' },
   { locale: 'ja', page: 'extract', path: '/unzip/' },
@@ -113,7 +106,7 @@ describe('planned URL model', () => {
       '/zip', '/en/zip', '/zip/view', '/en/zip/view',
       '/zip/view/extra/', '/en/zip/view/extra/', '/zip//view/',
       '/zip/view/?file=archive', '/zip/view/#details', '/?q=1', '/en/#start',
-      ...currentRoutes.filter(route => route.page !== 'top').map(route => route.path),
+      ...legacyRoutes.filter(route => route.page !== 'top').map(route => route.path),
     ];
     for (const path of invalid) {
       expect(publicPageFromPath(path), path).toBeUndefined();
@@ -122,18 +115,19 @@ describe('planned URL model', () => {
   });
 });
 
-describe('current public routes', () => {
-  it('keeps the existing operation slugs and publication boundary', () => {
-    expect(Object.fromEntries(OPS.map(op => [op.id, op.slug]))).toEqual(currentSlugs);
+describe('connected ZIP routes', () => {
+  it('uses the ZIP slugs and keeps the publication boundary', () => {
+    expect(Object.fromEntries(OPS.map(op => [op.id, op.slug]))).toEqual(expectedSlugs);
     expect(OPS.filter(op => op.available).map(op => op.id)).toEqual([
       'browse', 'extract', 'remove', 'fix-names',
     ]);
   });
 
-  it('keeps the current ten concrete URLs and round trips', () => {
+  it('uses the ten ZIP URLs and round trips', () => {
     const pages: CurrentPage[] = ['top', ...AVAILABLE_OPS.map(op => op.id)];
-    expect(currentRoutes).toHaveLength(LOCALES.length * pages.length);
-    for (const { locale, page, path } of currentRoutes) {
+    const zipRoutes = expectedRoutes.filter(route => route.page !== 'hub');
+    expect(zipRoutes).toHaveLength(LOCALES.length * pages.length);
+    for (const { locale, page, path } of zipRoutes) {
       expect(currentPagePath(locale, page)).toBe(path);
       expect(currentPageFromPath(path)).toEqual({ locale, page });
     }
@@ -142,13 +136,10 @@ describe('current public routes', () => {
     }
   });
 
-  it('has not connected the planned ZIP routes to the current public parser', () => {
-    for (const { page, path } of expectedRoutes) {
-      if (page === 'hub') {
-        expect(currentPageFromPath(path)).toEqual({ locale: path === '/' ? 'ja' : 'en', page: 'top' });
-      } else {
-        expect(currentPageFromPath(path)).toBeUndefined();
-      }
+  it('excludes hub and legacy routes from the ZIP parser', () => {
+    for (const { path } of expectedRoutes.filter(route => route.page === 'hub')) {
+      expect(currentPageFromPath(path)).toBeUndefined();
     }
+    for (const { path } of legacyRoutes) expect(currentPageFromPath(path)).toBeUndefined();
   });
 });
