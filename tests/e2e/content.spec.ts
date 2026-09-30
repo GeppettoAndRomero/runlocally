@@ -7,6 +7,7 @@ import { ui as enUi } from '../../src/i18n/en/ui';
 import { ui as jaUi } from '../../src/i18n/ja/ui';
 import { pagePath, type PublicPage } from '../../src/seo/page';
 import { ready } from './_helpers';
+import { zipHome } from './_paths';
 
 const paths = ['top', ...AVAILABLE_OPS.map(op => op.id)] as PublicPage[];
 const contents = { ja: jaPages, en: enPages };
@@ -74,7 +75,7 @@ test('initial pages and links work without JavaScript', async ({ browser, baseUR
 });
 
 test('hydration, route changes, input, and reset update content and cards', async ({ page }) => {
-  await page.goto('/');
+  await page.goto(zipHome('ja'));
   await ready(page);
   await assertContent(page, 'ja', 'top');
   await assertCards(page, 'ja', 'top');
@@ -109,7 +110,7 @@ test('hydration, route changes, input, and reset update content and cards', asyn
 
 test('card links navigate to a document and theme follows the system setting', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/en/');
+  await page.goto(zipHome('en'));
   await ready(page);
   const light = await page.locator('body').evaluate(node => getComputedStyle(node).backgroundColor);
   await page.emulateMedia({ colorScheme: 'dark' });
