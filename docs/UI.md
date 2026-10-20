@@ -1,6 +1,6 @@
 # Workbench UI
 
-The Japanese and English ZIP top (`/zip/` and `/en/zip/`) and available operation pages each mount the same Workbench. The hubs (`/` and `/en/`) have a ZIP card but no Workbench. It owns presentation and dispatches actions to the pure session reducer. The controller owns asynchronous listing and jobs, creates and closes one ZIP client or archive handle per request, and ignores notifications after invalidation. The engine performs local parsing and rewriting. `downloadBlob` handles explicit saves. Results are separate Blobs; creating one neither saves it nor replaces the input.
+The Japanese and English ZIP top (`/zip/` and `/en/zip/`) and available operation pages each mount the same Workbench. The hubs (`/` and `/en/`) have a ZIP card but no Workbench. Workbench owns the session, controller lifecycle, input intake, routing, menu, updates, feedback, results and saves, and dispatches actions to the pure session reducer. Operation components in `src/app/panels/` own panel contents, display calculations and paging state. Workbench renders their tabpanel sections in the available operation order; nonselected panels stay mounted with `hidden`. Pager positions survive operation and language changes and reset when the session generation changes. The controller owns asynchronous listing and jobs, creates and closes one ZIP client or archive handle per request, and ignores notifications after invalidation. The engine performs local parsing and rewriting. `downloadBlob` handles explicit saves. Results are separate Blobs; creating one neither saves it nor replaces the input.
 
 ## State and transitions
 
@@ -47,5 +47,9 @@ Input, listing, and job failures share localized explanations for all six engine
 ## Adding an operation
 
 See [I18N.md](I18N.md) for the publication and language workflow.
+
+Add a `src/app/panels/<operation>.panel.tsx` module exporting `panels`, keyed by operation ID and satisfying `PanelDefinitions`. The eager registry collects these modules without a central import list. Existing components share `builtin.panel.tsx`. Public operations must have a component; missing public registrations, unknown IDs and duplicate registrations fail during registry construction. Unpublished operations may be absent, and registering one does not publish its menu, panel or URL.
+
+Use `PanelProps` for the session, locale, typed text, busy/update flags and callbacks; keep controller ownership and routing in Workbench. Return only section contents, without another wrapper. Preserve IDs, accessible names, event order and the lifetime of hidden panels. New operations still require the input, execution and result support below before publication.
 
 Register the operation in `src/i18n/ops.ts` with its short public `ZIP_SLUGS` slug and representative engine entry point. Historical slugs live separately in `legacy/slugs.json`; publishing an operation does not revive its old URL. Extend input and output types, route and reducer guards, then controller execution and resource cleanup. Add progress, result fields, and actual counts, then tabs, localized text, keyboard and accessible names. Set `available` only after the screen, guards, text, and verification are ready; an engine API alone does not make an operation publishable. Page and navigation generation should use the derived available list. Test worker transfer and component behavior, and update public documentation.
