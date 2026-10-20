@@ -1,3 +1,4 @@
+import { EngineError } from '../engine/errors';
 import { createZipEngine, openArchive, type ZipEngineClient } from './engine';
 import type { OpenArchive } from '../engine/archive/libarchive';
 import { sniffArchiveKind, type ArchiveKind } from '../engine/sniff';
@@ -86,6 +87,34 @@ export class WorkbenchController {
       }
     } catch (error) {
       if (epoch === this.epoch && !this.disposed) this.dispatch({ type: 'listing/failure', generation, requestId, error });
+    }
+  }
+  /** Internal creation route; archive inspection and published operations are independent. */
+  async createFrom(files: readonly File[], state: Session): Promise<void> {
+    if (this.disposed || this.busy || state.create.run.status === 'running' ||
+        state.listing.status === 'reading' || state.job.status === 'running') return;
+    const input = [...files];
+    const failure = input.length === 0 ? new EngineError('unsupported', 'No files to archive')
+      : inputSizeFailure(input.reduce((sum, file) => sum + file.size, 0));
+    if (failure) { this.dispatch({ type: 'create/reject', error: failure }); return; }
+    const epoch = this.epoch;
+    const generation = state.generation;
+    const id = this.id();
+    this.setBusy(true);
+    this.dispatch({ type: 'create/start', generation, id, files: input });
+    let client: ZipEngineClient | undefined;
+    try {
+      client = createZipEngine();
+      this.clients.add(client);
+      const blob = await client.createZip(input, { onProgress: progress => {
+        if (epoch === this.epoch && !this.disposed) this.dispatch({ type: 'create/progress', generation, id, progress });
+      } });
+      if (epoch === this.epoch && !this.disposed) this.dispatch({ type: 'create/success', generation, id, blob });
+    } catch (error) {
+      if (epoch === this.epoch && !this.disposed) this.dispatch({ type: 'create/failure', generation, id, error });
+    } finally {
+      if (client && this.clients.delete(client)) client.terminate();
+      if (epoch === this.epoch) this.setBusy(false);
     }
   }
   async run(state: Session): Promise<void> {

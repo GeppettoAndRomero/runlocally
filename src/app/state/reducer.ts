@@ -1,7 +1,7 @@
 import { EngineError } from '../../engine/errors';
 import type { ArchiveKind } from '../../engine/sniff';
 import type { ZipEntry } from '../../engine/types';
-import type { Job, OpInputs, ResultRecord, Session, SessionAction, SessionFailure } from './session';
+import type { CreateState, Job, OpInputs, ResultRecord, Session, SessionAction, SessionFailure } from './session';
 import { archiveAvailable } from '../../i18n/ops';
 
 export const MAX_INPUT_BYTES = 1_000_000_000;
@@ -63,8 +63,10 @@ function defaultInputs(): OpInputs {
   return { browse: {}, extract: { mode: 'all' }, remove: {}, 'fix-names': {} };
 }
 
+function initialCreate(): CreateState { return { input: [], run: { status: 'idle' } }; }
+
 export function initialSession(generation = 0, op: Session['op'] = 'browse'): Session {
-  return { generation, source: null, listing: { status: 'idle' }, entries: [], archiveEntries: [],
+  return { generation, create: initialCreate(), source: null, listing: { status: 'idle' }, entries: [], archiveEntries: [],
     selection: new Set(), op, inputs: defaultInputs(), job: { status: 'idle' },
     results: [], log: [] };
 }
@@ -72,7 +74,7 @@ export function initialSession(generation = 0, op: Session['op'] = 'browse'): Se
 function withSource(state: Session, file: File, kind: ArchiveKind, chain: readonly string[]): Session {
   const failure = inputSizeFailure(file.size);
   if (failure) return { ...state, inputFailure: failure };
-  return { ...state, generation: state.generation + 1, source: { file, kind, chain },
+  return { ...state, generation: state.generation + 1, create: initialCreate(), source: { file, kind, chain },
     listing: { status: 'idle' }, entries: [], archiveEntries: [], selection: new Set(), job: { status: 'idle' },
     inputs: { ...state.inputs, extract: { mode: 'all' } },
     op: kind === 'zip' || archiveAvailable(state.op) ? state.op : 'browse',
@@ -104,6 +106,33 @@ function resultFor(action: Extract<SessionAction, { type: 'job/success' }>, sour
 /** Pure transition: request IDs and input generations reject late notifications. */
 export function sessionReducer(state: Session, action: SessionAction): Session {
   switch (action.type) {
+    case 'create/start': {
+      if (action.generation !== state.generation || state.create.run.status === 'running' ||
+          state.listing.status === 'reading' || state.job.status === 'running') return state;
+      const failure = action.files.length === 0
+        ? failureOf(new EngineError('unsupported', 'No files to archive'))
+        : inputSizeFailure(action.files.reduce((sum, file) => sum + file.size, 0));
+      if (failure) return { ...state, create: { ...state.create, run: { status: 'failed', failure } } };
+      return { ...state, create: { ...state.create, input: [...action.files],
+        run: { status: 'running', generation: action.generation, id: action.id,
+          progress: { index: 0, total: action.files.length, name: action.files[0].name } } } };
+    }
+    case 'create/reject':
+      if (state.create.run.status === 'running') return state;
+      return { ...state, create: { ...state.create, run: { status: 'failed', failure: failureOf(action.error) } } };
+    case 'create/progress':
+    case 'create/success':
+    case 'create/failure': {
+      const { create } = state;
+      if (action.generation !== state.generation || create.run.status !== 'running' ||
+          create.run.generation !== action.generation || create.run.id !== action.id) return state;
+      if (action.type === 'create/progress') return { ...state, create: { ...create,
+        run: { ...create.run, progress: { ...action.progress } } } };
+      if (action.type === 'create/failure') return { ...state, create: { ...create,
+        run: { status: 'failed', failure: failureOf(action.error) } } };
+      return { ...state, create: { ...create, run: { status: 'succeeded' },
+        result: { sourceFiles: create.input, blob: action.blob, name: 'created.zip', count: create.input.length } } };
+    }
     case 'input/accept': return withSource(state, action.file, action.kind, []);
     case 'input/reject': return { ...state, inputFailure: failureOf(action.error) };
     case 'result/reinput': {
@@ -113,7 +142,7 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
     }
     case 'reset': return initialSession(state.generation + 1);
     case 'listing/start':
-      if (!state.source || state.source.kind === 'unknown' || action.generation !== state.generation || state.job.status === 'running') return state;
+      if (!state.source || state.source.kind === 'unknown' || action.generation !== state.generation || (state.job.status === 'running' || state.create.run.status === 'running')) return state;
       return { ...state, listing: { status: 'reading', route: state.source.kind === 'zip' ? 'zip' : 'archive', requestId: action.requestId },
         entries: state.entries, archiveEntries: state.archiveEntries, selection: state.selection };
     case 'listing/success':
@@ -137,7 +166,7 @@ export function sessionReducer(state: Session, action: SessionAction): Session {
     case 'job/start': {
       if (!state.source || state.source.kind === 'unknown' || state.listing.status !== 'ready' ||
           (action.op === 'browse' || (state.listing.route === 'archive' && action.op !== 'extract')) ||
-          action.generation !== state.generation || state.job.status === 'running') return state;
+          action.generation !== state.generation || (state.job.status === 'running' || state.create.run.status === 'running')) return state;
       // The input and kept names are snapshots; later controls do not change this job.
       const job = { status: 'running', id: action.id, generation: action.generation,
         op: action.op, input: { ...state.inputs[action.op] }, kept: new Set(state.selection) } as Job;
