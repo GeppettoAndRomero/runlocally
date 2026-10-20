@@ -10,6 +10,9 @@ export interface PanelProps {
   t: UiStrings['workbench'];
   busy: boolean;
   updating: boolean;
+  active?: boolean;
+  onCreate?: (files: readonly File[]) => void;
+  onCreateSelectionChange?: (count: number) => void;
   publish: (action: Extract<SessionAction, { type: 'op/input' | 'selection/all' | 'selection/toggle' }>) => void;
   onNavigate: (op: AvailableOpId) => void;
   onRun: () => void;
