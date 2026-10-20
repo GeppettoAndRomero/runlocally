@@ -169,7 +169,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
       {canReset && <AppButton variant="secondary" ariaLabel={`${t.reset}: ${session.source?.file.name ?? t.input}`} onClick={() => controllerRef.current?.reset()}>{t.reset}</AppButton>}
     </AppCard>
     {session.listing.status === 'reading' && <Status spinning>{t.busy}</Status>}
-    {session.listing.status === 'error' && <div><Alert>{failureText(session.listing.failure, t, 'listing')} {session.source?.kind === 'zip' ? t.listingZip : session.source?.kind === 'rar' || session.source?.kind === '7z' ? t.listingArchive : session.source?.kind === 'tar' ? t.listingTar : t.listingUnknown}</Alert>
+    {session.listing.status === 'error' && <div><Alert>{failureText(session.listing.failure, t, 'listing')} {session.source?.kind === 'zip' ? t.listingZip : session.source?.kind === 'rar' || session.source?.kind === '7z' ? t.listingArchive : session.source?.kind === 'tar' || session.source?.kind === 'gzip' ? t.listingTar : t.listingUnknown}</Alert>
       <AppButton variant="secondary" ariaLabel={`${t.retryListing}: ${session.source?.file.name}`} disabled={busy} onClick={() => void controllerRef.current?.retryListing(session)}>{t.retryListing}</AppButton></div>}
     {operations.map(({ id }) => {
       const Panel = panelRegistry[id];
