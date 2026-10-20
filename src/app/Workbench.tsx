@@ -25,8 +25,8 @@ function leafName(path: string): string { return path.split('/').filter(Boolean)
 export function isWorkbenchBusy(session: Session, controller: WorkbenchController | null): boolean {
   return Boolean(controller?.processing) || session.listing.status === 'reading' || session.job.status === 'running';
 }
-export function isWorkbenchUpdateSafe(session: Session, controller: WorkbenchController | null): boolean {
-  return !isWorkbenchBusy(session, controller) && !session.source && session.results.length === 0 &&
+export function isWorkbenchUpdateSafe(session: Session, controller: WorkbenchController | null, createSelectionCount = 0): boolean {
+  return createSelectionCount === 0 && !isWorkbenchBusy(session, controller) && !session.source && session.results.length === 0 &&
     session.create.input.length === 0 && !session.create.result && session.create.run.status !== 'running';
 }
 export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: { locale: Locale; page?: ZipPage; op?: AvailableOpId }) {
@@ -34,6 +34,12 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   const routeRef = useRef(route);
   routeRef.current = route;
   const [session, publish] = useReducer(sessionReducer, undefined, () => initialSession(0, op));
+  const [createSelectionCount, setCreateSelectionCount] = useState(0);
+  const createSelectionCountRef = useRef(0);
+  const onCreateSelectionChange = (count: number) => {
+    createSelectionCountRef.current = count;
+    setCreateSelectionCount(count);
+  };
   const [updating, setUpdating] = useState(false);
   useEffect(() => subscribeUpdate(state => setUpdating(state.applying)), []);
   const sessionRef = useRef(session);
@@ -98,7 +104,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   useEffect(() => () => { delete document.documentElement.dataset.session; }, []);
   useEffect(() => {
     const dropped = (event: Event) => {
-      if (isUpdateApplying()) { window.dispatchEvent(new Event('filesProcessed')); return; }
+      if (isUpdateApplying() || sessionRef.current.op === 'create') { window.dispatchEvent(new Event('filesProcessed')); return; }
       void controllerRef.current?.accept((event as CustomEvent<File[]>).detail, session).finally(() => window.dispatchEvent(new Event('filesProcessed')));
     };
     const stopIntake = () => { window.__toolReady = false; window.removeEventListener('filesDropped', dropped); };
@@ -145,12 +151,12 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   const failure = session.inputFailure;
   const inputError = failure && failureText(failure, t, 'input');
   const busy = controllerBusy || isWorkbenchBusy(session, controllerRef.current);
-  const isSafeToUpdate = () => isWorkbenchUpdateSafe(sessionRef.current, controllerRef.current);
+  const isSafeToUpdate = () => isWorkbenchUpdateSafe(sessionRef.current, controllerRef.current, createSelectionCountRef.current);
   const results = session.results;
-  const canReset = busy || Boolean(session.source || session.inputFailure || results.length || session.listing.status !== 'idle' || session.job.status !== 'idle' ||
+  const canReset = busy || Boolean(createSelectionCount || session.source || session.inputFailure || results.length || session.listing.status !== 'idle' || session.job.status !== 'idle' ||
     session.create.input.length || session.create.result || session.create.run.status !== 'idle');
   return <div class="workbench">
-    <PwaStartup locale={route.locale} busy={busy} hasWork={Boolean(session.source || results.length ||
+    <PwaStartup locale={route.locale} busy={busy} hasWork={Boolean(createSelectionCount || session.source || results.length ||
       session.create.input.length || session.create.run.status === 'running' || session.create.result)} isSafe={isSafeToUpdate} />
     <GlobalDropZone locale={route.locale} disabled={updating} />
     {updating && <Status>{updateUi[route.locale].applying}</Status>}
@@ -162,12 +168,12 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
       if (next) navigate({ locale: next.code, page: routeRef.current.page });
     }}>{LOCALES.map(entry => <option key={entry.code} value={entry.code}>{entry.name}</option>)}</select></label>
     <AppCard title={t.input} className="workbench__input-card">
-      <label class="workbench__picker"><span>{t.choose}</span><span id="workbench-drop-hint" class="workbench__hint">{copy.dropHint}</span><input type="file" aria-label={t.choose} aria-describedby="workbench-drop-hint" disabled={busy || updating} onChange={event => {
+      {session.op !== 'create' && <label class="workbench__picker"><span>{t.choose}</span><span id="workbench-drop-hint" class="workbench__hint">{copy.dropHint}</span><input type="file" aria-label={t.choose} aria-describedby="workbench-drop-hint" disabled={busy || updating} onChange={event => {
         const input = event.currentTarget;
         const files = Array.from(input.files ?? []);
         input.value = '';
         if (files.length && !isUpdateApplying()) void controllerRef.current?.accept(files, session);
-      }} /></label>
+      }} /></label>}
       {session.source && <p class="workbench__source">{t.source}: <span class="workbench__filename">{session.source.file.name}</span> <span class="workbench__kind">({session.source.kind})</span></p>}
       {session.source?.kind === 'unknown' && <Alert>{t.unknown}</Alert>}
       {inputError && <Alert>{inputError}</Alert>}
@@ -179,7 +185,9 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
     {operations.map(({ id }) => {
       const Panel = panelRegistry[id];
       return <section key={id} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} tabIndex={0} hidden={activeOp !== id}>
-        <Panel session={session} locale={route.locale} t={t} busy={busy} updating={updating} publish={publish}
+        <Panel session={session} locale={route.locale} t={t} busy={busy} updating={updating} publish={publish} active={activeOp === id}
+          onCreate={files => { if (!isUpdateApplying()) void controllerRef.current?.createFrom(files, sessionRef.current); }}
+          onCreateSelectionChange={onCreateSelectionChange}
           onNavigate={next => { selectOp(next); document.getElementById(`tab-${next}`)?.focus(); }}
           onRun={() => { if (!isUpdateApplying()) void controllerRef.current?.run(session); }} />
       </section>;
