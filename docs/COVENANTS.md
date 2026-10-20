@@ -33,7 +33,9 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 | 旧 SW 移行 | `tests/e2e/sw-migration.spec.ts`: `chromium removes old registrations and caches while retaining current operations`; `tests/unit/register-sw.test.ts`: `removes prior scope and cache before registering once` | `tests/fixtures/sw/legacy.ts` の旧 8 スコープを使用。移行 e2e は ZIP 直接訪問と日本語・英語ハブ経由を CI の Chromium で確認する。人工的な登録・キャッシュによる検査で、本番 smoke の選択対象には含めない。 |
 | 更新・ビルド識別 | `tests/unit/register-sw.test.ts`: `holds an update when another tab does not answer`; `pauses input while applying and defers reload if work starts before controller change`; `reloads once after a safe controller change`; `tests/unit/build-meta-build.test.ts`: `keeps the worker, page revisions, assets and headers stable for a SHA-only change`; `tests/unit/check-deployed-build.test.ts`: `accepts one exact head meta with varied attribute syntax` | CI の単体検査。端末の更新操作は実機で補う。 |
 
-`tests/e2e/_helpers.ts` の一巡は ZIP の閲覧・取り出し・削除・名前修復、7z の閲覧・取り出し、保存・再入力、入れ子 ZIP を含む。`tests/e2e/_covenant-support.ts` は公開操作に対応する fixture の欠落を失敗にする。通信監視は初回読み込み前に開始し、precache、操作、保存・再入力を観測する。失敗した許可外リクエストも失敗条件になる。公開ページは完全一致、資産は限定した接頭辞で許可する。CSP に遮断されて通信イベントにならない試行は CSP 検査で補う。静的 URL 検査の例外は通信先の許可を意味しない。
+`tests/e2e/_helpers.ts` の一巡は ZIP の閲覧・取り出し・削除・名前修復、ファイルからの ZIP 作成と明示保存、7z の閲覧・取り出し、保存・再入力、入れ子 ZIP を含む。`tests/e2e/_covenant-support.ts` は公開操作に対応する fixture の欠落を失敗にする。通信監視は初回読み込み前に開始し、precache、操作、保存・再入力を観測する。失敗した許可外リクエストも失敗条件になる。公開ページは完全一致、資産は限定した接頭辞で許可する。CSP に遮断されて通信イベントにならない試行は CSP 検査で補う。静的 URL 検査の例外は通信先の許可を意味しない。
+
+フォルダの選択・ドロップの相対パスはブラウザに依存するため、作成 ZIP の名前と内容を実機で確認する。`tests/e2e/create.spec.ts` にはフォルダ選択の検査があるが、自動操作の非対応による skip はブラウザ自体の非対応を示さない。オフラインの自動検証は Chromium のみで、Firefox／WebKit は実機確認が必要。
 
 自動検証は、実インストール完了、報告への応答 SLA、全 CDN 拠点、既存端末のキャッシュ更新完了を検証しない。SECURITY 経路の検査は配信文書とリンクまでであり、報告送信、メール配送、Private Vulnerability Reporting の受付動作を確認しない。配信時の注入は CI 内のビルド検査だけでは確認できない。本番 smoke が配信応答の確認経路だが、実配信と初回実行は承認後であり、現時点では未実施。
 
@@ -47,7 +49,7 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 
 1. **準備:** 同じ origin とブラウザプロファイルを使う。ブラウザ・OS・版、対象 SHA、開始時の SW 登録・キャッシュを記録する。用いる fixture は `tests/fixtures` と `tests/e2e/_covenant-support.ts` を参照する。
 2. **インストール:** manifest とブラウザの診断を確認し、ページまたはブラウザの導線からインストールする。起動後の表示、単独ウィンドウでの起動、再起動後の操作を確認する。導線がない環境は理由と未確認項目を記録する。
-3. **オフライン:** 事前保存と SW 制御開始を確認後、ネットワークを切断する。公開ページの再読込・遷移、ZIP の閲覧・取り出し・削除・名前修復、7z の閲覧・取り出し、保存・再入力、入れ子 ZIP を fixture で確認する。終了後にオンラインへ戻す。
-4. **更新:** ローカル検証用の内容が異なる2ビルドを同じ origin で切り替える。SHA だけの変更を更新発生条件にしない。待機中の SW を確認し、別タブあり・処理中・File 保持中・結果ありで更新が保留されることを確認する。保存だけでは解除されないため、Reset と別タブ終了後に適用する。作業中のタブを強制再読込して代替しない。
+3. **オフライン:** 事前保存と SW 制御開始を確認後、ネットワークを切断する。公開ページの再読込・遷移、ZIP の閲覧・取り出し・削除・名前修復、ファイルからの ZIP 作成と明示保存、7z の閲覧・取り出し、保存・再入力、入れ子 ZIP を fixture で確認する。終了後にオンラインへ戻す。
+4. **更新:** ローカル検証用の内容が異なる2ビルドを同じ origin で切り替える。SHA だけの変更を更新発生条件にしない。待機中の SW を確認し、別タブあり・処理中・File 保持中・未実行の作成選択あり・作成実行済み入力あり・作成結果ありで更新が保留されることを確認する。保存だけでは解除されないため、Reset と別タブ終了後に適用する。作業中のタブを強制再読込して代替しない。2ビルド間の更新は実機確認が必要。選択クリア後も作成実行済み入力と結果が残る場合は保留が続き、Reset で解除されることを確認する。新しいアーカイブの入力と結果の再入力でも作成の状態は初期化される。
 5. **旧 SW 移行:** 実際の旧登録を持つ検証用プロファイルではサイトデータを消さずに移行前後を比較する。再現用登録なら実端末の旧状態と区別する。root 以外の登録と非 Workbox キャッシュの除去、root SW の動作、旧 SW URL の 410・転送なし、移行後の操作を確認する。検証用 SW を本番へ配置しない。
 6. **記録:** 実施日時、環境、origin、対象 SHA、SW を介さない HTTP 取得で観測した SHA、fixture、操作、期待結果・実結果、成功／失敗／未確認、SW・キャッシュの前後、必要な画面とログを非公開の記録へ残す。旧 DOM の SHA だけで配信や更新の成功を判定しない。
