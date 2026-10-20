@@ -18,6 +18,13 @@ export const ui = {
     remove: { verb: '不要な項目を削除する', description: '不要な項目を除いた新しい ZIP を作成する' },
     'fix-names': { verb: '名前を修復する', description: '文字化けした名前の修復候補を確認する' },
   },
+  create: {
+    title: 'ZIP を作成', addFiles: 'ファイルを追加', addFolder: 'フォルダを追加', selectedCount: '選択中のファイル数',
+    emptyGuide: 'ファイルやフォルダを追加して、ZIP を作成できます。', run: '新しい ZIP を作る', clearSelection: '選択をクリア',
+    processingFile: '処理中のファイル', resultSummary: '作成結果', save: 'ZIP を保存',
+    tooLarge: '入力の合計サイズは1 GB（1,000,000,000 bytes）以下にしてください。', emptySelection: '少なくとも1ファイルを選んでください。',
+    failure: 'ZIP の作成に失敗しました。', retryGuide: '選択したファイルで再実行するか、選択をクリアしてやり直してください。',
+  },
   workbench: {
     input: '入力', choose: 'アーカイブを選択', busy: '処理中です。完了後に入力してください。', single: '1つのアーカイブを選んでください。',
     large: '入力は1 GB（1,000,000,000 bytes）以下にしてください。', unknown: '形式を確認できません。ZIP、RAR、7z、tar を選んでください。',

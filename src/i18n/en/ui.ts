@@ -18,6 +18,13 @@ export const ui = {
     remove: { verb: 'Remove entries', description: 'Create a new ZIP without unwanted entries' },
     'fix-names': { verb: 'Fix names', description: 'Review candidates for garbled names' },
   },
+  create: {
+    title: 'Create a ZIP', addFiles: 'Add files', addFolder: 'Add a folder', selectedCount: 'Selected files',
+    emptyGuide: 'Add files or a folder to create a ZIP.', run: 'Create new ZIP', clearSelection: 'Clear selection',
+    processingFile: 'Processing file', resultSummary: 'Creation result', save: 'Save ZIP',
+    tooLarge: 'Choose files with a total size of 1 GB (1,000,000,000 bytes) or less.', emptySelection: 'Choose at least one file.',
+    failure: 'Could not create the ZIP.', retryGuide: 'Retry with the selected files, or clear the selection and start again.',
+  },
   workbench: {
     input: 'Input', choose: 'Choose an archive', busy: 'Processing. Try another input when it finishes.', single: 'Choose one archive.',
     large: 'Choose an input of 1 GB (1,000,000,000 bytes) or less.', unknown: 'Format could not be identified. Choose ZIP, RAR, 7z, or tar.',

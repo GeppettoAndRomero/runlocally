@@ -118,7 +118,24 @@ export type MenuStringKey = AvailableOp['i18nKey'];
 // verb is the primary label and description is supporting text; consumers use menuUi.
 export type MenuEntryStrings = { verb: string; description: string };
 export type MenuStrings = { [K in MenuStringKey]: MenuEntryStrings };
-export interface UiStrings { workbench: WorkbenchStrings; shared: SharedStrings; chrome: ChromeStrings; inputState: InputStateStrings; menu: MenuStrings }
+export type CreateStringKey =
+  | 'title'
+  | 'addFiles'
+  | 'addFolder'
+  | 'selectedCount'
+  | 'emptyGuide'
+  | 'run'
+  | 'clearSelection'
+  | 'processingFile'
+  | 'resultSummary'
+  | 'save'
+  | 'tooLarge'
+  | 'emptySelection'
+  | 'failure'
+  | 'retryGuide'
+;
+export type CreateStrings = { [K in CreateStringKey]: string };
+export interface UiStrings { workbench: WorkbenchStrings; shared: SharedStrings; chrome: ChromeStrings; inputState: InputStateStrings; menu: MenuStrings; create: CreateStrings }
 
 // Every engine code must have localized text in the workbench dictionary.
 export type MissingEngineText = Exclude<EngineErrorCode, WorkbenchStringKey>;
