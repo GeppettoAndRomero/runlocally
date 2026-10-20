@@ -4,12 +4,12 @@ import { DEFAULT_LOCALE, ENGLISH_LOCALE, LOCALES } from '../../src/i18n/locales'
 import { AVAILABLE_OPS, OPS, type AvailableOpId, type RegistryOpId } from '../../src/i18n/ops';
 import { workerApi } from '../../src/engine/worker-api';
 import { openArchive } from '../../src/engine/archive/libarchive';
-import type { OpId } from '../../src/app/state/session';
+import type { SessionOp } from '../../src/app/state/session';
 import type { UiStrings } from '../../src/i18n/types';
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
-const availableMatchesSession: Equal<AvailableOpId, OpId> = true;
-const futureIsExcluded: Equal<Exclude<RegistryOpId, OpId>, 'recover' | 'split' | 'merge' | 'unlock' | 'encrypt' | 'create' | 'rar-7z'> = true;
+const availableMatchesSession: Equal<AvailableOpId, SessionOp> = true;
+const futureIsExcluded: Equal<Exclude<RegistryOpId, SessionOp>, 'recover' | 'split' | 'merge' | 'unlock' | 'encrypt' | 'rar-7z'> = true;
 // @ts-expect-error A required shared label cannot be omitted.
 const missingShared: UiStrings['shared'] = { close: 'Close' };
 // @ts-expect-error A required workbench label cannot be omitted.
@@ -30,14 +30,14 @@ describe('locales and operation registry', () => {
     expect(config.i18n?.routing).toEqual({ prefixDefaultLocale: false });
   });
 
-  it('has unique public identifiers and only four available operations', () => {
+  it('has unique public identifiers and only five available operations', () => {
     for (const key of ['id', 'slug', 'i18nKey'] as const) {
       expect(new Set(OPS.map(op => op[key])).size).toBe(OPS.length);
     }
     expect(OPS).toHaveLength(11);
     expect(AVAILABLE_OPS).toEqual(OPS.filter(op => op.available));
-    expect(AVAILABLE_OPS.map(op => op.id)).toEqual(['browse', 'extract', 'remove', 'fix-names']);
-    expect(OPS.filter(op => !op.available)).toHaveLength(7);
+    expect(AVAILABLE_OPS.map(op => op.id)).toEqual(['browse', 'extract', 'remove', 'fix-names', 'create']);
+    expect(OPS.filter(op => !op.available)).toHaveLength(6);
     expect(OPS.filter(op => op.engineOp === 'rewriteZip')).toHaveLength(4);
   });
 

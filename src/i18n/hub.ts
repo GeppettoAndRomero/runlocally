@@ -12,19 +12,19 @@ export interface HubContent {
 export const hubs: Record<Locale, HubContent> = {
   ja: {
     title: 'runlocally | ブラウザでZIPを扱う',
-    description: 'ZIPファイルの閲覧、展開、削除、ファイル名の修正をブラウザ内で行えます。',
+    description: 'ZIPファイルの閲覧、展開、削除、ファイル名の修正、作成をブラウザ内で行えます。',
     h1: 'ブラウザでZIPファイルを扱う',
-    lead: 'ZIPの中身を確認し、必要なファイルを展開できます。ファイルの削除や名前の修正もブラウザ内で行えます。',
+    lead: 'ZIPの中身を確認し、必要なファイルを展開できます。ZIP の作成、ファイルの削除や名前の修正もブラウザ内で行えます。',
     zipCardTitle: 'ZIPを開く',
-    zipCardDescription: 'ZIPファイルを開いて、中身の確認、展開、削除、ファイル名の修正を行えます。',
+    zipCardDescription: 'ZIPファイルを開いて、中身の確認、展開、削除、ファイル名の修正や、新しい ZIP の作成を行えます。',
   },
   en: {
     title: 'runlocally | Work with ZIP files in your browser',
-    description: 'View, extract, remove, and rename files in ZIP archives in your browser.',
+    description: 'View, extract, remove, and rename ZIP entries, or create ZIP files in your browser.',
     h1: 'Work with ZIP files in your browser',
-    lead: 'Open a ZIP archive to view and extract files. You can also remove files and fix their names in your browser.',
+    lead: 'Open a ZIP archive to view and extract files. You can also create ZIP files, remove entries and fix their names in your browser.',
     zipCardTitle: 'Open ZIP files',
-    zipCardDescription: 'View, extract, remove, and fix file names in a ZIP archive.',
+    zipCardDescription: 'View, extract, remove, and fix file names in a ZIP archive, or create a new ZIP.',
   },
 };
 

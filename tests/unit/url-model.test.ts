@@ -18,12 +18,14 @@ const expectedRoutes = [
   { locale: 'ja', page: 'extract', path: '/zip/extract/' },
   { locale: 'ja', page: 'remove', path: '/zip/remove/' },
   { locale: 'ja', page: 'fix-names', path: '/zip/fix-names/' },
+  { locale: 'ja', page: 'create', path: '/zip/create/' },
   { locale: 'en', page: 'hub', path: '/en/' },
   { locale: 'en', page: 'top', path: '/en/zip/' },
   { locale: 'en', page: 'browse', path: '/en/zip/view/' },
   { locale: 'en', page: 'extract', path: '/en/zip/extract/' },
   { locale: 'en', page: 'remove', path: '/en/zip/remove/' },
   { locale: 'en', page: 'fix-names', path: '/en/zip/fix-names/' },
+  { locale: 'en', page: 'create', path: '/en/zip/create/' },
 ] as const;
 
 const expectedSlugs = {
@@ -49,13 +51,13 @@ describe('planned URL model', () => {
   it('derives page sets from the available operation registry', () => {
     expect(ZIP_PAGES).toEqual(['top', ...AVAILABLE_OPS.map(op => op.id)]);
     expect(PUBLIC_PAGES).toEqual(['hub', ...ZIP_PAGES]);
-    expect(ZIP_PAGES).toHaveLength(5);
-    expect(PUBLIC_PAGES).toHaveLength(6);
-    expect(new Set(ZIP_PAGES).size).toBe(5);
-    expect(new Set(PUBLIC_PAGES).size).toBe(6);
+    expect(ZIP_PAGES).toHaveLength(6);
+    expect(PUBLIC_PAGES).toHaveLength(7);
+    expect(new Set(ZIP_PAGES).size).toBe(6);
+    expect(new Set(PUBLIC_PAGES).size).toBe(7);
   });
 
-  it('uses the twelve specified URLs independently of the parser', () => {
+  it('uses the fourteen specified URLs independently of the parser', () => {
     for (const { locale, page, path } of expectedRoutes) {
       expect(pagePath(locale, page)).toBe(path);
     }
@@ -68,9 +70,9 @@ describe('planned URL model', () => {
       expect(zipPageFromPath(path)).toEqual(page === 'hub' ? undefined : { locale: code, page });
       return path;
     }));
-    expect(paths).toHaveLength(12);
-    expect(new Set(paths).size).toBe(12);
-    expect(paths.filter(path => zipPageFromPath(path))).toHaveLength(10);
+    expect(paths).toHaveLength(14);
+    expect(new Set(paths).size).toBe(14);
+    expect(paths.filter(path => zipPageFromPath(path))).toHaveLength(12);
     expect(paths.filter(path => !zipPageFromPath(path))).toEqual(['/', '/en/']);
   });
 
@@ -78,13 +80,13 @@ describe('planned URL model', () => {
     expect(ZIP_SLUGS).toEqual(expectedSlugs);
     expect(Object.keys(ZIP_SLUGS).sort()).toEqual(OPS.map(op => op.id).sort());
     expect(new Set(Object.values(ZIP_SLUGS)).size).toBe(OPS.length);
-    expect(AVAILABLE_OPS.map(op => op.id)).toEqual(['browse', 'extract', 'remove', 'fix-names']);
+    expect(AVAILABLE_OPS.map(op => op.id)).toEqual(['browse', 'extract', 'remove', 'fix-names', 'create']);
     expect(OPS.filter(op => !op.available).map(op => op.id)).toEqual([
-      'recover', 'split', 'merge', 'unlock', 'encrypt', 'create', 'rar-7z',
+      'recover', 'split', 'merge', 'unlock', 'encrypt', 'rar-7z',
     ]);
   });
 
-  it('does not generate or recognize the seven unavailable operations', () => {
+  it('does not generate or recognize the six unavailable operations', () => {
     for (const { code } of LOCALES) {
       const prefix = code === 'ja' ? '' : `/${code}`;
       for (const op of OPS.filter(entry => !entry.available)) {
@@ -120,11 +122,11 @@ describe('connected ZIP routes', () => {
   it('uses the ZIP slugs and keeps the publication boundary', () => {
     expect(Object.fromEntries(OPS.map(op => [op.id, op.slug]))).toEqual(expectedSlugs);
     expect(OPS.filter(op => op.available).map(op => op.id)).toEqual([
-      'browse', 'extract', 'remove', 'fix-names',
+      'browse', 'extract', 'remove', 'fix-names', 'create',
     ]);
   });
 
-  it('uses the twelve public URLs and round trips', () => {
+  it('uses the fourteen public URLs and round trips', () => {
     const pages: CurrentPage[] = ['hub', 'top', ...AVAILABLE_OPS.map(op => op.id)];
     expect(expectedRoutes).toHaveLength(LOCALES.length * pages.length);
     for (const { locale, page, path } of expectedRoutes) {

@@ -1,8 +1,8 @@
 ---
 import { LOCALES } from '../i18n/locales';
-import { AVAILABLE_OPS } from '../i18n/ops';
+import { operationLabel, AVAILABLE_OPS } from '../i18n/ops';
 import { pageContent } from '../i18n/pages';
-import { chromeUi, ui } from '../i18n/ui';
+import { chromeUi, menuUi, ui } from '../i18n/ui';
 import { pagePath } from '../seo/page';
 ---
 {LOCALES.map(({ code }) =>
@@ -10,7 +10,7 @@ import { pagePath } from '../seo/page';
     <div class="operation-cards__grid">
       {AVAILABLE_OPS.map(op =>
         <article class="operation-cards__card">
-          <h2><a href={pagePath(code, op.id)}>{ui[code].workbench[op.i18nKey]}</a></h2>
+          <h2><a href={pagePath(code, op.id)}>{operationLabel(op, ui[code].workbench, menuUi[code])}</a></h2>
           <p>{pageContent(code, op.id).description}</p>
         </article>
       )}

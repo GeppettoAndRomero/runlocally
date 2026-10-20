@@ -13,6 +13,7 @@ export const ui = {
   chrome: { navigation: '操作', home: 'ホーム', languages: '翻訳版' },
   inputState: { dropHint: 'アーカイブを1つここへドラッグするか、クリップボードのファイルを貼り付けてください。', emptyResults: 'アーカイブを選び、操作を実行すると、ここに結果が表示されます。', progressLabel: '処理状況' },
   menu: {
+    create: { verb: 'ZIP を作成する', description: '複数のファイルを新しい ZIP にまとめる' },
     browse: { verb: '中身を確認する', description: 'ファイルの一覧を表示する' },
     extract: { verb: 'ファイルを取り出す', description: '取り出したファイルを保存する' },
     remove: { verb: '不要な項目を削除する', description: '不要な項目を除いた新しい ZIP を作成する' },

@@ -4,11 +4,11 @@ import '../styles/base.css';
 import '../ui/components.css';
 import '../styles/chrome.css';
 import { LOCALES, type Locale } from '../i18n/locales';
-import { AVAILABLE_OPS } from '../i18n/ops';
+import { operationLabel, AVAILABLE_OPS } from '../i18n/ops';
 import type { PageContent } from '../i18n/types';
 import type { HubContent } from '../i18n/hub';
 import { alternates, checkMetadataLength, headData, ogLocale, pagePath, pageUrl, type PublicPage } from '../seo/page';
-import { chromeUi, ui } from '../i18n/ui';
+import { chromeUi, menuUi, ui } from '../i18n/ui';
 import { PwaStartup } from '../ui/PwaStartup';
 
 interface Props {
@@ -61,7 +61,7 @@ const og = metadata?.og ?? {
       <div class="site-header__inner">
         <a class="site-header__brand" data-chrome-home href={pagePath(lang, 'hub')} aria-label={chromeUi[lang].home} aria-current={page === 'hub' ? 'page' : undefined}>runlocally</a>
         {page !== 'hub' && <nav class="site-nav" aria-label={chromeUi[lang].navigation} data-chrome-nav>
-          {AVAILABLE_OPS.map(op => <a data-chrome-page={op.id} href={pagePath(lang, op.id)} aria-current={page === op.id ? 'page' : undefined}>{ui[lang].workbench[op.i18nKey]}</a>)}
+          {AVAILABLE_OPS.map(op => <a data-chrome-page={op.id} href={pagePath(lang, op.id)} aria-current={page === op.id ? 'page' : undefined}>{operationLabel(op, ui[lang].workbench, menuUi[lang])}</a>)}
         </nav>}
         <nav class="site-languages" aria-label={chromeUi[lang].languages} data-chrome-languages>
           {LOCALES.map(locale => <a data-chrome-locale={locale.code} href={pagePath(locale.code, page)} aria-current={lang === locale.code ? 'page' : undefined}>{locale.name}</a>)}

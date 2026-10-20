@@ -49,16 +49,16 @@ it.each(['ja', 'en'] as const)('uses %s verbs and descriptions with linked panel
     expect(button.getAttribute('aria-controls')).toBe(`panel-${op.id}`);
   }
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowUp' });
-  expect(select).toHaveBeenCalledWith('fix-names');
+  expect(select).toHaveBeenCalledWith('create');
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowDown' });
   expect(select).toHaveBeenLastCalledWith('extract');
   unmount();
   expect(media.removeEventListener).toHaveBeenCalledWith('change', media.change);
 });
 
-it('shows four panels before input, cycles focus and URL, and changes orientation without history', async () => {
+it('shows five panels before input, cycles focus and URL, and changes orientation without history', async () => {
   render(<Workbench locale="en" />);
-  expect(screen.getAllByRole('tab')).toHaveLength(4);
+  expect(screen.getAllByRole('tab')).toHaveLength(5);
   expect(document.querySelectorAll('[data-workbench-menu]')).toHaveLength(1);
   expect(document.querySelectorAll('[data-chrome-page]')).toHaveLength(1);
   for (const op of AVAILABLE_OPS) expect(document.getElementById(`panel-${op.id}`)?.tabIndex).toBe(0);
@@ -66,9 +66,9 @@ it('shows four panels before input, cycles focus and URL, and changes orientatio
   expect(screen.queryByRole('button', { name: /^Extract:/ })).toBeNull();
   const push = vi.spyOn(window.history, 'pushState');
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowUp' });
-  selected('fix-names');
-  expect(document.activeElement).toBe(tab('fix-names'));
-  expect(window.location.pathname).toBe(pagePath('en', 'fix-names'));
+  selected('create');
+  expect(document.activeElement).toBe(tab('create'));
+  expect(window.location.pathname).toBe(pagePath('en', 'create'));
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
   selected('browse');
   media.matches = false;
@@ -82,7 +82,7 @@ it('shows four panels before input, cycles focus and URL, and changes orientatio
   expect(push).toHaveBeenCalledTimes(2);
 });
 
-it('keeps the menu while listing and after failure, then resets to four choices', async () => {
+it('keeps the menu while listing and after failure, then resets to five choices', async () => {
   let reject!: (reason: Error) => void;
   engine.list.mockReturnValueOnce(new Promise((_resolve, fail) => { reject = fail; }));
   render(<Workbench locale="en" />);
@@ -90,15 +90,15 @@ it('keeps the menu while listing and after failure, then resets to four choices'
   choose(input);
   await waitFor(() => expect(engine.list).toHaveBeenCalledTimes(1));
   expect(engine.list.mock.calls[0][0]).toBe(input);
-  expect(screen.getAllByRole('tab')).toHaveLength(4);
+  expect(screen.getAllByRole('tab')).toHaveLength(5);
   expect(screen.queryByRole('button', { name: /^Extract:/ })).toBeNull();
   reject(new Error('listing failed'));
   await screen.findByRole('button', { name: /^Retry listing:/ });
-  expect(screen.getAllByRole('tab')).toHaveLength(4);
+  expect(screen.getAllByRole('tab')).toHaveLength(5);
   expect(screen.queryByRole('button', { name: /^Extract:/ })).toBeNull();
   expect(engine.all).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: /^Reset:/ }));
-  expect(screen.getAllByRole('tab')).toHaveLength(4);
+  expect(screen.getAllByRole('tab')).toHaveLength(5);
   selected('browse');
 });
 

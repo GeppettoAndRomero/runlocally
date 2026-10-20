@@ -44,11 +44,11 @@ export function CreatePanel({ session, locale, busy, updating, active = false, o
     return () => window.removeEventListener('filesDropped', dropped);
   }, [active, busy, updating, run.status, session.generation]);
   return <AppCard title={t.title}>
-    <label class="workbench__choice">{t.addFiles}<input type="file" multiple disabled={blocked} onChange={event => {
+    <label class="workbench__choice workbench__choice--file">{t.addFiles}<input type="file" multiple disabled={blocked} onChange={event => {
       add(Array.from(event.currentTarget.files ?? []));
       event.currentTarget.value = '';
     }} /></label>
-    <label class="workbench__choice">{t.addFolder}<input type="file" ref={node => node?.setAttribute('webkitdirectory', '')} disabled={blocked} onChange={event => {
+    <label class="workbench__choice workbench__choice--file">{t.addFolder}<input type="file" ref={node => node?.setAttribute('webkitdirectory', '')} disabled={blocked} onChange={event => {
       add(Array.from(event.currentTarget.files ?? []));
       event.currentTarget.value = '';
     }} /></label>

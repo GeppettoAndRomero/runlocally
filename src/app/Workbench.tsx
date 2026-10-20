@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'preact/hooks';
 import { LOCALES, type Locale } from '../i18n/locales';
-import { AVAILABLE_OPS, type AvailableOpId } from '../i18n/ops';
+import { archiveAvailable, AVAILABLE_OPS, type AvailableOpId } from '../i18n/ops';
 import { pagePath, zipPageFromPath } from '../seo/page';
 import type { ZipPage } from '../seo/url-model';
 import { displayPage } from './page-display';
@@ -91,7 +91,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   useEffect(() => { displayPage(route.locale, route.page); }, [route]);
   useEffect(() => {
     if (session.source?.kind && session.source.kind !== 'zip' && route.page !== 'top' &&
-        !AVAILABLE_OPS.find(entry => entry.id === route.page)?.archive) {
+        !archiveAvailable(route.page)) {
       navigate({ locale: route.locale, page: 'browse' }, 'replace');
     } else if (!session.source && session.op !== requestedOp(route.page)) {
       publish({ type: 'op/select', op: requestedOp(route.page) });
@@ -145,7 +145,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
     };
   }, []);
   const ready = session.listing.status === 'ready';
-  const operations = AVAILABLE_OPS.filter(entry => !session.source || session.source.kind === 'zip' || entry.archive);
+  const operations = AVAILABLE_OPS.filter(entry => !session.source || session.source.kind === 'zip' || archiveAvailable(entry.id));
   // The menu and the panels follow the same operation; a state op that is not published falls back to the route.
   const activeOp = AVAILABLE_OPS.find(entry => entry.id === session.op)?.id ?? requestedOp(route.page);
   const failure = session.inputFailure;

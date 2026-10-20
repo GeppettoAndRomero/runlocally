@@ -32,7 +32,7 @@ for (const locale of ['en', 'ja'] as const) for (const width of [360, 768, 1280]
     await ready(page);
     await intake(page, await longZip(), 'source'.repeat(50) + '.zip');
     const tabs = page.getByRole('tab');
-    await expect(tabs).toHaveCount(4);
+    await expect(tabs).toHaveCount(5);
     const selected = page.locator('[role="tab"][aria-selected="true"]');
     const tabStyle = await selected.evaluate(node => { const s = getComputedStyle(node); return { weight: s.fontWeight, border: s.borderInlineStartWidth, color: s.borderInlineStartColor }; });
     const otherStyle = await page.locator('[role="tab"][aria-selected="false"]').first().evaluate(node => { const s = getComputedStyle(node); return { weight: s.fontWeight, border: s.borderInlineStartWidth, color: s.borderInlineStartColor }; });
@@ -52,7 +52,7 @@ for (const locale of ['en', 'ja'] as const) for (const width of [360, 768, 1280]
     await expect(tabs.last()).toHaveAttribute('aria-selected', 'true');
     await page.keyboard.press('ArrowRight');
     await expect(tabs.first()).toBeFocused();
-    for (const op of ['browse', 'extract', 'remove', 'fix-names'] as const) {
+    for (const op of ['browse', 'extract', 'remove', 'fix-names', 'create'] as const) {
       await select(page, op);
       const panel = page.locator(`#panel-${op}`);
       await expect(panel).toBeVisible();

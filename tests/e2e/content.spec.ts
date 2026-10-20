@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { LOCALES, type Locale } from '../../src/i18n/locales';
-import { AVAILABLE_OPS } from '../../src/i18n/ops';
+import { operationLabel, AVAILABLE_OPS } from '../../src/i18n/ops';
 import { pages as enPages } from '../../src/i18n/en/pages';
 import { pages as jaPages } from '../../src/i18n/ja/pages';
 import { ui as enUi } from '../../src/i18n/en/ui';
@@ -49,7 +49,7 @@ async function assertCards(page: Page, locale: Locale, current: ZipPage, session
   const links = cards.locator('article h2 > a');
   await expect(links).toHaveCount(AVAILABLE_OPS.length);
   for (const [index, op] of AVAILABLE_OPS.entries()) {
-    await expect(links.nth(index)).toHaveText(dictionaries[locale].workbench[op.i18nKey]);
+    await expect(links.nth(index)).toHaveText(operationLabel(op, dictionaries[locale].workbench, dictionaries[locale].menu));
     await expect(links.nth(index)).toHaveAttribute('href', pagePath(locale, op.id));
     await expect(cards.locator('article p').nth(index)).toHaveText(contents[locale][op.id].description);
   }
@@ -69,7 +69,7 @@ test('initial pages and links work without JavaScript', async ({ browser, baseUR
     }
     for (const { code } of LOCALES) for (const op of AVAILABLE_OPS) {
       await page.goto(pagePath(code, 'top'));
-      await visibleCards(page).getByRole('link', { name: dictionaries[code].workbench[op.i18nKey] }).click();
+      await visibleCards(page).getByRole('link', { name: operationLabel(op, dictionaries[code].workbench, dictionaries[code].menu) }).click();
       await expect(page).toHaveURL(new RegExp(`${pagePath(code, op.id).replaceAll('/', '\\/')}$`));
       await assertContent(page, code, op.id);
     }
@@ -99,7 +99,7 @@ test('hydration, route changes, input, and reset update content and cards', asyn
   await ready(page);
   await assertContent(page, 'ja', 'top');
   await assertCards(page, 'ja', 'top');
-  await page.locator('input[type="file"]').setInputFiles('tests/fixtures/zip/sample.zip');
+  await page.locator('.workbench__picker input').setInputFiles('tests/fixtures/zip/sample.zip');
   await expect(page.locator('html')).toHaveAttribute('data-session', 'open');
   await expect(page.locator('#page-content')).toBeHidden();
   await assertCards(page, 'ja', 'top', true);

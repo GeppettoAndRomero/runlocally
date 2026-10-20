@@ -13,6 +13,7 @@ export const ui = {
   chrome: { navigation: 'Operations', home: 'Home', languages: 'Available in' },
   inputState: { dropHint: 'Drag one archive here, or paste a file from the clipboard.', emptyResults: 'Choose an archive and run an operation to see results here.', progressLabel: 'Operation progress' },
   menu: {
+    create: { verb: 'Create a ZIP', description: 'Combine files into a new ZIP' },
     browse: { verb: 'View contents', description: 'See the file list' },
     extract: { verb: 'Extract files', description: 'Save extracted files' },
     remove: { verb: 'Remove entries', description: 'Create a new ZIP without unwanted entries' },

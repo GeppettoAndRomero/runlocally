@@ -205,7 +205,7 @@ it('retries an archive listing before exposing extraction and never offers rewri
   expect(mock.open.mock.calls[0][0]).toBe(mock.open.mock.calls[1][0]);
 });
 
-it('moves focus among four ZIP tabs with arrow keys', async () => {
+it('moves focus among five ZIP tabs with arrow keys', async () => {
   mock.list.mockResolvedValue([entry('a.txt')]);
   render(<Workbench locale="en" />); await choose();
   const browse = screen.getByRole('tab', { name: menuName('en', 'browse') });
@@ -216,6 +216,8 @@ it('moves focus among four ZIP tabs with arrow keys', async () => {
   expect(document.activeElement).toBe(screen.getByRole('tab', { name: menuName('en', 'remove') }));
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
   expect(document.activeElement).toBe(screen.getByRole('tab', { name: menuName('en', 'fix-names') }));
+  fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
+  expect(document.activeElement).toBe(screen.getByRole('tab', { name: menuName('en', 'create') }));
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
   expect(document.activeElement).toBe(browse);
 });

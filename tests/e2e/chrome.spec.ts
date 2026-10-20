@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { LOCALES, type Locale } from '../../src/i18n/locales';
-import { AVAILABLE_OPS } from '../../src/i18n/ops';
+import { operationLabel, AVAILABLE_OPS } from '../../src/i18n/ops';
 import { headData, pagePath } from '../../src/seo/page';
 import { ZIP_PAGES, type ZipPage } from '../../src/seo/url-model';
 import { pages as enPages } from '../../src/i18n/en/pages';
@@ -38,7 +38,7 @@ async function check(page: Page, locale: Locale, current: ZipPage) {
   for (const op of AVAILABLE_OPS) {
     const link = page.locator(`[data-chrome-page="${op.id}"]`);
     await expect(link).toHaveAttribute('href', pagePath(locale, op.id));
-    await expect(link).toHaveText(dictionaries[locale].workbench[op.i18nKey]);
+    await expect(link).toHaveText(operationLabel(op, dictionaries[locale].workbench, dictionaries[locale].menu));
     if (current === op.id) await expect(link).toHaveAttribute('aria-current', 'page');
     else await expect(link).not.toHaveAttribute('aria-current');
   }

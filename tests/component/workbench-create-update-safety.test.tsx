@@ -103,20 +103,20 @@ it('protects controller-created input and results until the controller resets', 
   controller.dispose();
 });
 
-it('uses the public route for menu selection while create remains unpublished', () => {
+it('selects the published create operation from session state', () => {
   mock.seed = { ...initialSession(0, 'create'), source: { file, kind: 'zip', chain: [] } };
   render(<Workbench locale="en" page="extract" op="extract" />);
-  expect(screen.getByRole('tab', { selected: true }).id).toBe('tab-extract');
-  expect(screen.getAllByRole('tab')).toHaveLength(4);
-  expect(document.getElementById('tab-create')).toBeNull();
-  expect(document.getElementById('panel-create')).toBeNull();
+  expect(screen.getByRole('tab', { selected: true }).id).toBe('tab-create');
+  expect(screen.getAllByRole('tab')).toHaveLength(5);
+  expect(document.getElementById('tab-create')).not.toBeNull();
+  expect(document.getElementById('panel-create')).not.toBeNull();
 });
 
-it('shows the panel of the selected tab while the state operation is unpublished', () => {
+it('shows the published panel of the selected operation', () => {
   mock.seed = { ...initialSession(0, 'create'), source: { file, kind: 'zip', chain: [] } };
   render(<Workbench locale="en" page="extract" op="extract" />);
   const selected = screen.getByRole('tab', { selected: true });
-  expect(selected.id).toBe('tab-extract');
+  expect(selected.id).toBe('tab-create');
   const panel = document.getElementById(selected.getAttribute('aria-controls')!)!;
   expect(panel.hidden).toBe(false);
   expect([...document.querySelectorAll<HTMLElement>('[role="tabpanel"]')].filter(item => !item.hidden)).toEqual([panel]);

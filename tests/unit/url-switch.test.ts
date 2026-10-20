@@ -16,12 +16,14 @@ const publicRoutes = [
   { locale: 'ja', page: 'extract', path: '/zip/extract/' },
   { locale: 'ja', page: 'remove', path: '/zip/remove/' },
   { locale: 'ja', page: 'fix-names', path: '/zip/fix-names/' },
+  { locale: 'ja', page: 'create', path: '/zip/create/' },
   { locale: 'en', page: 'hub', path: '/en/' },
   { locale: 'en', page: 'top', path: '/en/zip/' },
   { locale: 'en', page: 'browse', path: '/en/zip/view/' },
   { locale: 'en', page: 'extract', path: '/en/zip/extract/' },
   { locale: 'en', page: 'remove', path: '/en/zip/remove/' },
   { locale: 'en', page: 'fix-names', path: '/en/zip/fix-names/' },
+  { locale: 'en', page: 'create', path: '/en/zip/create/' },
 ] as const;
 const zipRoutes = publicRoutes.filter(route => route.page !== 'hub');
 
@@ -37,9 +39,9 @@ const content: PageContent = {
 };
 
 describe('ZIP URL connection', () => {
-  it('generates and parses the twelve concrete public URLs through the public module', () => {
-    expect(publicRoutes).toHaveLength(12);
-    expect(zipRoutes).toHaveLength(10);
+  it('generates and parses the fourteen concrete public URLs through the public module', () => {
+    expect(publicRoutes).toHaveLength(14);
+    expect(zipRoutes).toHaveLength(12);
     for (const { locale, page, path } of publicRoutes) {
       const route = { locale, page };
       const url = `${SITE_ORIGIN}${path}`;
@@ -84,12 +86,12 @@ describe('ZIP URL connection', () => {
     expect(zipPageFromPath('/en/')).toBeUndefined();
   });
 
-  it('uses one distinct registry slug per operation and publishes four operations', () => {
+  it('uses one distinct registry slug per operation and publishes five operations', () => {
     expect(OPS).toHaveLength(11);
     expect(Object.keys(ZIP_SLUGS).sort()).toEqual(OPS.map(op => op.id).sort());
     expect(new Set(OPS.map(op => op.slug)).size).toBe(OPS.length);
     for (const op of OPS) expect(op.slug).toBe(ZIP_SLUGS[op.id]);
-    expect(AVAILABLE_OPS.map(op => op.id)).toEqual(['browse', 'extract', 'remove', 'fix-names']);
+    expect(AVAILABLE_OPS.map(op => op.id)).toEqual(['browse', 'extract', 'remove', 'fix-names', 'create']);
   });
 
   it('uses ZIP URLs in canonical, OG, JSON-LD and alternates', () => {
