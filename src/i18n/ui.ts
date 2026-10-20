@@ -1,12 +1,28 @@
 import { ENGLISH_LOCALE, LOCALES, type Locale } from './locales';
 import { AVAILABLE_OPS } from './ops';
-import type { UiStrings, UpdateStrings } from './types';
+import type { CreateStrings, UiStrings, UpdateStrings } from './types';
 const modules = import.meta.glob<{ ui: UiStrings; update: UpdateStrings }>('./*/ui.ts', { eager: true });
 const reference = modules[`./${ENGLISH_LOCALE}/ui.ts`]?.ui;
 if (!reference) throw new Error(`Missing UI dictionary: ${ENGLISH_LOCALE}`);
+const createKeys = new Set(Object.keys(reference.create));
+export function validateCreateStrings(code: Locale, section: unknown): void {
+  if (!section || typeof section !== 'object' || Array.isArray(section)) {
+    throw new Error(`Missing UI text: ${code}/create`);
+  }
+  const strings = section as Record<string, unknown>;
+  for (const key of createKeys) {
+    if (!Object.hasOwn(strings, key) || typeof strings[key] !== 'string' || !strings[key].trim()) {
+      throw new Error(`Missing UI text: ${code}/create/${key}`);
+    }
+  }
+  for (const key of Object.keys(strings)) {
+    if (!createKeys.has(key)) throw new Error(`Unexpected UI text: ${code}/create/${key}`);
+  }
+}
 const dictionaries = Object.fromEntries(LOCALES.map(({ code }) => {
   const dictionary = modules[`./${code}/ui.ts`]?.ui;
   if (!dictionary) throw new Error(`Missing UI dictionary: ${code}`);
+  validateCreateStrings(code, dictionary.create);
   for (const section of ['shared', 'workbench', 'chrome'] as const) {
     for (const key of Object.keys(reference[section])) {
       const value = (dictionary[section] as Record<string, unknown> | undefined)?.[key];
@@ -46,4 +62,5 @@ export const ui = Object.fromEntries(LOCALES.map(({ code }) => [code, {
 }])) as Record<Locale, Pick<UiStrings, 'shared' | 'workbench'>>;
 export const chromeUi = Object.fromEntries(LOCALES.map(({ code }) => [code, dictionaries[code].chrome])) as Record<Locale, UiStrings['chrome']>;
 export const menuUi = Object.fromEntries(LOCALES.map(({ code }) => [code, dictionaries[code].menu])) as Record<Locale, UiStrings['menu']>;
+export const createUi = Object.fromEntries(LOCALES.map(({ code }) => [code, dictionaries[code].create])) as Record<Locale, CreateStrings>;
 export const updateUi = Object.fromEntries(LOCALES.map(({ code }) => [code, modules[`./${code}/ui.ts`]?.update])) as Record<Locale, UpdateStrings>;
