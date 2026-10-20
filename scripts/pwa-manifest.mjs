@@ -2,14 +2,16 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { LOCALES } from '../src/i18n/locales.ts';
-import { PUBLIC_PAGES, pagePath } from '../src/seo/url-model.ts';
+import { SITE_PAGES, pagePath } from '../src/seo/url-model.ts';
 
 const vendorPaths = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js'];
-export const publicPagePaths = () => new Set(LOCALES.flatMap(locale =>
-  PUBLIC_PAGES.map(page => pagePath(locale.code, page))));
+export const sitePagePaths = (model = { sitePages: SITE_PAGES, pagePath }) => new Set(LOCALES.flatMap(locale =>
+  model.sitePages.map(page => model.pagePath(locale.code, page))));
+// Compatibility name for build metadata callers; precache covers SITE, not only indexable PUBLIC pages.
+export const publicPagePaths = sitePagePaths;
 
-export async function transformPrecache(entries, root = 'public') {
-  const expected = publicPagePaths();
+export async function transformPrecache(entries, root = 'public', model) {
+  const expected = sitePagePaths(model);
   const seen = new Set();
   const result = entries.map(entry => {
     if (!entry.url.endsWith('.html')) return { ...entry };

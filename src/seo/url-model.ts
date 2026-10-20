@@ -3,33 +3,61 @@ import { AVAILABLE_OPS, ZIP_SLUGS, type AvailableOpId } from '../i18n/ops';
 
 export type ZipPage = 'top' | AvailableOpId;
 export type PublicPage = 'hub' | ZipPage;
-export type PageRoute<Page extends PublicPage = PublicPage> = { locale: Locale; page: Page };
+export type UnlistedPage = 'image';
+export type SitePage = PublicPage | UnlistedPage;
+export type PageRoute<Page extends SitePage = PublicPage> = { locale: Locale; page: Page };
 
 export const ZIP_PAGES: readonly ZipPage[] = ['top', ...AVAILABLE_OPS.map(op => op.id)];
 export const PUBLIC_PAGES: readonly PublicPage[] = ['hub', ...ZIP_PAGES];
 
+// PUBLIC is indexable; SITE also includes unlisted pages. Keep this registry dormant.
+export const UNLISTED_PAGES: readonly UnlistedPage[] = [];
+export const SITE_PAGES: readonly SitePage[] = [...PUBLIC_PAGES, ...UNLISTED_PAGES];
+
 const availableSlugs = new Map<string, string>(AVAILABLE_OPS.map(op => [op.id, ZIP_SLUGS[op.id]]));
 
-export function pagePath(locale: Locale, page: PublicPage): string {
-  if (!LOCALES.some(entry => entry.code === locale)) throw new Error(`Unknown locale: ${locale}`);
-  if (!PUBLIC_PAGES.includes(page)) throw new Error(`Unavailable page: ${page}`);
+// Internal test seam: each model owns its registry and never changes the production model.
+export function __createUrlModel(unlistedPages: readonly UnlistedPage[]) {
+  const sitePages: readonly SitePage[] = [...PUBLIC_PAGES, ...unlistedPages];
 
-  const prefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
-  if (page === 'hub') return `${prefix}/`;
-  if (page === 'top') return `${prefix}/zip/`;
-  return `${prefix}/zip/${availableSlugs.get(page)}/`;
+  function pagePath(locale: Locale, page: SitePage): string {
+    if (!LOCALES.some(entry => entry.code === locale)) throw new Error(`Unknown locale: ${locale}`);
+    if (!sitePages.includes(page)) throw new Error(`Unavailable page: ${page}`);
+
+    const prefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
+    if (page === 'hub') return `${prefix}/`;
+    if (page === 'image') return `${prefix}/image/`;
+    if (page === 'top') return `${prefix}/zip/`;
+    return `${prefix}/zip/${availableSlugs.get(page)}/`;
+  }
+
+  const routes = new Map<string, PageRoute<SitePage>>(
+    LOCALES.flatMap(({ code }) => sitePages.map(page => [pagePath(code, page), { locale: code, page }] as const)),
+  );
+
+  function sitePageFromPath(pathname: string): PageRoute<SitePage> | undefined {
+    return routes.get(pathname);
+  }
+
+  function isIndexable(page: SitePage): page is PublicPage {
+    return PUBLIC_PAGES.some(entry => entry === page);
+  }
+
+  function publicPageFromPath(pathname: string): PageRoute | undefined {
+    const route = sitePageFromPath(pathname);
+    if (!route || !isIndexable(route.page)) return undefined;
+    return { locale: route.locale, page: route.page };
+  }
+
+  function zipPageFromPath(pathname: string): PageRoute<ZipPage> | undefined {
+    const route = publicPageFromPath(pathname);
+    if (!route || route.page === 'hub') return undefined;
+    return { locale: route.locale, page: route.page };
+  }
+
+  return { sitePages, pagePath, sitePageFromPath, publicPageFromPath, zipPageFromPath, isIndexable };
 }
 
-const routes = new Map<string, PageRoute>(
-  LOCALES.flatMap(({ code }) => PUBLIC_PAGES.map(page => [pagePath(code, page), { locale: code, page }] as const)),
-);
-
-export function publicPageFromPath(pathname: string): PageRoute | undefined {
-  return routes.get(pathname);
-}
-
-export function zipPageFromPath(pathname: string): PageRoute<ZipPage> | undefined {
-  const route = publicPageFromPath(pathname);
-  if (!route || route.page === 'hub') return undefined;
-  return { locale: route.locale, page: route.page };
-}
+export const { pagePath, sitePageFromPath, publicPageFromPath, zipPageFromPath, isIndexable } =
+  __createUrlModel(UNLISTED_PAGES);
+export type UrlModel = ReturnType<typeof __createUrlModel>;

@@ -7,13 +7,13 @@ const middlewarePath = join(root, 'functions/_middleware.js');
 const start = '// BEGIN GENERATED LEGACY TABLES';
 const end = '// END GENERATED LEGACY TABLES';
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const toolPrefix = 'zip';
+const toolPrefixes = ['zip', 'image'];
 
 function validate(slugs) {
   if (!Array.isArray(slugs)) throw new Error('Invalid input list');
   const seen = new Set();
   for (const slug of slugs) {
-    if (typeof slug !== 'string' || !slugPattern.test(slug) || seen.has(slug) || slug === toolPrefix) {
+    if (typeof slug !== 'string' || !slugPattern.test(slug) || seen.has(slug) || toolPrefixes.includes(slug)) {
       throw new Error('Invalid or duplicate legacy slug');
     }
     seen.add(slug);
