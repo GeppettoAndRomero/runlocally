@@ -26,7 +26,8 @@ export function isWorkbenchBusy(session: Session, controller: WorkbenchControlle
   return Boolean(controller?.processing) || session.listing.status === 'reading' || session.job.status === 'running';
 }
 export function isWorkbenchUpdateSafe(session: Session, controller: WorkbenchController | null): boolean {
-  return !isWorkbenchBusy(session, controller) && !session.source && session.results.length === 0;
+  return !isWorkbenchBusy(session, controller) && !session.source && session.results.length === 0 &&
+    session.create.input.length === 0 && !session.create.result && session.create.run.status !== 'running';
 }
 export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: { locale: Locale; page?: ZipPage; op?: AvailableOpId }) {
   const [route, setRoute] = useState<{ locale: Locale; page: ZipPage }>({ locale, page: initialPage });
@@ -139,18 +140,22 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   }, []);
   const ready = session.listing.status === 'ready';
   const operations = AVAILABLE_OPS.filter(entry => !session.source || session.source.kind === 'zip' || entry.archive);
+  // The menu and the panels follow the same operation; a state op that is not published falls back to the route.
+  const activeOp = AVAILABLE_OPS.find(entry => entry.id === session.op)?.id ?? requestedOp(route.page);
   const failure = session.inputFailure;
   const inputError = failure && failureText(failure, t, 'input');
   const busy = controllerBusy || isWorkbenchBusy(session, controllerRef.current);
   const isSafeToUpdate = () => isWorkbenchUpdateSafe(sessionRef.current, controllerRef.current);
   const results = session.results;
-  const canReset = busy || Boolean(session.source || session.inputFailure || results.length || session.listing.status !== 'idle' || session.job.status !== 'idle');
+  const canReset = busy || Boolean(session.source || session.inputFailure || results.length || session.listing.status !== 'idle' || session.job.status !== 'idle' ||
+    session.create.input.length || session.create.result || session.create.run.status !== 'idle');
   return <div class="workbench">
-    <PwaStartup locale={route.locale} busy={busy} hasWork={Boolean(session.source || results.length)} isSafe={isSafeToUpdate} />
+    <PwaStartup locale={route.locale} busy={busy} hasWork={Boolean(session.source || results.length ||
+      session.create.input.length || session.create.run.status === 'running' || session.create.result)} isSafe={isSafeToUpdate} />
     <GlobalDropZone locale={route.locale} disabled={updating} />
     {updating && <Status>{updateUi[route.locale].applying}</Status>}
     <div class="workbench__layout">
-    <OperationMenu locale={route.locale} operations={operations} selected={session.op} onSelect={selectOp} />
+    <OperationMenu locale={route.locale} operations={operations} selected={activeOp} onSelect={selectOp} />
     <div class="workbench__workspace">
     <label class="workbench__language">{ui[route.locale].shared.language} <select aria-label={ui[route.locale].shared.language} value={route.locale} onChange={event => {
       const next = LOCALES.find(entry => entry.code === event.currentTarget.value);
@@ -173,7 +178,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
       <AppButton variant="secondary" ariaLabel={`${t.retryListing}: ${session.source?.file.name}`} disabled={busy} onClick={() => void controllerRef.current?.retryListing(session)}>{t.retryListing}</AppButton></div>}
     {operations.map(({ id }) => {
       const Panel = panelRegistry[id];
-      return <section key={id} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} tabIndex={0} hidden={session.op !== id}>
+      return <section key={id} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} tabIndex={0} hidden={activeOp !== id}>
         <Panel session={session} locale={route.locale} t={t} busy={busy} updating={updating} publish={publish}
           onNavigate={next => { selectOp(next); document.getElementById(`tab-${next}`)?.focus(); }}
           onRun={() => { if (!isUpdateApplying()) void controllerRef.current?.run(session); }} />
