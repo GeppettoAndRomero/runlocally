@@ -13,22 +13,15 @@ import { Alert, Status } from '../ui/WorkbenchFeedback';
 import { inputStateCopy } from '../ui/input-state-copy';
 import { downloadBlob } from './download';
 import { initialSession, sessionReducer } from './state/reducer';
-import { directoryState, keptFileCount } from './state/reducer';
 import type { Session } from './state/session';
 import { WorkbenchController } from './workbench-controller';
 import { ui, updateUi } from '../i18n/ui';
 import { failureText } from './workbench-errors';
-import { repairPlan } from './rewrite-plan';
+import { panelRegistry } from './panels';
 import { OperationMenu } from './OperationMenu';
 import './workbench.css';
 
-const PAGE_SIZE = 500;
 function leafName(path: string): string { return path.split('/').filter(Boolean).at(-1) || 'file'; }
-function EntryIcon({ directory }: { directory: boolean }) {
-  return directory
-    ? <svg class="workbench__icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 6.5h7l2 2h10v10h-19z" stroke-linejoin="round" /></svg>
-    : <svg class="workbench__icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 2.5h9l5 5v14H5zM14 2.5v5h5" stroke-linejoin="round" /></svg>;
-}
 export function isWorkbenchBusy(session: Session, controller: WorkbenchController | null): boolean {
   return Boolean(controller?.processing) || session.listing.status === 'reading' || session.job.status === 'running';
 }
@@ -49,12 +42,8 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   const controllerRef = useRef<WorkbenchController | null>(null);
   const [controllerBusy, setControllerBusy] = useState(false);
   if (!controllerRef.current) controllerRef.current = new WorkbenchController(publish, setControllerBusy);
-  const [page, setPage] = useState(0);
-  const [removePage, setRemovePage] = useState(0);
-  const [repairPage, setRepairPage] = useState(0);
   const t = ui[route.locale].workbench;
   const copy = inputStateCopy[route.locale];
-  const notReadyCopy = session.listing.status === 'reading' ? t.busy : session.listing.status === 'error' ? t.retryListing : t.choose;
   const requestedOp = (value: ZipPage): AvailableOpId => value === 'top' ? 'browse' : value;
   const navigate = (next: { locale: Locale; page: ZipPage }, mode: 'push' | 'replace' | 'pop' = 'push') => {
     const current = routeRef.current;
@@ -106,7 +95,6 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
     else delete document.documentElement.dataset.session;
   }, [session.source]);
   useEffect(() => () => { delete document.documentElement.dataset.session; }, []);
-  useEffect(() => { setPage(0); setRemovePage(0); setRepairPage(0); }, [session.generation]);
   useEffect(() => {
     const dropped = (event: Event) => {
       if (isUpdateApplying()) { window.dispatchEvent(new Event('filesProcessed')); return; }
@@ -150,22 +138,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
     };
   }, []);
   const ready = session.listing.status === 'ready';
-  const zip = session.listing.status === 'ready' && session.listing.route === 'zip';
-  const entries = zip ? session.entries.map((entry) => ({ name: entry.name, size: entry.size, directory: entry.directory,
-    eligible: !entry.directory && !entry.encrypted })) : session.archiveEntries.map(entry => ({ name: entry.path, size: entry.size, eligible: true }));
-  const fileCount = zip ? session.entries.filter(entry => !entry.directory).length : entries.length;
-  const eligible = entries.filter(entry => entry.eligible).length;
-  const pages = Math.max(1, Math.ceil(entries.length / PAGE_SIZE));
-  const visible = entries.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const duplicates = zip && new Set(session.entries.map(entry => entry.name)).size !== session.entries.length;
   const operations = AVAILABLE_OPS.filter(entry => !session.source || session.source.kind === 'zip' || entry.archive);
-  const removed = zip ? session.entries.filter(entry => !session.selection.has(entry.name)).length : 0;
-  const keptFiles = zip ? keptFileCount(session.entries, session.selection) : 0;
-  const repair = repairPlan(zip ? session.entries : []);
-  const hasCandidates = zip && repair.changes.length > 0;
-  const encryptedKept = zip && session.entries.some(entry => entry.encrypted && session.selection.has(entry.name));
-  const extractInput = session.inputs.extract;
-  const currentOne = extractInput.mode === 'one' && entries.some(entry => entry.name === extractInput.name && entry.eligible);
   const failure = session.inputFailure;
   const inputError = failure && failureText(failure, t, 'input');
   const busy = controllerBusy || isWorkbenchBusy(session, controllerRef.current);
@@ -198,81 +171,14 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
     {session.listing.status === 'reading' && <Status spinning>{t.busy}</Status>}
     {session.listing.status === 'error' && <div><Alert>{failureText(session.listing.failure, t, 'listing')} {session.source?.kind === 'zip' ? t.listingZip : session.source?.kind === 'rar' || session.source?.kind === '7z' ? t.listingArchive : session.source?.kind === 'tar' ? t.listingTar : t.listingUnknown}</Alert>
       <AppButton variant="secondary" ariaLabel={`${t.retryListing}: ${session.source?.file.name}`} disabled={busy} onClick={() => void controllerRef.current?.retryListing(session)}>{t.retryListing}</AppButton></div>}
-    <section id="panel-browse" role="tabpanel" aria-labelledby="tab-browse" tabIndex={0} hidden={session.op !== 'browse'}>
-      {!ready && <AppCard title={t.browse}><p class="workbench__not-ready">{notReadyCopy}</p></AppCard>}
-      {ready && <>
-        <AppCard title={t.browse}>
-          <p>{t.entries}: {entries.length} / {t.files}: {fileCount} / {t.eligible}: {eligible}</p>
-          {duplicates && <p>{t.duplicate}</p>}
-          <div class="workbench__list" role="list">{visible.map((entry, index) => <div role="listitem" class="workbench__row" key={`${page}-${index}`}>
-            <span class="workbench__entry"><EntryIcon directory={'directory' in entry && entry.directory === true} /><span class="workbench__name">{entry.name}</span></span><span class="workbench__size">{entry.size} B</span>
-            {entry.eligible && <AppButton variant="ghost" ariaLabel={`${t.chooseOne}: ${entry.name}`} onClick={() => {
-              publish({ type: 'op/input', op: 'extract', input: { mode: 'one', name: entry.name } });
-              selectOp('extract');
-              document.getElementById('tab-extract')?.focus();
-            }}>{t.chooseOne}</AppButton>}
-          </div>)}</div>
-          <nav class="workbench__pages" aria-label={t.page}>
-            <AppButton variant="secondary" ariaLabel={`${t.previous}: ${t.browse} ${t.page}`} disabled={page === 0} onClick={() => setPage(page - 1)}>{t.previous}</AppButton>
-            <span>{t.page} {page + 1} / {pages}</span>
-            <AppButton variant="secondary" ariaLabel={`${t.next}: ${t.browse} ${t.page}`} disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>{t.next}</AppButton>
-          </nav>
-        </AppCard></>}
-      </section>
-      <section id="panel-extract" role="tabpanel" aria-labelledby="tab-extract" tabIndex={0} hidden={session.op !== 'extract'}>
-      {!ready && <AppCard title={t.extract}><p class="workbench__not-ready">{notReadyCopy}</p></AppCard>}
-      {ready && <>
-        <AppCard title={t.extract}>
-          <label class="workbench__choice"><input type="radio" name="extract-mode" checked={extractInput.mode === 'all'} onChange={() => publish({ type: 'op/input', op: 'extract', input: { mode: 'all' } })} />{t.all} ({eligible})</label>
-          <label class="workbench__choice"><input type="radio" name="extract-mode" checked={extractInput.mode === 'one'} onChange={() => {
-            const first = entries.find(entry => entry.eligible);
-            if (first) publish({ type: 'op/input', op: 'extract', input: { mode: 'one', name: first.name } });
-          }} />{t.one}</label>
-          {extractInput.mode === 'one' && <select aria-label={t.one} value={extractInput.name} onChange={event => publish({ type: 'op/input', op: 'extract', input: { mode: 'one', name: event.currentTarget.value } })}>
-            {entries.filter(entry => entry.eligible).map((entry, index) => <option key={index} value={entry.name}>{entry.name}</option>)}
-          </select>}
-          {zip && <p>{t.encrypted}</p>}
-          <AppButton ariaLabel={`${t.run}: ${extractInput.mode === 'one' ? extractInput.name : session.source?.file.name}`} disabled={busy || updating || (extractInput.mode === 'one' && !currentOne)} onClick={() => { if (!isUpdateApplying()) void controllerRef.current?.run(session); }}>{t.run}</AppButton>
-        </AppCard></>}
-      </section>
-      {operations.some(entry => entry.id === 'remove') && <section id="panel-remove" role="tabpanel" aria-labelledby="tab-remove" tabIndex={0} hidden={session.op !== 'remove'}>
-      {!ready && <AppCard title={t.remove}><p class="workbench__not-ready">{notReadyCopy}</p></AppCard>}
-      {ready && <>
-        <AppCard title={t.remove}>
-          <p>{t.removeGuide}</p>
-          {duplicates && <p>{t.duplicateKeep}</p>}
-          {hasCandidates && <p>{t.orderGuide} <AppButton variant="ghost" ariaLabel={`${t.goRepair}: ${session.source?.file.name}`} onClick={() => { selectOp('fix-names'); document.getElementById('tab-fix-names')?.focus(); }}>{t.goRepair}</AppButton></p>}
-          <p>{t.plannedRemove}: {removed}{t.entriesUnit} / {t.keptFiles}: {keptFiles}{t.filesUnit}</p>
-          {encryptedKept && <p>{t.encryptedKept}</p>}
-          <div class="workbench__actions"><AppButton variant="secondary" ariaLabel={`${t.keepAll}: ${session.source?.file.name}`} disabled={busy} onClick={() => publish({ type: 'selection/all', keep: true })}>{t.keepAll}</AppButton>
-            <AppButton variant="secondary" ariaLabel={`${t.clearAll}: ${session.source?.file.name}`} disabled={busy} onClick={() => publish({ type: 'selection/all', keep: false })}>{t.clearAll}</AppButton></div>
-          <div class="workbench__list" role="list" aria-label={t.remove}>{session.entries.slice(removePage * PAGE_SIZE, (removePage + 1) * PAGE_SIZE).map((entry, index) => {
-            const state = entry.directory ? directoryState(session.entries, entry.name, session.selection) : session.selection.has(entry.name) ? 'checked' : 'unchecked';
-            return <div role="listitem" class="workbench__row workbench__remove-row" data-keep-state={state} key={`${removePage}-${index}`}><label class="workbench__choice"><input type="checkbox" checked={state === 'checked'}
-              ref={node => { if (node) node.indeterminate = state === 'indeterminate'; }} disabled={busy}
-              aria-label={`${entry.name}: ${t.keep}`} onChange={event => publish({ type: 'selection/toggle', name: entry.name, keep: event.currentTarget.checked })} /><EntryIcon directory={entry.directory} /><span class="workbench__name">{entry.name}</span></label></div>;
-          })}</div>
-          <nav class="workbench__pages" aria-label={`${t.remove} ${t.page}`}><AppButton variant="secondary" ariaLabel={`${t.previous}: ${t.remove} ${t.page}`} disabled={removePage === 0} onClick={() => setRemovePage(removePage - 1)}>{t.previous}</AppButton>
-            <span>{t.page} {removePage + 1} / {Math.max(1, Math.ceil(session.entries.length / PAGE_SIZE))}</span>
-            <AppButton variant="secondary" ariaLabel={`${t.next}: ${t.remove} ${t.page}`} disabled={(removePage + 1) * PAGE_SIZE >= session.entries.length} onClick={() => setRemovePage(removePage + 1)}>{t.next}</AppButton></nav>
-          {keptFiles === 0 && <p>{t.emptyKeep}</p>}
-          <AppButton ariaLabel={`${t.removeRun}: ${session.source?.file.name}`} disabled={busy || updating || removed === 0 || keptFiles === 0} onClick={() => { if (!isUpdateApplying()) void controllerRef.current?.run(session); }}>{t.removeRun}</AppButton>
-        </AppCard></>}
-      </section>}
-      {operations.some(entry => entry.id === 'fix-names') && <section id="panel-fix-names" role="tabpanel" aria-labelledby="tab-fix-names" tabIndex={0} hidden={session.op !== 'fix-names'}>
-      {!ready && <AppCard title={t['fix-names']}><p class="workbench__not-ready">{notReadyCopy}</p></AppCard>}
-      {ready && <>
-        <AppCard title={t['fix-names']}>
-          <p>{t.repairGuide}</p><p>{t.plannedRepair}: {repair.changes.length}{t.entriesUnit}</p>
-          {repair.collision && <Alert>{t.collision}{repair.collision}</Alert>}
-          <div class="workbench__list" role="list" aria-label={t['fix-names']}>{repair.changes.slice(repairPage * PAGE_SIZE, (repairPage + 1) * PAGE_SIZE).map((change, index) =>
-            <div role="listitem" class="workbench__row workbench__repair-row" key={`${repairPage}-${index}`}><span class="workbench__name">{t.repairBefore}: {change.before}</span><span class="workbench__name">{t.repairAfter}: {change.after}</span></div>)}</div>
-          <nav class="workbench__pages" aria-label={`${t['fix-names']} ${t.page}`}><AppButton variant="secondary" ariaLabel={`${t.previous}: ${t['fix-names']} ${t.page}`} disabled={repairPage === 0} onClick={() => setRepairPage(repairPage - 1)}>{t.previous}</AppButton>
-            <span>{t.page} {repairPage + 1} / {Math.max(1, Math.ceil(repair.changes.length / PAGE_SIZE))}</span>
-            <AppButton variant="secondary" ariaLabel={`${t.next}: ${t['fix-names']} ${t.page}`} disabled={(repairPage + 1) * PAGE_SIZE >= repair.changes.length} onClick={() => setRepairPage(repairPage + 1)}>{t.next}</AppButton></nav>
-          <AppButton ariaLabel={`${t.repairRun}: ${session.source?.file.name}`} disabled={busy || updating || repair.changes.length === 0 || Boolean(repair.collision)} onClick={() => { if (!isUpdateApplying()) void controllerRef.current?.run(session); }}>{t.repairRun}</AppButton>
-        </AppCard></>}
-      </section>}
+    {operations.map(({ id }) => {
+      const Panel = panelRegistry[id];
+      return <section key={id} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} tabIndex={0} hidden={session.op !== id}>
+        <Panel session={session} locale={route.locale} t={t} busy={busy} updating={updating} publish={publish}
+          onNavigate={next => { selectOp(next); document.getElementById(`tab-${next}`)?.focus(); }}
+          onRun={() => { if (!isUpdateApplying()) void controllerRef.current?.run(session); }} />
+      </section>;
+    })}
     {ready && <>
       {session.job.status === 'running' && session.job.progress?.kind === 'extract' && <Status progress={{ done: session.job.progress.done, total: session.job.progress.total }} label={copy.progressLabel}>{t.progress}: {session.job.progress.done} / {session.job.progress.total}</Status>}
       {session.job.status === 'running' && session.job.progress?.kind === 'rewrite' && <Status spinning>{t.processingEntry}: {session.job.progress.progress.index + 1} / {session.job.progress.progress.total} {session.job.progress.progress.name}</Status>}
