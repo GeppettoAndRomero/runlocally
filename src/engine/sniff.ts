@@ -1,4 +1,4 @@
-export type ArchiveKind = 'zip' | 'rar' | '7z' | 'tar' | 'unknown';
+export type ArchiveKind = 'zip' | 'rar' | '7z' | 'tar' | 'gzip' | 'unknown';
 
 /** Inspect bytes only. Callers should read at least 263 bytes to recognize a ustar header. */
 export function sniffArchiveKind(bytes: Uint8Array): ArchiveKind {
@@ -13,5 +13,7 @@ export function sniffArchiveKind(bytes: Uint8Array): ArchiveKind {
   if (at(0, [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c])) return '7z';
   if (at(257, [0x75, 0x73, 0x74, 0x61, 0x72, 0x00]) ||
       at(257, [0x75, 0x73, 0x74, 0x61, 0x72, 0x20])) return 'tar';
+  // Leave the compressed contents to libarchive.
+  if (bytes.length >= 10 && at(0, [0x1f, 0x8b, 0x08]) && (bytes[3] & 0xe0) === 0) return 'gzip';
   return 'unknown';
 }
