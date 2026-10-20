@@ -5,7 +5,6 @@ import { Workbench, isWorkbenchUpdateSafe } from '../../src/app/Workbench';
 import { initialSession } from '../../src/app/state/reducer';
 import type { Session } from '../../src/app/state/session';
 import type { PanelProps } from '../../src/app/panels';
-import { CreatePanel } from '../../src/app/panels/create.panel';
 import { WorkbenchController } from '../../src/app/workbench-controller';
 import type { PwaStartup } from '../../src/ui/PwaStartup';
 import { createUi } from '../../src/i18n/ui';
@@ -14,6 +13,7 @@ const mock = vi.hoisted(() => ({
   seed: undefined as Session | undefined,
   props: new Map<string, PanelProps>(),
   applying: false,
+  mountCreate: true,
   startup: vi.fn(),
 }));
 vi.mock('../../src/app/state/reducer', async importOriginal => {
@@ -24,10 +24,11 @@ vi.mock('../../src/app/panels', async importOriginal => {
   const actual = await importOriginal<typeof import('../../src/app/panels')>();
   const adapter = (id: string, Panel: ComponentType<PanelProps>) => (props: PanelProps) => {
     mock.props.set(id, props);
-    return <Panel {...props} />;
+    return id === 'create' && !mock.mountCreate ? null : <Panel {...props} />;
   };
   return { ...actual, panelRegistry: {
     ...actual.panelRegistry,
+    create: adapter('create', actual.panelRegistry.create),
     browse: adapter('browse', actual.panelRegistry.browse),
     extract: adapter('extract', actual.panelRegistry.extract),
     remove: adapter('remove', actual.panelRegistry.remove),
@@ -45,7 +46,7 @@ const file = new File(['text'], 'item.txt');
 function seedCreate() {
   mock.seed = { ...initialSession(3, 'create'), source: { file: new File(['zip'], 'source.zip'), kind: 'zip', chain: [] } };
 }
-function props(): PanelProps { return mock.props.get('extract')!; }
+function props(): PanelProps { return mock.props.get('create')!; }
 function startup(): Parameters<typeof PwaStartup>[0] { return mock.startup.mock.lastCall![0]; }
 function drop(files = [file]) { fireEvent(window, new CustomEvent('filesDropped', { detail: files })); }
 function processed() {
@@ -58,24 +59,24 @@ afterEach(() => {
   mock.seed = undefined;
   mock.props.clear();
   mock.applying = false;
+  mock.mountCreate = true;
   vi.restoreAllMocks();
   vi.clearAllMocks();
   window.history.replaceState(null, '', '/en/zip/');
 });
 
-it('routes create drops to the real active panel while keeping creation unpublished', () => {
+it('routes create drops to the real active panel through the published panel', async () => {
   seedCreate();
   const accept = vi.spyOn(WorkbenchController.prototype, 'accept').mockResolvedValue();
-  render(<Workbench locale="en" page="extract" op="extract" />);
-  expect(screen.getAllByRole('tab')).toHaveLength(4);
-  expect(screen.getByRole('tab', { selected: true }).id).toBe('tab-extract');
-  expect(document.getElementById('tab-create')).toBeNull();
-  expect(document.getElementById('panel-create')).toBeNull();
+  const panel = render(<Workbench locale="en" page="create" op="create" />);
+  expect(screen.getAllByRole('tab')).toHaveLength(5);
+  expect(screen.getByRole('tab', { selected: true }).id).toBe('tab-create');
+  expect(document.getElementById('tab-create')).not.toBeNull();
+  expect(document.getElementById('panel-create')).not.toBeNull();
   expect(props().active).toBe(true);
   expect(mock.props.get('browse')?.active).toBe(false);
   expect(screen.queryByLabelText('Choose an archive')).toBeNull();
   expect(screen.getByRole('button', { name: /^Reset:/ })).toBeTruthy();
-  const panel = render(<CreatePanel {...props()} active />);
   const notification = processed();
   try {
     drop();
@@ -84,10 +85,12 @@ it('routes create drops to the real active panel while keeping creation unpublis
     expect(panel.getByText(`${createUi.en.selectedCount}: 1`)).toBeTruthy();
     expect(panel.getByText(file.name)).toBeTruthy();
     expect(startup().isSafe?.()).toBe(false);
-    panel.rerender(<CreatePanel {...props()} active={false} />);
-    drop([new File(['other'], 'other.txt')]);
-    expect(panel.queryByText('other.txt')).toBeNull();
-    expect(notification.listener).toHaveBeenCalledTimes(2);
+    fireEvent.click(document.getElementById('tab-browse')!);
+    const other = new File(['other'], 'other.txt');
+    drop([other]);
+    expect(document.querySelector('#panel-create')?.textContent).not.toContain('other.txt');
+    expect(accept).toHaveBeenCalledWith([other], props().session);
+    await waitFor(() => expect(notification.listener).toHaveBeenCalledTimes(2));
   } finally { notification.remove(); }
 });
 
@@ -115,14 +118,13 @@ it.each([false, true])('ignores drops during synchronous update application (cre
   if (create) seedCreate();
   const accept = vi.spyOn(WorkbenchController.prototype, 'accept').mockResolvedValue();
   render(<Workbench locale="en" page="extract" op="extract" />);
-  const panel = create ? render(<CreatePanel {...props()} active />) : undefined;
   mock.applying = true;
   const notification = processed();
   try {
     drop();
     expect(accept).not.toHaveBeenCalled();
     expect(notification.listener).toHaveBeenCalledOnce();
-    if (panel) expect(panel.getByText(`${createUi.en.selectedCount}: 0`)).toBeTruthy();
+    if (create) expect(screen.getByText(`${createUi.en.selectedCount}: 0`)).toBeTruthy();
   } finally { notification.remove(); }
 });
 
@@ -146,8 +148,7 @@ it('uses the latest session from an earlier execution callback after Reset and g
 });
 
 it('protects pending selection synchronously, allows Reset, and releases protection on clear and unmount', async () => {
-  render(<Workbench locale="en" page="extract" op="extract" />);
-  const panel = render(<CreatePanel {...props()} active />);
+  const panel = render(<Workbench locale="en" page="create" op="create" />);
   const safe = startup().isSafe!;
   expect(safe()).toBe(true);
   expect(screen.queryByRole('button', { name: /^Reset:/ })).toBeNull();
@@ -167,12 +168,12 @@ it('protects pending selection synchronously, allows Reset, and releases protect
   const generation = props().session.generation;
   fireEvent.click(screen.getByRole('button', { name: /^Reset:/ }));
   await waitFor(() => expect(props().session.generation).toBe(generation + 1));
-  panel.rerender(<CreatePanel {...props()} active />);
   await waitFor(() => expect(startup().hasWork).toBe(false));
   expect(panel.getByText(`${createUi.en.selectedCount}: 0`)).toBeTruthy();
   expect(safe()).toBe(true);
   fireEvent.change(panel.getByLabelText(createUi.en.addFiles), { target: { files: [file] } });
-  panel.unmount();
+  mock.mountCreate = false;
+  panel.rerender(<Workbench locale="en" page="create" op="create" />);
   await waitFor(() => expect(startup().hasWork).toBe(false));
   expect(safe()).toBe(true);
 });
@@ -181,8 +182,7 @@ it('clears only pending selection while retaining executed input and results unt
   seedCreate();
   const result: NonNullable<Session['create']['result']> = { sourceFiles: [file], blob: new Blob(['zip']), name: 'created.zip', count: 1 };
   mock.seed = { ...mock.seed!, create: { input: [file], run: { status: 'succeeded' }, result } };
-  render(<Workbench locale="en" page="extract" op="extract" />);
-  const panel = render(<CreatePanel {...props()} active />);
+  const panel = render(<Workbench locale="en" page="create" op="create" />);
   fireEvent.change(panel.getByLabelText(createUi.en.addFiles), { target: { files: [file] } });
   fireEvent.click(panel.getByRole('button', { name: createUi.en.clearSelection }));
   expect(props().session.create.input).toEqual([file]);

@@ -49,4 +49,13 @@ export const pages = {
     faq: [{ question: 'Which entries are candidates?', answer: 'Detection starts with non-ASCII names without a UTF-8 flag. Only names with original bytes that change when decoded as Shift_JIS are included.' }],
     limits: ['Entries without original filename bytes are excluded. A new collision between names blocks the operation.', 'This does not repair damaged directory metadata or entry contents. The screen does not offer password-based rebuilding of retained encrypted entries.'],
   },
+  create: {
+    title: 'Create a ZIP from Local Files | runlocally',
+    description: 'Add local files and combine them into a new ZIP. Review the result, then save it with a separate action.',
+    h1: 'Combine multiple files into a new ZIP',
+    lead: 'The added file names and contents are written into a ZIP in your browser. The result can be saved as created.zip; saving is a separate action.',
+    steps: [{ heading: 'Add files', body: 'Choose or drop files and review the selected names and sizes. Relative paths supplied by a folder are used in the ZIP.' }, { heading: 'Create the ZIP', body: 'Process the selected files together and review the result.' }, { heading: 'Save the result', body: 'Use the save button to save created.zip. Reset to clear the selection and creation result.' }],
+    faq: [{ question: 'What happens to files with the same name?', answer: 'Colliding names are retained with (1), (2) suffixes. Adding a file again with the same relative path, name, size and modification time does not add another selection.' }],
+    limits: ['The total size of the selection must be at most 1,000,000,000 bytes. Processing can fail even within that limit.', 'The screen does not offer passwords or encryption. Relative paths supplied by folder selection and drops depend on the browser.'],
+  },
 } satisfies Record<PageKey, PageContent>;

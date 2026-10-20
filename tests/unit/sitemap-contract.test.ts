@@ -9,14 +9,15 @@ const pairs = [
   ['/zip/extract/', '/en/zip/extract/'],
   ['/zip/remove/', '/en/zip/remove/'],
   ['/zip/fix-names/', '/en/zip/fix-names/'],
+  ['/zip/create/', '/en/zip/create/'],
 ] as const;
 const url = (path: string) => `${SITE_ORIGIN}${path}`;
 const expected = pairs.flatMap(([ja, en]) => [url(ja), url(en)]);
 
 describe('sitemap product options', () => {
-  it('accepts exactly the twelve published routes', () => {
-    expect(expected).toHaveLength(12);
-    expect(new Set(expected).size).toBe(12);
+  it('accepts exactly the fourteen published routes', () => {
+    expect(expected).toHaveLength(14);
+    expect(new Set(expected).size).toBe(14);
     for (const page of expected) expect(sitemapOptions.filter(page)).toBe(true);
     for (const path of [
       '/zip-viewer/', '/unzip/', '/remove-from-zip/', '/zip-filename-fix/',

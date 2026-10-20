@@ -9,8 +9,8 @@ import { LOCALES } from '../../src/i18n/locales';
 import { PUBLIC_PAGES, pagePath } from '../../src/seo/url-model';
 
 const publicUrls = [
-  '/', '/zip/', '/zip/view/', '/zip/extract/', '/zip/remove/', '/zip/fix-names/',
-  '/en/', '/en/zip/', '/en/zip/view/', '/en/zip/extract/', '/en/zip/remove/', '/en/zip/fix-names/',
+  '/', '/zip/', '/zip/view/', '/zip/extract/', '/zip/remove/', '/zip/fix-names/', '/zip/create/',
+  '/en/', '/en/zip/', '/en/zip/view/', '/en/zip/extract/', '/en/zip/remove/', '/en/zip/fix-names/', '/en/zip/create/',
 ];
 const hubs = ['/', '/en/'];
 const vendor = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js'];
@@ -46,7 +46,7 @@ function fixture() {
 }
 
 describe('public page contract', () => {
-  it('has exactly the twelve published URLs without duplicates', () => {
+  it('has exactly the fourteen published URLs without duplicates', () => {
     const modeled = LOCALES.flatMap(locale => PUBLIC_PAGES.map(page => pagePath(locale.code, page)));
     expect(modeled).toEqual(publicUrls);
     expect(new Set(modeled).size).toBe(publicUrls.length);

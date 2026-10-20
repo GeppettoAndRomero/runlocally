@@ -1,3 +1,4 @@
+import type { UiStrings } from './types';
 import type { WorkerApi } from '../engine/worker-api';
 
 type ArchiveOp = keyof Pick<typeof import('../engine/archive/libarchive'), 'openArchive'>;
@@ -37,7 +38,7 @@ export const OPS = [
   { id: 'merge', slug: ZIP_SLUGS.merge, engineOp: 'mergeZips', i18nKey: 'merge', available: false },
   { id: 'unlock', slug: ZIP_SLUGS.unlock, engineOp: 'rewriteZip', i18nKey: 'unlock', available: false },
   { id: 'encrypt', slug: ZIP_SLUGS.encrypt, engineOp: 'rewriteZip', i18nKey: 'encrypt', available: false },
-  { id: 'create', slug: ZIP_SLUGS.create, engineOp: 'createZip', i18nKey: 'create', available: false },
+  { id: 'create', slug: ZIP_SLUGS.create, engineOp: 'createZip', i18nKey: 'create', available: true },
   { id: 'rar-7z', slug: ZIP_SLUGS['rar-7z'], engineOp: 'openArchive', i18nKey: 'rar-7z', available: false },
 ] as const satisfies readonly OpDefinition[];
 
@@ -46,5 +47,10 @@ export type AvailableOp = Extract<typeof OPS[number], { available: true }>;
 export type AvailableOpId = AvailableOp['id'];
 export const AVAILABLE_OPS: readonly AvailableOp[] = OPS.filter((op): op is AvailableOp => op.available);
 export function archiveAvailable(op: AvailableOpId): boolean {
-  return AVAILABLE_OPS.find(entry => entry.id === op)?.archive ?? false;
+  const entry = AVAILABLE_OPS.find(entry => entry.id === op);
+  return Boolean(entry && 'archive' in entry && entry.archive);
+}
+
+export function operationLabel(op: AvailableOp, workbench: UiStrings['workbench'], menu: UiStrings['menu']): string {
+  return op.i18nKey === 'create' ? menu.create.verb : workbench[op.i18nKey];
 }

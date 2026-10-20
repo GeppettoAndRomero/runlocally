@@ -6,7 +6,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ready, select, save, reinput, roundTrip } from './_helpers';
 import { visit } from './_covenant-support';
 import { zipHome } from './_paths';
-import { AVAILABLE_OPS, type AvailableOp } from '../../src/i18n/ops';
+import { archiveAvailable, AVAILABLE_OPS, type AvailableOp } from '../../src/i18n/ops';
 import { ui as enUi } from '../../src/i18n/en/ui';
 
 configure({ useWebWorkers: false });
@@ -65,17 +65,26 @@ async function inertMenu(page: Page, ops: readonly AvailableOp[], guidance: stri
   expect(await tabs.allTextContents()).toEqual(ops.map(op =>
     `${enUi.menu[op.i18nKey].verb}${enUi.menu[op.i18nKey].description}`));
   await expect(page.locator('[role="tabpanel"]')).toHaveCount(ops.length);
-  await expect(page.locator('[role="tabpanel"] button, [role="tabpanel"] input, [role="tabpanel"] select')).toHaveCount(0);
+  await expect(page.locator('[role="tabpanel"]:not(#panel-create) button, [role="tabpanel"]:not(#panel-create) input, [role="tabpanel"]:not(#panel-create) select')).toHaveCount(0);
   for (const op of ops) {
     await select(page, op.id);
     const panel = page.locator(`#panel-${op.id}`);
     await expect(panel).toBeVisible();
-    await expect(panel).toContainText(guidance);
-    await expect(panel.locator('.workbench__not-ready')).toBeVisible();
-    await expect(panel.getByRole('button')).toHaveCount(0);
-    await expect(panel.getByRole('checkbox')).toHaveCount(0);
-    await expect(panel.getByRole('radio')).toHaveCount(0);
-    await expect(panel.getByRole('combobox')).toHaveCount(0);
+    if (op.id === 'create') {
+      await expect(panel).toContainText(enUi.create.emptyGuide);
+      await expect(panel.locator('input[type="file"]')).toHaveCount(2);
+      await expect(panel.getByRole('button', { name: enUi.create.run, exact: true })).toBeDisabled();
+      await expect(panel.getByRole('button', { name: enUi.create.clearSelection })).toBeDisabled();
+      await expect(panel.getByRole('listitem')).toHaveCount(0);
+      await expect(panel.getByRole('button', { name: /^Save ZIP/ })).toHaveCount(0);
+    } else {
+      await expect(panel).toContainText(guidance);
+      await expect(panel.locator('.workbench__not-ready')).toBeVisible();
+      await expect(panel.getByRole('button')).toHaveCount(0);
+      await expect(panel.getByRole('checkbox')).toHaveCount(0);
+      await expect(panel.getByRole('radio')).toHaveCount(0);
+      await expect(panel.getByRole('combobox')).toHaveCount(0);
+    }
     await expect(page.locator('[role="tabpanel"]:not([hidden])')).toHaveCount(1);
   }
 }
@@ -330,7 +339,7 @@ for (const name of ['unknown.bin', 'unknown.zip']) test('unrecognized bytes in '
   const downloads = watchDownloads(page);
   const hash = await intake(page, new Uint8Array([0x13, 0x37, 0x00, 0x42, 0x19]), name);
   await expect(page.getByRole('alert')).toContainText('Format could not be identified.');
-  await inertMenu(page, AVAILABLE_OPS.filter(op => op.archive), enUi.workbench.choose);
+  await inertMenu(page, AVAILABLE_OPS.filter(op => archiveAvailable(op.id)), enUi.workbench.choose);
   await noOutput(page, downloads);
   await heldUnchanged(page, hash);
 });

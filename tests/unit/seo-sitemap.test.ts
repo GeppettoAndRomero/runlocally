@@ -35,7 +35,7 @@ describe('built sitemap', () => {
         return new URL(`/${route}`, SITE_ORIGIN).href;
       });
       const expected = LOCALES.flatMap(({ code }) => PUBLIC_PAGES.map(page => pageUrl(code, page)));
-      expect(expected).toHaveLength(12);
+      expect(expected).toHaveLength(14);
       expect(generatedPages.sort()).toEqual(expected.sort());
       for (const { code } of LOCALES) for (const page of ZIP_PAGES) {
         const html = readFileSync(join(output, new URL(pageUrl(code, page)).pathname.slice(1), 'index.html'), 'utf8');

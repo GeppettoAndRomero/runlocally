@@ -12,8 +12,8 @@ const tempDirs: string[] = [];
 const oldZip = ['zip-viewer', 'unzip', 'remove-from-zip', 'zip-filename-fix'];
 const publicPaths = [
   '/', '/en/', '/zip/', '/zip/view/', '/zip/extract/', '/zip/remove/',
-  '/zip/fix-names/', '/en/zip/', '/en/zip/view/', '/en/zip/extract/',
-  '/en/zip/remove/', '/en/zip/fix-names/',
+  '/zip/fix-names/', '/zip/create/', '/en/zip/', '/en/zip/view/', '/en/zip/extract/',
+  '/en/zip/remove/', '/en/zip/fix-names/', '/en/zip/create/',
 ];
 
 async function visit(path: string, method = 'GET', upstream = new Response('upstream', { status: 202 })) {

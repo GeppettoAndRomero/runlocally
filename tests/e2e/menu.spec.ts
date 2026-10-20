@@ -40,10 +40,14 @@ async function menuContract(page: Page, locale: Locale) {
     await expect(page.locator(`#panel-${op.id}`)).toHaveAttribute('aria-labelledby', `tab-${op.id}`);
   }
 }
-async function noExecution(page: Page) {
+async function noExecution(page: Page, locale: Locale) {
   await expect(page.locator('article.workbench__result')).toHaveCount(0);
-  await expect(page.locator('[role="tabpanel"] button, [role="tabpanel"] input, [role="tabpanel"] select')).toHaveCount(0);
+  await expect(page.locator('[role="tabpanel"]:not(#panel-create) button, [role="tabpanel"]:not(#panel-create) input, [role="tabpanel"]:not(#panel-create) select')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Save file:/ })).toHaveCount(0);
+  const panel = page.locator('#panel-create');
+  await expect(panel.locator('input[type="file"]')).toHaveCount(2);
+  await expect(panel.locator('button').filter({ hasText: copy[locale].create.run })).toBeDisabled();
+  await expect(panel.locator('[role="listitem"]')).toHaveCount(0);
 }
 
 for (const locale of ['en', 'ja'] as const) {
@@ -52,16 +56,17 @@ for (const locale of ['en', 'ja'] as const) {
     page.on('download', () => { downloads++; });
     await page.goto(zipHome(locale)); await ready(page);
     await menuContract(page, locale);
-    await noExecution(page);
+    await noExecution(page, locale);
     for (const op of AVAILABLE_OPS) {
       await tab(page, locale, op).click();
       await selected(page, locale, op.id);
-      await expect(page.locator(`#panel-${op.id} .workbench__not-ready`)).toHaveText(copy[locale].workbench.choose);
-      await noExecution(page);
+      if (op.id === 'create') await expect(page.locator('#panel-create')).toContainText(copy[locale].create.emptyGuide);
+      else await expect(page.locator(`#panel-${op.id} .workbench__not-ready`)).toHaveText(copy[locale].workbench.choose);
+      await noExecution(page, locale);
       await page.goto(zipOp(locale, op.id)); await ready(page);
       await menuContract(page, locale);
       await selected(page, locale, op.id);
-      await noExecution(page);
+      await noExecution(page, locale);
     }
     expect(downloads).toBe(0);
   });
@@ -102,7 +107,7 @@ for (const locale of ['en', 'ja'] as const) {
     })).toBe(true);
     const first = tab(page, locale, AVAILABLE_OPS[0]);
     await first.focus();
-    for (const [key, id] of [['ArrowUp', 'fix-names'], ['ArrowDown', 'browse'], ['ArrowLeft', 'fix-names'], ['ArrowRight', 'browse']] as const) {
+    for (const [key, id] of [['ArrowUp', 'create'], ['ArrowDown', 'browse'], ['ArrowLeft', 'create'], ['ArrowRight', 'browse']] as const) {
       await page.keyboard.press(key);
       const target = tab(page, locale, AVAILABLE_OPS.find(op => op.id === id)!);
       await expect(target).toBeFocused();
@@ -128,7 +133,7 @@ for (const locale of ['en', 'ja'] as const) {
     expect((await geometry()).above).toBe(true);
     await noOverflow(page);
     await tab(page, locale, AVAILABLE_OPS[0]).focus();
-    await page.keyboard.press('ArrowLeft'); await selected(page, locale, 'fix-names');
+    await page.keyboard.press('ArrowLeft'); await selected(page, locale, 'create');
     await page.keyboard.press('ArrowRight'); await selected(page, locale, 'browse');
     await page.evaluate(() => {
       (window as Window & { __menuKeys?: boolean[] }).__menuKeys = [];

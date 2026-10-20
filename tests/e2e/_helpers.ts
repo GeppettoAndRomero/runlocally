@@ -1,8 +1,9 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { AVAILABLE_OPS, type AvailableOpId } from '../../src/i18n/ops';
+import { archiveAvailable, AVAILABLE_OPS, type AvailableOpId } from '../../src/i18n/ops';
 import { publicPageFromPath } from '../../src/seo/page';
+import { saveCreated, zipContents } from './_create-input';
 import { ui as jaUi } from '../../src/i18n/ja/ui';
 import { ui as enUi } from '../../src/i18n/en/ui';
 
@@ -118,6 +119,16 @@ function expectText(bytes: Buffer, content: string, subject: string) {
 }
 
 const drivers: Record<AvailableOpId, (page: Page) => Promise<void>> = {
+  create: async page => {
+    await select(page, 'create');
+    await page.locator('#panel-create input[multiple]').setInputFiles(fixture('zip/sample.zip'));
+    await page.locator('#panel-create').getByRole('button', { name: 'Create new ZIP', exact: true }).click();
+    await expect(page.locator('#panel-create')).toContainText('Creation result: 1');
+    const files = await zipContents(await saveCreated(page));
+    expect(Object.keys(files)).toEqual(['sample.zip']);
+    expect(Buffer.from(files['sample.zip'])).toEqual(await readFile(fixture('zip/sample.zip')));
+    await select(page, 'browse');
+  },
   browse: async page => browse(page, ['readme.txt', 'docs/notes.txt', 'docs/sub/deep.txt', 'メモ.txt', 'images/']),
   extract: async page => extract(page, 'sample.zip', 'readme.txt', 'hello from unzip\n'),
   remove: async page => {
@@ -160,7 +171,7 @@ export async function roundTrip(page: Page, checkpoint: () => void = () => {}) {
   await drivers['fix-names'](page);
   checkpoint();
   await drop(page, 'archive/sample.7z');
-  const archiveOps = AVAILABLE_OPS.filter(op => op.archive).map(op => op.id);
+  const archiveOps = AVAILABLE_OPS.filter(op => archiveAvailable(op.id)).map(op => op.id);
   expect(archiveOps.sort()).toEqual(['browse', 'extract']);
   await expect(page.getByRole('tab')).toHaveCount(archiveOps.length);
   await browse(page, ['readme.txt', 'docs/notes.txt']);

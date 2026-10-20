@@ -2,11 +2,13 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/preact';
 import { Workbench } from '../../src/app/Workbench';
 import { buildPanelRegistry, panelRegistry, type PanelDefinitions } from '../../src/app/panels';
-import { BrowsePanel, ExtractPanel, RemovePanel, FixNamesPanel, panels } from '../../src/app/panels/builtin.panel';
+import { BrowsePanel, ExtractPanel, RemovePanel, FixNamesPanel, panels as builtinPanels } from '../../src/app/panels/builtin.panel';
 import { CreatePanel } from '../../src/app/panels/create.panel';
 import { AVAILABLE_OPS } from '../../src/i18n/ops';
 import { ui } from '../../src/i18n/ui';
 import { zipPageFromPath } from '../../src/seo/page';
+
+const panels = { ...builtinPanels, create: CreatePanel };
 
 const mock = vi.hoisted(() => ({ list: vi.fn() }));
 vi.mock('../../src/app/engine', () => ({ createZipEngine: () => ({ listEntries: mock.list, terminate: vi.fn() }) }));
@@ -18,7 +20,7 @@ afterEach(() => {
 
 it('collects all actual components and allows absent unpublished panels', () => {
   expect(panelRegistry).toEqual({ browse: BrowsePanel, extract: ExtractPanel, remove: RemovePanel, 'fix-names': FixNamesPanel, create: CreatePanel });
-  expect(buildPanelRegistry({ builtin: { panels } })).toEqual({ browse: BrowsePanel, extract: ExtractPanel, remove: RemovePanel, 'fix-names': FixNamesPanel });
+  expect(buildPanelRegistry({ builtin: { panels } })).toEqual({ browse: BrowsePanel, extract: ExtractPanel, remove: RemovePanel, 'fix-names': FixNamesPanel, create: CreatePanel });
 });
 
 it.each(AVAILABLE_OPS)('rejects missing public panel $id', ({ id }) => {

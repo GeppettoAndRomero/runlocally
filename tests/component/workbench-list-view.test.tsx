@@ -21,7 +21,7 @@ it('keeps tab state, focus cycling, names, size, and native selection states', a
   render(<Workbench locale="en" />);
   await load();
   const tabs = screen.getAllByRole('tab');
-  expect(tabs.map(tab => tab.id)).toEqual(['tab-browse', 'tab-extract', 'tab-remove', 'tab-fix-names']);
+  expect(tabs.map(tab => tab.id)).toEqual(['tab-browse', 'tab-extract', 'tab-remove', 'tab-fix-names', 'tab-create']);
   for (const tab of tabs) {
     expect(tab.getAttribute('aria-controls')).toBe('panel-' + tab.id.slice(4));
     expect(document.getElementById(tab.getAttribute('aria-controls')!)?.hidden).toBe(tab !== tabs[0]);
@@ -35,8 +35,8 @@ it('keeps tab state, focus cycling, names, size, and native selection states', a
   expect(within(row).getByText('7 B').classList.contains('workbench__size')).toBe(true);
   expect(row.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowLeft' });
-  expect(document.activeElement).toBe(tabs[3]);
-  expect(tabs[3].getAttribute('aria-selected')).toBe('true');
+  expect(document.activeElement).toBe(tabs[4]);
+  expect(tabs[4].getAttribute('aria-selected')).toBe('true');
   expect(document.getElementById('panel-browse')?.hidden).toBe(true);
   fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
   expect(document.activeElement).toBe(tabs[0]);

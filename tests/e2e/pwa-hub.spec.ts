@@ -10,13 +10,13 @@ const expectedPages = [
   '/zip/view/', '/en/zip/view/',
   '/zip/extract/', '/en/zip/extract/',
   '/zip/remove/', '/en/zip/remove/',
-  '/zip/fix-names/', '/en/zip/fix-names/',
+  '/zip/fix-names/', '/zip/create/', '/en/zip/fix-names/', '/en/zip/create/',
 ];
 const vendor = ['/vendor/libarchive/libarchive.wasm', '/vendor/libarchive/worker-bundle.js'];
 
-test('public pages are the twelve distinct routes', () => {
-  expect(publicPaths).toHaveLength(12);
-  expect(new Set(publicPaths).size).toBe(12);
+test('public pages are the fourteen distinct routes', () => {
+  expect(publicPaths).toHaveLength(14);
+  expect(new Set(publicPaths).size).toBe(14);
   expect([...publicPaths].sort()).toEqual([...expectedPages].sort());
 });
 
@@ -54,7 +54,7 @@ for (const locale of LOCALES) {
       await activeRootWorker(page);
       const paths = await cachePaths(page);
       const savedPages = paths.filter(path => path.endsWith('/'));
-      expect(savedPages).toHaveLength(12);
+      expect(savedPages).toHaveLength(14);
       expect([...savedPages].sort()).toEqual([...expectedPages].sort());
       for (const path of vendor) expect(paths).toContain(path);
 

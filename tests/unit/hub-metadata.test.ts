@@ -12,8 +12,8 @@ import { PUBLIC_PAGES, type PublicPage as ModelPublicPage } from '../../src/seo/
 
 const sameType = <T extends ModelPublicPage>(page: PublicPage & T): ModelPublicPage => page;
 const expected = [
-  '/', '/en/', '/zip/', '/zip/view/', '/zip/extract/', '/zip/remove/', '/zip/fix-names/',
-  '/en/zip/', '/en/zip/view/', '/en/zip/extract/', '/en/zip/remove/', '/en/zip/fix-names/',
+  '/', '/en/', '/zip/', '/zip/view/', '/zip/extract/', '/zip/remove/', '/zip/fix-names/', '/zip/create/',
+  '/en/zip/', '/en/zip/view/', '/en/zip/extract/', '/en/zip/remove/', '/en/zip/fix-names/', '/en/zip/create/',
 ];
 
 describe('hub routes', () => {
@@ -35,7 +35,7 @@ describe('hub routes', () => {
   });
 
   it('rejects old, unpublished and noncanonical URLs', () => {
-    const invalid = ['/view/', '/en/view/', '/zip/create/', '/en/zip/merge/', '/zip',
+    const invalid = ['/view/', '/en/view/', '/zip/merge/', '/en/zip/merge/', '/zip',
       '/en', '/ZIP/', '/en//', '/en/zip/../', '/ja/', '/zip/%76iew/'];
     for (const path of invalid) {
       expect(publicPageFromPath(path)).toBeUndefined();

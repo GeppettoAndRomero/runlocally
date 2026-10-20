@@ -12,6 +12,7 @@ export const publicPaths = LOCALES.flatMap(locale =>
   PUBLIC_PAGES.map(page => pagePath(locale.code, page)));
 export const publicPathSet = new Set(publicPaths);
 export const fixtures: Record<AvailableOpId, readonly string[]> = {
+  create: ['zip/sample.zip'],
   browse: ['zip/sample.zip', 'archive/sample.7z', 'zip/nested.zip'],
   extract: ['zip/sample.zip', 'archive/sample.7z', 'zip/nested.zip'],
   remove: ['zip/sample.zip'],

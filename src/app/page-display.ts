@@ -1,7 +1,7 @@
 import { pageContent } from '../i18n/pages';
-import { chromeUi, ui } from '../i18n/ui';
+import { chromeUi, menuUi, ui } from '../i18n/ui';
 import { LOCALES, type Locale } from '../i18n/locales';
-import { AVAILABLE_OPS } from '../i18n/ops';
+import { operationLabel, AVAILABLE_OPS } from '../i18n/ops';
 import { headData, pagePath } from '../seo/page';
 import type { ZipPage } from '../seo/url-model';
 
@@ -34,7 +34,7 @@ export function displayPage(locale: Locale, page: ZipPage): void {
     const link = document.querySelector<HTMLAnchorElement>(`[data-chrome-page="${op.id}"]`);
     if (!link) continue;
     link.href = pagePath(locale, op.id);
-    link.textContent = ui[locale].workbench[op.i18nKey];
+    link.textContent = operationLabel(op, ui[locale].workbench, menuUi[locale]);
     if (page === op.id) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   }

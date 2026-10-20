@@ -30,6 +30,8 @@
 .workbench__row-actions .app-button { max-width: 100%; overflow-wrap: anywhere; white-space: normal; line-height: var(--lh-normal); }
 .workbench .workbench__choice { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--size-control-min); min-width: 0; padding: var(--space-2); margin-right: var(--space-3); overflow-wrap: anywhere; }
 .workbench__choice input { appearance: auto; accent-color: var(--color-primary); flex: none; }
+.workbench .workbench__choice--file { flex-wrap: wrap; max-width: 100%; margin-right: 0; }
+.workbench__choice--file input[type="file"] { flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .workbench__remove-row .workbench__choice { flex: 1; margin: 0; }
 .workbench__remove-row[data-keep-state="unchecked"] { border-inline-start: 3px solid var(--color-control-border); }
 .workbench__remove-row[data-keep-state="indeterminate"] { border-inline-start: 3px dashed var(--color-control-border); }

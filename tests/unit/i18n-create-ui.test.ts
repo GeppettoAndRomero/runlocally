@@ -34,10 +34,10 @@ describe('create strings', () => {
     expect(createUi.en).toBe(enDictionary.create);
     for (const { code } of LOCALES) {
       expect(Object.keys(ui[code]).sort()).toEqual(['shared', 'workbench']);
-      expect(menuUi[code]).not.toHaveProperty('create');
-      expect(pages[code]).not.toHaveProperty('create');
+      expect(menuUi[code]).toHaveProperty('create');
+      expect(pages[code]).toHaveProperty('create');
     }
-    expect(OPS.find(op => op.id === 'create')?.available).toBe(false);
+    expect(OPS.find(op => op.id === 'create')?.available).toBe(true);
   });
 
   it.each(LOCALES.map(locale => locale.code))('rejects missing and extra keys for %s', code => {

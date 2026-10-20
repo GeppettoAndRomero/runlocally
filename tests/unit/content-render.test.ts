@@ -4,9 +4,9 @@ import { join } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { expect, test } from 'vitest';
 import { LOCALES } from '../../src/i18n/locales';
-import { AVAILABLE_OPS } from '../../src/i18n/ops';
+import { operationLabel, AVAILABLE_OPS } from '../../src/i18n/ops';
 import { pageContent } from '../../src/i18n/pages';
-import { chromeUi, ui } from '../../src/i18n/ui';
+import { chromeUi, menuUi, ui } from '../../src/i18n/ui';
 import { pagePath } from '../../src/seo/page';
 import { ZIP_PAGES } from '../../src/seo/url-model';
 
@@ -41,7 +41,7 @@ for (const { code } of LOCALES) for (const current of ZIP_PAGES) {
       expect(articles).toHaveLength(AVAILABLE_OPS.length);
       for (const [index, op] of AVAILABLE_OPS.entries()) {
         const link = articles[index].querySelector('h2 > a');
-        expect(link?.textContent).toBe(ui[locale.code].workbench[op.i18nKey]);
+        expect(link?.textContent).toBe(operationLabel(op, ui[locale.code].workbench, menuUi[locale.code]));
         expect(link?.getAttribute('href')).toBe(pagePath(locale.code, op.id));
         expect(articles[index].querySelector('p')?.textContent).toBe(pageContent(locale.code, op.id).description);
         expect(link?.hasAttribute('data-chrome-page')).toBe(false);
