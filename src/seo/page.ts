@@ -1,10 +1,10 @@
 import { DEFAULT_LOCALE, ENGLISH_LOCALE, LOCALES, type Locale } from '../i18n/locales';
 import type { PageContent } from '../i18n/types';
 import type { HubContent } from '../i18n/hub';
-import { pagePath as modelPagePath, publicPageFromPath, zipPageFromPath, type PublicPage } from './url-model';
+import { pagePath as modelPagePath, publicPageFromPath, zipPageFromPath, isIndexable, type PublicPage, type SitePage, type UrlModel } from './url-model';
 
 export const SITE_ORIGIN = 'https://runlocally.app';
-export type { PublicPage } from './url-model';
+export type { PublicPage, SitePage } from './url-model';
 export { publicPageFromPath, zipPageFromPath };
 
 export function ogLocale(locale: Locale): string {
@@ -13,12 +13,13 @@ export function ogLocale(locale: Locale): string {
   return value;
 }
 
-export function pagePath(locale: Locale, page: PublicPage): string {
-  return modelPagePath(locale, page);
+// An optional model lets internal registry tests exercise the same head and URL generation.
+export function pagePath(locale: Locale, page: SitePage, model?: UrlModel): string {
+  return (model?.pagePath ?? modelPagePath)(locale, page);
 }
 
-export function pageUrl(locale: Locale, page: PublicPage): string {
-  return new URL(pagePath(locale, page), SITE_ORIGIN).href;
+export function pageUrl(locale: Locale, page: SitePage, model?: UrlModel): string {
+  return new URL(pagePath(locale, page, model), SITE_ORIGIN).href;
 }
 
 export function publicPageFromUrl(value: string): { locale: Locale; page: PublicPage } | undefined {
@@ -37,14 +38,14 @@ export const sitemapI18n = {
   locales: Object.fromEntries(LOCALES.map(locale => [locale.code, locale.hreflang])),
 };
 
-export function alternates(page: PublicPage) {
+export function alternates(page: SitePage, model?: UrlModel) {
   return [
-    ...LOCALES.map(locale => ({ hreflang: locale.hreflang, href: pageUrl(locale.code, page) })),
-    { hreflang: 'x-default', href: pageUrl(ENGLISH_LOCALE, page) },
+    ...LOCALES.map(locale => ({ hreflang: locale.hreflang, href: pageUrl(locale.code, page, model) })),
+    { hreflang: 'x-default', href: pageUrl(ENGLISH_LOCALE, page, model) },
   ];
 }
 
-export function checkMetadataLength(locale: Locale, page: PublicPage, title: string, description: string): void {
+export function checkMetadataLength(locale: Locale, page: SitePage, title: string, description: string): void {
   for (const [field, value, limit] of [['title', title, 60], ['description', description, 120]] as const) {
     const length = Array.from(value).length;
     if (!value.trim() || length > limit) {
@@ -62,11 +63,11 @@ export function safeJsonLd(value: object): string {
     .replace(/\u2029/g, '\\u2029');
 }
 
-export function headData(locale: Locale, page: PublicPage, content: PageContent | HubContent) {
+export function headData(locale: Locale, page: SitePage, content: PageContent | HubContent, model?: UrlModel) {
   const title = content.title;
   const description = content.description;
   checkMetadataLength(locale, page, title, description);
-  const url = pageUrl(locale, page);
+  const url = pageUrl(locale, page, model);
   const localeInfo = LOCALES.find(entry => entry.code === locale)!;
   const common = { '@context': 'https://schema.org', name: content.h1, description, url, inLanguage: localeInfo.hreflang };
   let application: typeof common & { '@type': 'WebSite'; featureList?: never } |
@@ -74,6 +75,8 @@ export function headData(locale: Locale, page: PublicPage, content: PageContent 
   if (page === 'hub') {
     if ('steps' in content) throw new Error('Hub requires hub content');
     application = { ...common, '@type': 'WebSite' };
+  } else if (page === 'image') {
+    application = { ...common, '@type': 'SoftwareApplication', featureList: [] };
   } else {
     if (!('steps' in content) || !Array.isArray(content.steps)) throw new Error('ZIP page requires steps');
     application = { ...common, '@type': 'SoftwareApplication',
@@ -83,7 +86,8 @@ export function headData(locale: Locale, page: PublicPage, content: PageContent 
     title,
     description,
     canonical: url,
-    alternates: alternates(page),
+    alternates: alternates(page, model),
+    ...((model?.isIndexable ?? isIndexable)(page) ? {} : { robots: 'noindex' }),
     og: {
       type: 'website',
       url,
