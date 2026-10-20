@@ -1,3 +1,4 @@
+import type { CreateProgress } from '../../engine/zip/create';
 import type { ZipEntry, ExtractedFile } from '../../engine/types';
 import type { EngineErrorCode } from '../../engine/errors';
 import type { RewriteProgress, RewriteResult } from '../../engine/zip/rewrite';
@@ -68,8 +69,27 @@ export interface ResultRecord {
 
 export interface LogRecord { jobId: string; op: OpId; at: number; summary: string }
 
+/** Internal creation state stays separate from the published operation and result contracts. */
+export interface CreateResult {
+  sourceFiles: readonly File[];
+  blob: Blob;
+  name: 'created.zip';
+  count: number;
+}
+export type CreateRun =
+  | { status: 'idle' }
+  | { status: 'running'; generation: number; id: string; progress: CreateProgress }
+  | { status: 'succeeded' }
+  | { status: 'failed'; failure: SessionFailure };
+export interface CreateState {
+  input: readonly File[];
+  run: CreateRun;
+  result?: CreateResult;
+}
+
 export interface Session {
   generation: number;
+  create: CreateState;
   source: Source | null;
   listing: Listing;
   entries: readonly ZipEntry[];
@@ -109,4 +129,9 @@ export type SessionAction =
   | { type: 'job/progress'; generation: number; id: string; progress: JobProgress }
   | JobSuccess
   | { type: 'job/failure'; generation: number; id: string; error: unknown }
+  | { type: 'create/start'; generation: number; id: string; files: readonly File[] }
+  | { type: 'create/progress'; generation: number; id: string; progress: CreateProgress }
+  | { type: 'create/success'; generation: number; id: string; blob: Blob }
+  | { type: 'create/failure'; generation: number; id: string; error: unknown }
+  | { type: 'create/reject'; error: unknown }
   | { type: 'reset' };
