@@ -118,7 +118,7 @@ export class WorkbenchController {
     }
   }
   async run(state: Session): Promise<void> {
-    if (this.disposed || this.busy || !state.source || state.listing.status !== 'ready' || state.op === 'browse') return;
+    if (this.disposed || this.busy || !state.source || state.listing.status !== 'ready' || state.op === 'browse' || state.op === 'create') return;
     const op = state.op;
     if (op !== 'extract') {
       if (state.source.kind !== 'zip' || state.listing.route !== 'zip') return;

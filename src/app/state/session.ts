@@ -21,6 +21,7 @@ export interface OpOutputMap {
 }
 
 export type OpId = keyof OpInputMap & keyof OpOutputMap;
+export type SessionOp = OpId | 'create';
 export type OpInputs = { [K in OpId]: OpInputMap[K] };
 
 export type SessionFailure =
@@ -96,7 +97,7 @@ export interface Session {
   archiveEntries: readonly ArchiveEntryInfo[];
   /** Names kept by rewrite. Duplicate names share one choice: extractOne uses the first match. */
   selection: ReadonlySet<string>;
-  op: OpId;
+  op: SessionOp;
   inputs: OpInputs;
   job: Job;
   results: readonly ResultRecord[];
@@ -123,7 +124,7 @@ export type SessionAction =
   | { type: 'listing/failure'; generation: number; requestId: string; error: unknown }
   | { type: 'selection/toggle'; name: string; keep: boolean }
   | { type: 'selection/all'; keep: boolean }
-  | { type: 'op/select'; op: OpId }
+  | { type: 'op/select'; op: SessionOp }
   | { [K in OpId]: { type: 'op/input'; op: K; input: OpInputMap[K] } }[OpId]
   | JobStart
   | { type: 'job/progress'; generation: number; id: string; progress: JobProgress }
