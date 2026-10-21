@@ -12,3 +12,5 @@ test-results/
 .wrangler/
 playwright-report/
 .leak-patterns.local
+
+/public/vendor/libheif/

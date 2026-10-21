@@ -13,7 +13,7 @@ const expectedPages = [
   '/zip/fix-names/', '/zip/create/', '/en/zip/fix-names/', '/en/zip/create/',
 ];
 const sitePages = [...expectedPages, '/image/', '/en/image/'];
-const vendor = ['/vendor/libarchive/libarchive.wasm', '/vendor/libarchive/worker-bundle.js'];
+const vendor = ['/vendor/libarchive/libarchive.wasm', '/vendor/libarchive/worker-bundle.js', '/vendor/libheif/libheif.wasm'];
 
 test('public pages are the fourteen distinct routes', () => {
   expect(publicPaths).toHaveLength(14);
@@ -62,6 +62,12 @@ for (const locale of LOCALES) {
       for (const path of vendor) expect(paths).toContain(path);
 
       await context.setOffline(true);
+      const wasm = await page.evaluate(async () => {
+        const response = await fetch('/vendor/libheif/libheif.wasm');
+        const bytes = await response.arrayBuffer();
+        return { ok: response.ok, hash: [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map(value => value.toString(16).padStart(2, '0')).join('') };
+      });
+      expect(wasm).toEqual({ ok: true, hash: '184d3d20f8323877f13e9f5254f9c6a0ce272c9a3a2f823b0b2bcd2ee9f73f80' });
       await offlineDocument(page, hub, true);
       for (const path of sitePages) {
         await offlineDocument(page, path);

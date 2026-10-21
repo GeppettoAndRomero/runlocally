@@ -47,13 +47,10 @@ function build(root: string, sha: string, notice = false) {
 function fixture(parent: string, name: string) {
   const root = join(parent, name);
   mkdirSync(root);
-  for (const dir of ['src', 'scripts', 'public']) cpSync(join(repository, dir), join(root, dir), { recursive: true });
-  for (const file of ['astro.config.mjs', 'package.json', 'tsconfig.json']) cpSync(join(repository, file), join(root, file));
+  for (const dir of ['src', 'scripts', 'public', 'vendor']) cpSync(join(repository, dir), join(root, dir), { recursive: true });
+  for (const file of ['astro.config.mjs', 'package.json', 'tsconfig.json', 'NOTICE.md', 'LICENSE']) cpSync(join(repository, file), join(root, file));
   symlinkSync(join(repository, 'node_modules'), join(root, 'node_modules'), 'dir');
-  mkdirSync(join(root, 'public/vendor/libarchive'), { recursive: true });
-  for (const name of ['worker-bundle.js', 'libarchive.wasm']) {
-    cpSync(join(repository, 'vendor/libarchive-lean', name), join(root, 'public/vendor/libarchive', name));
-  }
+  rmSync(join(root, 'public/vendor'), { recursive: true, force: true });
   mkdirSync(join(root, 'docker'));
   return root;
 }

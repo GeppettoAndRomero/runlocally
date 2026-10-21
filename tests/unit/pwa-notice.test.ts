@@ -19,6 +19,7 @@ function fixture() {
     put(root, `node_modules/${name}/LICENSE`, `License for ${name}`);
   }
   put(root, 'vendor/libarchive-lean/components.json', JSON.stringify({ components: [] }));
+  put(root, 'vendor/libheif/components.json', JSON.stringify({ components: [], unverified: [] }));
   return root;
 }
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });

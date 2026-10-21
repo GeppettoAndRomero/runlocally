@@ -96,3 +96,9 @@ Each hub has cards linking to ZIP top and the image conversion coming-soon page 
 Development requires Node.js 24 or newer: run `npm ci`, `npm run dev` and `npm run ci`. Self-hosting with Docker is planned for v0.4.0. License: [MIT](LICENSE).
 
 Run unit tests with `npm run test:unit -- --coverage` and component tests with `npm run test:component`. Vitest runs unit tests in Node and component tests in jsdom; CI collects both. See the [component contract](src/ui/README.md). Engine coverage thresholds are 80% for lines, functions and statements, and 75% for branches. `npm run check:engine-dom` checks for DOM references in the engine. See the [engine API](docs/ENGINE.md) for signatures and cleanup responsibilities. The notice generator identifies browser-delivered code from analysis-build sourcemaps and statically copied assets. Regenerate [NOTICE](NOTICE.md) with `npm run notice:generate` and verify it with `npm run notice:check`. These checks and `npm run check:egress` are part of `npm run ci`. Build first, then run `npm run test:e2e` as a separate step. Local e2e uses Wrangler Pages.
+
+## libheif WASM distribution
+
+ビルド成果物には、無改変の libheif WASM を /vendor/libheif/libheif.wasm に配置し、全利用者の初回 precache に含めます。非圧縮資産量は 1,463,506 bytes（約 1.46 MB）増えます。NOTICE には部品の版・ソース・ライセンス全文を生成し、LICENSE とともに配布成果物へ同梱します。画像変換ページは準備中のままで、glue とデコーダは公開 entry に接続していません。本番への反映を示すものではありません。
+
+`--from` は固定バイトの検証のみです。互換改変版の選択・差し替えと SW ハッシュ更新は未完で、画像機能の公開前に完成させる必要があります。[配布記録](vendor/libheif/README.md)と[取得量・キャッシュの説明](docs/PWA.md#libheif-wasm-distribution)を参照してください。

@@ -2,7 +2,7 @@
 
 These five files are a matched build for libarchive.js 2.0.2. The WASM is 862,582 bytes and was built without OpenSSL. Password-protected archives are detected when possible and rejected; decryption is not provided. The JavaScript glue and WASM must come from the same build because WASM export names can differ between builds.
 
-`SHA256SUMS` fixes the bytes of all five files. Run `node scripts/vendor-libarchive.mjs --verify` from the repository root to validate them. Run `node scripts/vendor-libarchive.mjs` to replace the five installed dist files and copy the browser worker and WASM into `public/vendor/libarchive/` as a pair. The generated public directory is ignored by Git.
+`SHA256SUMS` fixes the bytes of all five files. Run `node scripts/vendor-libarchive.mjs --verify` from the repository root to validate them. Run `node scripts/vendor-libarchive.mjs` to replace the five installed dist files. Astro setup copies the browser worker and WASM into `public/vendor/libarchive/` as a pair. The generated public directory is ignored by Git.
 
 The browser loads that pair from `/vendor/libarchive/`. The installed library also contains an unused fallback URL for its worker. `scripts/libarchive-vendor-plugin.mjs`, registered in `astro.config.mjs`, replaces that one expression before Vite processes asset URLs. This prevents a second worker from being emitted in `_astro/` while leaving the ZIP worker path alone. The plugin checks the installed version and expression before changing the module.
 
@@ -17,3 +17,7 @@ A new build must be reviewed and its five hashes updated together before use.
 The [rebuild recipe](../../wasm/libarchive-lean/README.md) describes the component versions, verification gates, and artifact update process.
 
 [Component metadata](components.json) and primary-source [license texts](licenses/) feed the generated [NOTICE](../../NOTICE.md). The npm packages copied to public assets are identified explicitly by the generator.
+
+## libheif WASM distribution
+
+The vendor CLI installs the five verified npm artifacts only. Astro setup uses `scripts/vendor-distribution.mjs` to prepare the two public libarchive assets and the separate libheif WASM for development, normal and NOTICE analysis builds. The libarchive URL rewrite plugin retains its version and replacement checks.

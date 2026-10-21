@@ -7,7 +7,7 @@
     "integrity": "sha512-umXZPthnWZtF3iG/5mQG+AZ2V6i0UeYpo3z2CkggTEgL8dKmIIwJT6TDuAMuabXa1yTW8uJ1ZAgR+CxNTklYYw==",
     "dependencies": []
   },
-  "note": "Dormant verification metadata; no artifacts are copied or served. Source/build provenance and upstream byte comparisons were supplied with the artifact review; local checks reproduce hashes, sizes and runtime descriptors. License paths are relative to licenses/.",
+  "note": "Distribution metadata; only the unchanged WASM is served and precached. The verified glue remains dormant. Source/build provenance and upstream byte comparisons were supplied with the artifact review; local checks reproduce hashes, sizes and runtime descriptors. License paths are relative to licenses/.",
   "components": [
     {
       "name": "libheif",
