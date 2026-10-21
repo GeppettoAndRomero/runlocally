@@ -148,20 +148,51 @@ exactly the two package-relative paths above, once each, with valid hashes.
 Malformed, duplicate, missing, unknown and directory-escaping entries fail.
 Postinstall, prebuild and predev verify the pair after installing the libarchive npm artifacts. Astro setup uses scripts/vendor-distribution.mjs to verify both vendors and prepare public assets for development, normal builds and analysis builds.
 
-Prepare a replacement directory containing `libheif-wasm/libheif.wasm` and
-`libheif-wasm/libheif.js`, then run from the repository root:
+`--from <dir>` is verification only: the directory must contain
+`libheif-wasm/libheif.wasm` and `libheif-wasm/libheif.js` matching the pinned
+hashes. Relative directories resolve against the caller's cwd. It does not
+copy files or select a modified build for distribution.
+
+To distribute a compatible modified WASM, run from the repository root:
 
 ```sh
-node scripts/vendor-libheif.mjs --from replacement
+LIBHEIF_WASM_REPLACEMENT=./replacement/libheif.wasm npm run build
+cmp ./replacement/libheif.wasm dist/vendor/libheif/libheif.wasm
 ```
 
-Relative directories resolve against the caller's cwd. This verifies the
-replacement pair against the same pinned hashes and still checks the installed
-npm version. It does not accept arbitrary rebuilds, copy files, or alter hashes.
-A different build requires explicit review of both artifacts, provenance,
-component/license metadata and both hashes together. Unmodified WASM copying and precaching are implemented. Selection of compatible modified builds and service-worker hash updates remain incomplete.
+The variable accepts an absolute file path or a path relative to the command's
+cwd. Keep it set on every build/dev command that should use the replacement;
+unsetting it restores the pinned distribution on the next build. Both normal
+and NOTICE analysis builds use the selection. No installed package, pinned
+hash or NOTICE metadata is changed. `--verify` continues to check the pinned
+package regardless of the variable.
 
-Full LGPL/GPL texts and component licenses are preserved here and in generated NOTICE, with corresponding source and build-input locations. WASM is served separately and unchanged. The verifier does not implement modified-build selection or relinking; that replacement procedure must be completed before the image feature is published. License texts and separate WASM delivery alone do not establish completion.
+Before copying, preparation requires `WebAssembly.validate` to succeed. Every
+replacement import must match a pinned import's module, name and kind; every
+pinned export must remain present with the same name and kind. A missing,
+empty, unreadable or incompatible file fails the build with a reason. These
+interface checks do not prove function signatures, memory layout, codec
+behavior or runtime correctness: the distributor must test those separately.
+The validated bytes are copied unchanged to `public/vendor/libheif/libheif.wasm`
+and then to `dist/vendor/libheif/libheif.wasm`. A build emits a one-line warning
+that it distributes a non-pinned WASM. SW revision and SHA-256 integrity are
+recomputed from the actual public bytes, so changed bytes update the precache.
+
+Glue is separate from this WASM selection: `heic-worker` statically imports it
+through the adapter and bundles it when connected to an entry. To change glue
+in this source-available site, manually replace
+`node_modules/libheif-js/libheif-wasm/libheif.js` and rebuild; there is no
+automated glue replacement. The pinned verifier still checks that file against
+`SHA256SUMS`, so a manual glue change also needs a deliberate update of its
+pinned hash in the distributor's source tree.
+
+Replacement is at the distributor's own risk. Distributors are responsible
+for providing their modified build's licenses and corresponding source,
+including any changed components and build inputs. Generated NOTICE continues
+to describe the pinned build; it is not updated to describe a replacement.
+Full LGPL/GPL texts and component licenses for the pinned build are preserved
+here and in generated NOTICE, with corresponding source and build-input
+locations. Separate WASM delivery alone is not a claim of license compliance.
 
 Unverified: the exact LLVM (libc++) revision used by Emscripten 3.1.61 for the
 release; static proof of libde265 inclusion (only build defaults and runtime
@@ -176,8 +207,8 @@ The internal `src/engine/image/libheif-adapter.ts` statically imports
 `/vendor/libheif/libheif.wasm`; redirects are rejected and input images are never
 included in that request. Tests supply the installed pinned WASM locally.
 
-No public entry imports the adapter. Only the WASM URL is served and precached; glue is not copied to public/dist. Image pages remain coming soon. Compatible modified-build replacement remains pending.
+No public entry imports the adapter. Only the WASM URL is served and precached; glue is not copied to public/dist. Image pages remain coming soon. Compatible modified WASM selection is available as described above.
 
 ## Remaining replacement work
 
-- [ ] Support explicitly selected compatible modified builds, preserve the selection through rebuilds, and verify corresponding SW revision/integrity updates before image publication. Current `--from` only checks fixed bytes.
+- [x] Select compatible modified WASM with `LIBHEIF_WASM_REPLACEMENT`, copy validated bytes unchanged, and recompute SW revision/integrity from public bytes. Tests cover rejection and hash updates; keep the variable set on rebuilds. `--from` remains fixed-byte verification only.

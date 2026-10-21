@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Verify the pinned libheif WASM/glue pair without installing or copying it. */
+/** --from only verifies pinned bytes; use LIBHEIF_WASM_REPLACEMENT when building to distribute a replacement WASM. */
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -13,7 +13,7 @@ try {
   if (args.length === 2 && args[0] === '--from' && args[1] && !args[1].startsWith('-')) {
     source = path.resolve(args[1]);
   } else if (args.length !== 0 && !(args.length === 1 && args[0] === '--verify')) {
-    throw new Error('Usage: node scripts/vendor-libheif.mjs [--verify | --from <dir>]');
+    throw new Error('Usage: node scripts/vendor-libheif.mjs [--verify | --from <dir>] (--from verifies only; build with LIBHEIF_WASM_REPLACEMENT to distribute replacement WASM)');
   }
   verifyVendor(root, vendors[1], source);
   console.log('vendor-libheif: verified pinned WASM/glue pair');

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 
 export const vendors = [
   {
@@ -46,12 +46,38 @@ export function installVendor(root, vendor) {
 }
 export function prepareVendors(root) {
   for (const vendor of vendors) verifyVendor(root, vendor);
+  let replacement;
+  if (process.env.LIBHEIF_WASM_REPLACEMENT !== undefined) {
+    try {
+      if (!process.env.LIBHEIF_WASM_REPLACEMENT) throw new Error('file path is empty');
+      replacement = readFileSync(resolve(process.env.LIBHEIF_WASM_REPLACEMENT));
+      if (!WebAssembly.validate(replacement)) throw new Error('file is empty or is not valid WebAssembly');
+      const pinned = new WebAssembly.Module(readFileSync(join(root, vendors[1].source, vendors[1].publicFiles[0])));
+      const selected = new WebAssembly.Module(replacement);
+      const imports = new Set(WebAssembly.Module.imports(pinned).map(entry => JSON.stringify([entry.module, entry.name, entry.kind])));
+      for (const entry of WebAssembly.Module.imports(selected)) {
+        if (!imports.has(JSON.stringify([entry.module, entry.name, entry.kind]))) {
+          throw new Error(`unsupported import: ${entry.module}/${entry.name} (${entry.kind})`);
+        }
+      }
+      const exports = new Set(WebAssembly.Module.exports(selected).map(entry => JSON.stringify([entry.name, entry.kind])));
+      for (const entry of WebAssembly.Module.exports(pinned)) {
+        if (!exports.has(JSON.stringify([entry.name, entry.kind]))) {
+          throw new Error(`missing export: ${entry.name} (${entry.kind})`);
+        }
+      }
+    } catch (error) {
+      throw new Error(`LIBHEIF_WASM_REPLACEMENT: ${error.message}`, { cause: error });
+    }
+    if (process.env.NOTICE_ANALYZE !== '1') console.warn('LIBHEIF_WASM_REPLACEMENT: 固定版ではない WASM を配布する');
+  }
   for (const vendor of vendors) {
     installVendor(root, vendor);
     for (const file of vendor.publicFiles) {
       const destination = join(root, 'public', publicVendorPath(vendor, file));
       mkdirSync(dirname(destination), { recursive: true });
-      copyFileSync(join(root, vendor.source, file), destination);
+      if (vendor.id === 'libheif' && replacement) writeFileSync(destination, replacement);
+      else copyFileSync(join(root, vendor.source, file), destination);
     }
   }
 }

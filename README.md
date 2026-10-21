@@ -101,4 +101,4 @@ Run unit tests with `npm run test:unit -- --coverage` and component tests with `
 
 ビルド成果物には、無改変の libheif WASM を /vendor/libheif/libheif.wasm に配置し、全利用者の初回 precache に含めます。非圧縮資産量は 1,463,506 bytes（約 1.46 MB）増えます。NOTICE には部品の版・ソース・ライセンス全文を生成し、LICENSE とともに配布成果物へ同梱します。画像変換ページは準備中のままで、glue とデコーダは公開 entry に接続していません。本番への反映を示すものではありません。
 
-`--from` は固定バイトの検証のみです。互換改変版の選択・差し替えと SW ハッシュ更新は未完で、画像機能の公開前に完成させる必要があります。[配布記録](vendor/libheif/README.md)と[取得量・キャッシュの説明](docs/PWA.md#libheif-wasm-distribution)を参照してください。
+`--from` は固定バイトの検証のみです。`LIBHEIF_WASM_REPLACEMENT=./replacement/libheif.wasm npm run build` で互換改変版を無改変で配置し、実バイトから SW の revision/integrity を更新できます。再ビルドごとに変数を指定し、未設定なら固定版に戻ります。差し替えは自己責任で、配布者が改変版のライセンス・対応ソースを提供する責務を負います。NOTICE は固定版の記述のままです。[配布記録](vendor/libheif/README.md)と[取得量・キャッシュの説明](docs/PWA.md#libheif-wasm-distribution)を参照してください。
