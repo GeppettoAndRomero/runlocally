@@ -50,8 +50,8 @@ export function checkBuiltSitemap(output: string): void {
   expect(new Set(entries.map(entry => entry.loc)).size).toBe(14);
 
   const files = htmlFiles(output);
-  expect(files).toHaveLength(14);
-  expect(files.map(file => url(`/${relative(output, file).replace(/(^|\/)index\.html$/, '$1')}`)).sort()).toEqual(expected);
+  expect(files).toHaveLength(16);
+  expect(files.map(file => url(`/${relative(output, file).replace(/(^|\/)index\.html$/, '$1')}`)).sort()).toEqual([...expected, url('/image/'), url('/en/image/')].sort());
 
   for (const [ja, en] of pairs) for (const path of [ja, en]) {
     const pageUrl = url(path);

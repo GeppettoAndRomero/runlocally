@@ -1,9 +1,10 @@
 ---
 import { LOCALES, type Locale } from '../i18n/locales';
+import { imageSoonContent } from '../i18n/image-soon';
 import { hubContent } from '../i18n/hub';
 import { pageContent } from '../i18n/pages';
-import { pagePath, type PublicPage } from '../seo/page';
-import { PUBLIC_PAGES } from '../seo/url-model';
+import { pagePath, type SitePage } from '../seo/page';
+import { SITE_PAGES } from '../seo/url-model';
 import Base from '../layouts/Base.astro';
 import Page from '../layouts/Page.astro';
 import { Workbench } from '../app/Workbench';
@@ -11,15 +12,16 @@ import OperationCards from '../ui/OperationCards.astro';
 import '../styles/content.css';
 
 export function getStaticPaths() {
-  return LOCALES.flatMap(({ code }) => PUBLIC_PAGES.map(page => {
+  return LOCALES.flatMap(({ code }) => SITE_PAGES.map(page => {
     const path = pagePath(code, page);
     return { params: { path: path === '/' ? undefined : path.slice(1, -1) }, props: { locale: code, page } };
   }));
 }
 
-const { locale, page } = Astro.props as { locale: Locale; page: PublicPage };
-const zipPage = page === 'hub' ? undefined : page;
+const { locale, page } = Astro.props as { locale: Locale; page: SitePage };
+const zipPage = page === 'hub' || page === 'image' ? undefined : page;
 const zipContent = zipPage ? pageContent(locale, zipPage) : undefined;
+const image = page === 'image' ? imageSoonContent(locale) : undefined;
 const hub = page === 'hub' ? hubContent(locale) : undefined;
 ---
 {hub ? <Base lang={locale} page="hub" content={hub}>
@@ -31,6 +33,22 @@ const hub = page === 'hub' ? hubContent(locale) : undefined;
         <h2><a href={pagePath(locale, 'top')}>{hub.zipCardTitle}</a></h2>
         <p>{hub.zipCardDescription}</p>
       </article>
+      <article class="hub-card">
+        <h2><a href={pagePath(locale, 'image')}>{hub.imageCardTitle}</a></h2>
+        <p>{hub.imageCardDescription}</p>
+      </article>
+    </section>
+  </main>
+</Base> : image ? <Base lang={locale} page="image" content={image}>
+  <main>
+    <div class="page-identity"><h1 id="page-heading">{image.h1}</h1></div>
+    <section id="page-content" class="page-content" aria-label={image.h1}>
+      <p class="page-lead">{image.lead}</p>
+      <p>{image.body}</p>
+      <ul>
+        <li><a href={pagePath(locale, 'hub')}>{image.hubLink}</a></li>
+        <li><a href={pagePath(locale, 'top')}>{image.zipLink}</a></li>
+      </ul>
     </section>
   </main>
 </Base> : zipPage && zipContent ? <Page locale={locale} page={zipPage} content={zipContent}>
@@ -49,6 +67,7 @@ const hub = page === 'hub' ? hubContent(locale) : undefined;
 
 <style>
   .hub-card { padding: var(--space-5); border: 1px solid var(--color-control-border); border-radius: var(--radius-md); background: var(--color-surface); }
+  .hub-card + .hub-card { margin-top: var(--space-5); }
   .hub-card h2 { margin-bottom: var(--space-3); }
   .hub-card a { color: var(--color-link); text-decoration: underline; }
   .hub-card p { margin-bottom: 0; color: var(--color-subtle); }

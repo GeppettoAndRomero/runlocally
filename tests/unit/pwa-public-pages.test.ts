@@ -6,12 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { publicPagePaths, transformPrecache } from '../../scripts/pwa-manifest.mjs';
 import { addBuildMetaToOutput } from '../../scripts/build-meta.mjs';
 import { LOCALES } from '../../src/i18n/locales';
-import { PUBLIC_PAGES, pagePath } from '../../src/seo/url-model';
+import { PUBLIC_PAGES, SITE_PAGES, pagePath } from '../../src/seo/url-model';
 
 const publicUrls = [
   '/', '/zip/', '/zip/view/', '/zip/extract/', '/zip/remove/', '/zip/fix-names/', '/zip/create/',
   '/en/', '/en/zip/', '/en/zip/view/', '/en/zip/extract/', '/en/zip/remove/', '/en/zip/fix-names/', '/en/zip/create/',
 ];
+const siteUrls = [...publicUrls, '/image/', '/en/image/'];
 const hubs = ['/', '/en/'];
 const vendor = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js'];
 const assets = ['manifest.webmanifest', 'icons/app.svg', 'icons/app-192.png', 'icons/app-512.png',
@@ -24,7 +25,7 @@ function htmlPath(url: string) {
 
 function entries(): Entry[] {
   return [
-    ...publicUrls.map(url => ({ url: htmlPath(url), revision: url })),
+    ...siteUrls.map(url => ({ url: htmlPath(url), revision: url })),
     ...assets.map(url => ({ url, revision: url })),
     ...vendor.map(url => ({ url, revision: url })),
   ];
@@ -32,7 +33,7 @@ function entries(): Entry[] {
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'pwa-public-pages-'));
-  for (const url of publicUrls) {
+  for (const url of siteUrls) {
     const file = join(root, htmlPath(url));
     mkdirSync(join(file, '..'), { recursive: true });
     writeFileSync(file, '<html><head></head><body></body></html>');
@@ -50,7 +51,8 @@ describe('public page contract', () => {
     const modeled = LOCALES.flatMap(locale => PUBLIC_PAGES.map(page => pagePath(locale.code, page)));
     expect(modeled).toEqual(publicUrls);
     expect(new Set(modeled).size).toBe(publicUrls.length);
-    expect(publicPagePaths()).toEqual(new Set(modeled));
+    expect(publicPagePaths()).toEqual(new Set(LOCALES.flatMap(locale => SITE_PAGES.map(page => pagePath(locale.code, page)))));
+    expect(publicPagePaths()).toEqual(new Set(siteUrls));
   });
 
   it('accepts both hubs and inserts one shared build SHA into every HTML', async () => {
@@ -58,11 +60,11 @@ describe('public page contract', () => {
     const sha = 'a'.repeat(40);
     try {
       const result = await transformPrecache(entries(), root);
-      expect(result.manifest.filter((entry: Entry) => publicUrls.includes(entry.url)))
-        .toHaveLength(publicUrls.length);
+      expect(result.manifest.filter((entry: Entry) => siteUrls.includes(entry.url)))
+        .toHaveLength(siteUrls.length);
       for (const hub of hubs) expect(result.manifest.some((entry: Entry) => entry.url === hub)).toBe(true);
       await addBuildMetaToOutput(pathToFileURL(`${root}/`), sha);
-      for (const url of publicUrls) {
+      for (const url of siteUrls) {
         const html = readFileSync(join(root, htmlPath(url)), 'utf8');
         expect(html.match(/<meta name="build" content="[^"]*">/g))
           .toEqual([`<meta name="build" content="${sha}">`]);

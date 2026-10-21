@@ -34,18 +34,18 @@ afterEach(async () => {
 });
 
 describe('site page registry', () => {
-  it('keeps production dormant with the same fourteen public URLs', () => {
-    expect(UNLISTED_PAGES).toEqual([]);
-    expect(SITE_PAGES).toEqual(PUBLIC_PAGES);
+  it('registers sixteen site URLs with the same fourteen public URLs', () => {
+    expect(UNLISTED_PAGES).toEqual(['image']);
+    expect(SITE_PAGES).toEqual([...PUBLIC_PAGES, 'image']);
     expect(sitePagePaths()).toEqual(publicPagePaths());
-    expect(sitePagePaths().size).toBe(14);
+    expect(sitePagePaths().size).toBe(16);
     for (const { code } of LOCALES) for (const page of PUBLIC_PAGES) {
       expect(isIndexable(page)).toBe(true);
       expect(sitePageFromPath(pagePath(code, page))).toEqual({ locale: code, page });
       expect(headData(code, 'hub', hubContent(code)).robots).toBeUndefined();
     }
-    for (const path of imagePaths) expect(sitePageFromPath(path)).toBeUndefined();
-    expect(() => pagePath('ja', 'image')).toThrow('Unavailable page: image');
+    for (const path of imagePaths) expect(sitePageFromPath(path)?.page).toBe('image');
+    expect(() => __createUrlModel([]).pagePath('ja', 'image')).toThrow('Unavailable page: image');
     expect(() => __createUrlModel([]).pagePath('en', 'image')).toThrow('Unavailable page: image');
   });
 
@@ -81,7 +81,7 @@ describe('site page registry', () => {
       expect(data.canonical).toBe(pageUrl(code, 'image', model));
       expect(data.alternates).toEqual(expectedAlternates);
     }
-    expect(() => headData('ja', 'image', hubContent('ja'))).toThrow('Unavailable page: image');
+    expect(() => headData('ja', 'image', hubContent('ja'), __createUrlModel([]))).toThrow('Unavailable page: image');
   });
 
   it('excludes image URLs through the configured sitemap filter', async () => {
@@ -110,7 +110,7 @@ describe('site precache', () => {
       .rejects.toThrow('Unexpected or duplicate HTML');
     await expect(transformPrecache([...entries, { url: 'unknown/index.html', revision: 'unknown' }], root, model))
       .rejects.toThrow('Unexpected or duplicate HTML');
-    await expect(transformPrecache(entries, root)).rejects.toThrow('Unexpected or duplicate HTML');
+    await expect(transformPrecache(entries, root, __createUrlModel([]))).rejects.toThrow('Unexpected or duplicate HTML');
   });
 });
 
