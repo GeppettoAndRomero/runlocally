@@ -47,3 +47,21 @@ is `heic`, compatible brands are `mif1 MiPr miaf MiHB heic`.
 `file` confirmed HEIF/HEVC and `sips -g pixelWidth -g pixelHeight` reported 240×240.
 Full decode with sips to a temporary PNG failed with Error 13 in this environment;
 HEIC pixel decoding remains unverified. Truncated/malformed cases live only in tests.
+
+## Fixed WASM pixel verification
+
+On 2026-10-21 the pinned libheif-js 1.23.5 non-bundle WASM decoded `sample.heic`
+successfully: primary image 240×240, interleaved RGBA stride 960, 230,400 output
+bytes. The first pixel is `[1, 1, 3, 255]`. This resolves the WASM pixel-decoding
+uncertainty above; the separate sips failure is unchanged.
+
+`tests/unit/image-libheif.test.ts` reproduces this with local installed WASM. It
+also derives two encoded HEIC inputs in memory without HEVC encoding: change the
+existing irot property from 0 to 1 (90 degrees counterclockwise); then optionally
+append an imir property with axis 0, associate it after irot and adjust parent box
+sizes, association count and the absolute iloc extent offset. Compressed pixels
+and the original fixture file are unchanged. The tests verify 240×240 dimensions
+and every RGBA pixel against the original: rotated output `(x,y)` samples original
+`(239-y,x)`; with the additional reflection it samples `(y,x)`. The adapter applies
+no further rotation/reflection. These are real encoded HEVC pixel tests with the
+fixed runtime, not a claim about browser or device behavior.

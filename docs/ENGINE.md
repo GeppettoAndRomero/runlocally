@@ -97,3 +97,49 @@ Failures are values: `unsupported-type` for unknown bytes; `decode-failed` for r
 `createImageWorkerApi()` is exposed by the thin `image-worker.ts` Comlink entry. `convert({ type: 'convert', requestId, input, format })` returns `{ type: 'result', requestId, result }`; `interrupt({ type: 'interrupt', requestId })` affects only that active ID. IDs are nonnegative safe integers and must increase for the worker's lifetime, so reuse needs no growing history set. There is one active conversion; concurrent requests and invalid/reused IDs receive `interrupted`. Unknown or completed interrupts are harmless. Cancellation is checked around async stages and late success becomes `interrupted`; native operations themselves cannot be forcibly interrupted. The future caller owns worker termination, including departure and discarded jobs, and should normally use one worker per conversion. Image failures do not use the ZIP exception transfer handler.
 
 `tests/unit/image-convert.test.ts` exercises injected failures, limits, cleanup, cancellation and the DOM-independent worker API. `tests/e2e/image-convert.spec.ts` builds a test-only harness outside dist and serves it temporarily, exercising real module workers and caller-created DOM canvases with the existing synthetic fixtures. It checks orientation, white compositing, alpha, first-frame GIF output and browser-specific AVIF/HEIC decode capability. The harness, server and workers are released after tests; browser results do not establish iOS device limits or peak memory behavior.
+
+## Dormant HEIC rescue decoder
+
+`heic-client.ts`, `heic-worker.ts` and `libheif-adapter.ts` implement an internal rescue
+adapter. No page, app entry or existing image worker imports them. The public image
+pages remain preparation pages; the glue and WASM are absent from distribution and
+precache. The existing image converter contract above is unchanged.
+
+`HeicWorkerManager.rescueDecode` implements `ImageAdapters.rescueDecode`. It checks
+bytes, accepts only HEIC/HEIF and never creates a worker for AVIF. A module worker is
+created on the first eligible request, initialized explicitly, and used serially.
+When both execution and the queue are empty, proxy/listeners are released and the
+worker is terminated. A later request creates another worker. The injected
+`subscribePagehide` source and explicit `terminate()` interrupt all pending work
+once and permanently stop that manager; late responses are discarded. Actual page
+event wiring is deferred to integration. Worker errors during startup return
+`heic-decoder-unavailable`; errors during decoding return `decode-failed`.
+
+The adapter statically imports the pinned non-bundle glue. It explicitly fetches
+only same-origin `/vendor/libheif/libheif.wasm`, rejects redirects and failed
+responses, and supplies `wasmBinary`. That URL is **not served yet**. Tests inject
+local WASM bytes. Initialization/availability failures, unsupported types, invalid
+input/results, excessive dimensions, identifiable allocation failures and explicit
+interruption use the existing result codes; arbitrary runtime traps and worker
+failure are not inferred to be memory exhaustion. These are value results,
+separate from the ZIP exception protocol.
+
+Only the primary handle is acquired via the primary-handle API, independent of
+item order. Other images are never acquired or pixel-decoded. Context, handle and
+decoded image have separate owners and are released in `finally`, including on
+copy/transfer preparation failures. Forced termination discards the whole WASM
+execution environment; it cannot execute native cleanup blocks. Width/height are
+checked with the shared `checkImageDimensions` and `MAX_IMAGE_PIXELS` before pixel
+decode or RGBA allocation; the exact ceiling is accepted without resizing. The
+returned dimensions, channel stride and RGBA length are validated again.
+
+The worker copies RGBA out of native memory into an owned transferable buffer.
+libheif applies irot/imir; no additional EXIF rotation, reflection or metadata copy
+is performed. The client creates an ImageBitmap from ImageData and implements
+`paint(context)` with `drawImage`, preserving the converter's limited context API.
+The converter owns `close()` after success; the manager closes late/discarded
+bitmaps. Bitmap construction can temporarily copy RGBA again. The converter still
+owns white JPG compositing and output encoding. The pinned WASM successfully
+decodes the synthetic 240×240 fixture, including derived irot/imir cases with
+all pixels checked. This does not establish browser/device memory limits or
+native HEIC support; browser worker execution remains separate validation.
