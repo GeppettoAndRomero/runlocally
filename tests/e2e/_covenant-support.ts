@@ -42,7 +42,7 @@ export async function activeRootWorker(page: Page) {
     for (const name of names) {
       const keys = await (await caches.open(name)).keys();
       const paths = keys.map(key => new URL(key.url).pathname);
-      if (paths.includes('/vendor/libarchive/libarchive.wasm') && paths.includes('/vendor/libarchive/worker-bundle.js')) return true;
+      if (paths.includes('/vendor/libarchive/libarchive.wasm') && paths.includes('/vendor/libarchive/worker-bundle.js') && paths.includes('/vendor/libheif/libheif.wasm')) return true;
     }
     return false;
   }), { timeout: 60_000 }).toBe(true);

@@ -55,3 +55,11 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 4. **更新:** ローカル検証用の内容が異なる2ビルドを同じ origin で切り替える。SHA だけの変更を更新発生条件にしない。待機中の SW を確認し、別タブあり・処理中・File 保持中・未実行の作成選択あり・作成実行済み入力あり・作成結果ありで更新が保留されることを確認する。保存だけでは解除されないため、Reset と別タブ終了後に適用する。作業中のタブを強制再読込して代替しない。2ビルド間の更新は実機確認が必要。選択クリア後も作成実行済み入力と結果が残る場合は保留が続き、Reset で解除されることを確認する。新しいアーカイブの入力と結果の再入力でも作成の状態は初期化される。
 5. **旧 SW 移行:** 実際の旧登録を持つ検証用プロファイルではサイトデータを消さずに移行前後を比較する。再現用登録なら実端末の旧状態と区別する。root 以外の登録と非 Workbox キャッシュの除去、root SW の動作、旧 SW URL の 410・転送なし、移行後の操作を確認する。検証用 SW を本番へ配置しない。
 6. **記録:** 実施日時、環境、origin、対象 SHA、SW を介さない HTTP 取得で観測した SHA、fixture、操作、期待結果・実結果、成功／失敗／未確認、SW・キャッシュの前後、必要な画面とログを非公開の記録へ残す。旧 DOM の SHA だけで配信や更新の成功を判定しない。
+
+## libheif WASM distribution
+
+`tests/unit/libheif-distribution.test.ts` compares normal and analysis output bytes, detects duplicate binaries and public glue, checks precache integrity and independent revisions, and rejects missing/duplicate/unreadable assets. It also checks that NOTICE and LICENSE accompany both outputs. `tests/unit/libheif-notice.test.ts` checks unchanged component license bodies, generation determinism, and missing/empty text failures.
+
+`tests/e2e/pwa-hub.spec.ts` fetches the WASM offline after initial precache in Chromium and checks its SHA-256. The existing hub, coming-soon and network tests now require the additional cached asset while keeping the sixteen-page contract and the same communication allowlist. These tests do not verify modified-build selection, other-browser offline behavior or actual installation. Image UI and glue remain disconnected from public entries. Every user's initial precache adds 1,463,506 uncompressed bytes; actual transferred bytes are unmeasured. See [PWA delivery details](PWA.md#libheif-wasm-distribution).
+
+The `--from` command only verifies fixed bytes without writing. Compatible modified-build replacement and SW hash updates remain incomplete and must be completed before image publication; see [distribution records](../vendor/libheif/README.md).

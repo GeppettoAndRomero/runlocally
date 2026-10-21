@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -11,6 +11,7 @@ function setup() {
   const root = mkdtempSync(join(tmpdir(), 'vendor-libarchive-'));
   roots.push(root);
   mkdirSync(join(root, 'scripts'));
+  copyFileSync(join(repo, 'scripts/vendor-distribution.mjs'), join(root, 'scripts/vendor-distribution.mjs'));
   mkdirSync(join(root, 'vendor/libarchive-lean'), { recursive: true });
   mkdirSync(join(root, 'node_modules/libarchive.js/dist'), { recursive: true });
   copyFileSync(join(repo, 'scripts/vendor-libarchive.mjs'), join(root, 'scripts/vendor-libarchive.mjs'));
@@ -27,7 +28,7 @@ function run(root: string, verify = false) {
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
 
 describe('vendor-libarchive', () => {
-  it('verifies without mutation, copies all five files and the browser pair, and can run again', () => {
+  it('verifies without mutation, installs all five npm files without public copies, and can run again', () => {
     const root = setup();
     expect(run(root, true).status).toBe(0);
     expect(readFileSync(join(root, 'node_modules/libarchive.js/dist/libarchive.js'), 'utf8')).toBe('original');
@@ -38,11 +39,7 @@ describe('vendor-libarchive', () => {
       expect(readFileSync(join(root, 'node_modules/libarchive.js/dist', file)))
         .toEqual(readFileSync(join(root, 'vendor/libarchive-lean', file)));
     }
-    expect(readdirSync(join(root, 'public/vendor/libarchive')).sort()).toEqual(['libarchive.wasm', 'worker-bundle.js']);
-    for (const file of ['worker-bundle.js', 'libarchive.wasm']) {
-      expect(readFileSync(join(root, 'public/vendor/libarchive', file)))
-        .toEqual(readFileSync(join(root, 'vendor/libarchive-lean', file)));
-    }
+    expect(existsSync(join(root, 'public/vendor/libarchive'))).toBe(false);
   });
 
   it('rejects mismatches, missing files, and malformed manifests before copying', () => {

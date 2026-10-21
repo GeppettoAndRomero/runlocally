@@ -1,4 +1,4 @@
-# Pinned libheif WASM/glue pair (not served)
+# Pinned libheif WASM/glue pair (WASM distribution)
 
 This directory records the selected artifacts from **libheif-js 1.23.5**.
 The npm dependency is pinned exactly, has no runtime dependencies, and declares
@@ -7,9 +7,8 @@ The npm tarball is <https://registry.npmjs.org/libheif-js/-/libheif-js-1.23.5.tg
 its lockfile integrity is
 `sha512-umXZPthnWZtF3iG/5mQG+AZ2V6i0UeYpo3z2CkggTEgL8dKmIIwJT6TDuAMuabXa1yTW8uJ1ZAgR+CxNTklYYw==`.
 
-No page imports this library. The verifier only reads files; it does not fetch,
-update hashes, or copy anything into public, dist, or node_modules. NOTICE and
-precache are unchanged. Only the following non-bundle pair is selected:
+No public page imports this library. The verifier only reads files; it does not fetch,
+update hashes, or copy anything into public, dist, or node_modules. Astro prepares the unchanged WASM for public/dist and mandatory precache; NOTICE includes component licenses. Only the following non-bundle pair is selected:
 
 | Package-relative path | Bytes | Brotli quality 11 bytes | SHA-256 |
 | --- | ---: | ---: | --- |
@@ -147,8 +146,7 @@ cmp release-artifacts/libheif.min.js node_modules/libheif-js/libheif-wasm/libhei
 checks. The installed npm package must be exactly 1.23.5. SHA256SUMS must list
 exactly the two package-relative paths above, once each, with valid hashes.
 Malformed, duplicate, missing, unknown and directory-escaping entries fail.
-Postinstall, prebuild and predev run verification after the existing libarchive
-hook, and stop on a mismatch.
+Postinstall, prebuild and predev verify the pair after installing the libarchive npm artifacts. Astro setup uses scripts/vendor-distribution.mjs to verify both vendors and prepare public assets for development, normal builds and analysis builds.
 
 Prepare a replacement directory containing `libheif-wasm/libheif.wasm` and
 `libheif-wasm/libheif.js`, then run from the repository root:
@@ -161,15 +159,9 @@ Relative directories resolve against the caller's cwd. This verifies the
 replacement pair against the same pinned hashes and still checks the installed
 npm version. It does not accept arbitrary rebuilds, copy files, or alter hashes.
 A different build requires explicit review of both artifacts, provenance,
-component/license metadata and both hashes together. Actual unmodified copying,
-serving and user replacement will be completed in the later distribution step.
+component/license metadata and both hashes together. Unmodified WASM copying and precaching are implemented. Selection of compatible modified builds and service-worker hash updates remain incomplete.
 
-The LGPL compliance plan preserves full LGPL/GPL texts and component licenses
-here, records corresponding source locations above, and will expose usage
-attribution and source/replacement instructions in NOTICE when distribution is
-enabled. The WASM will be served separately, unchanged, with a supported
-replacement path. Those distribution obligations remain to be completed before
-shipping; the current verifier does not implement distribution or relinking.
+Full LGPL/GPL texts and component licenses are preserved here and in generated NOTICE, with corresponding source and build-input locations. WASM is served separately and unchanged. The verifier does not implement modified-build selection or relinking; that replacement procedure must be completed before the image feature is published. License texts and separate WASM delivery alone do not establish completion.
 
 Unverified: the exact LLVM (libc++) revision used by Emscripten 3.1.61 for the
 release; static proof of libde265 inclusion (only build defaults and runtime
@@ -180,11 +172,12 @@ The rebuild inputs above are not a claim of a locally reproduced full build.
 
 The internal `src/engine/image/libheif-adapter.ts` statically imports
 `libheif-js/libheif-wasm/libheif.js` and receives the selected WASM through
-`wasmBinary`. Its worker's planned same-origin URL is
+`wasmBinary`. Its worker's same-origin URL is
 `/vendor/libheif/libheif.wasm`; redirects are rejected and input images are never
 included in that request. Tests supply the installed pinned WASM locally.
 
-No public entry imports the adapter and the URL is not currently served. This
-change does not copy either artifact to public/dist or add precache entries.
-The later distribution work still owns unmodified binary delivery, replacement
-support, attribution and the license/source instructions described above.
+No public entry imports the adapter. Only the WASM URL is served and precached; glue is not copied to public/dist. Image pages remain coming soon. Compatible modified-build replacement remains pending.
+
+## Remaining replacement work
+
+- [ ] Support explicitly selected compatible modified builds, preserve the selection through rebuilds, and verify corresponding SW revision/integrity updates before image publication. Current `--from` only checks fixed bytes.

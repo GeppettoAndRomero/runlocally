@@ -14,7 +14,7 @@ const publicUrls = [
 ];
 const siteUrls = [...publicUrls, '/image/', '/en/image/'];
 const hubs = ['/', '/en/'];
-const vendor = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js'];
+const vendor = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js', 'vendor/libheif/libheif.wasm'];
 const assets = ['manifest.webmanifest', 'icons/app.svg', 'icons/app-192.png', 'icons/app-512.png',
   'SECURITY.md', '_astro/worker-test.js'];
 type Entry = { url: string; revision: string };

@@ -12,6 +12,7 @@ function setup() {
   const root = mkdtempSync(join(tmpdir(), 'vendor-libheif-'));
   roots.push(root);
   mkdirSync(join(root, 'scripts'));
+  copyFileSync(join(repo, 'scripts/vendor-distribution.mjs'), join(root, 'scripts/vendor-distribution.mjs'));
   mkdirSync(join(root, 'vendor/libheif'), { recursive: true });
   mkdirSync(join(root, 'node_modules/libheif-js/libheif-wasm'), { recursive: true });
   copyFileSync(join(repo, 'scripts/vendor-libheif.mjs'), join(root, 'scripts/vendor-libheif.mjs'));

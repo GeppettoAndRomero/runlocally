@@ -1,3 +1,4 @@
+import { vendorIntegration } from './scripts/vendor-integration.mjs';
 import { defineConfig } from 'astro/config';
 import { fileURLToPath } from 'node:url';
 import preact from '@astrojs/preact';
@@ -15,7 +16,7 @@ const pwaOptions = {
     inlineWorkboxRuntime: true, cleanupOutdatedCaches: true, skipWaiting: false,
     navigateFallback: null, globPatterns: ['**/*.{html,js,css,wasm,webmanifest,png,svg}', 'vendor/**', 'SECURITY.md'],
     maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-    manifestTransforms: [entries => transformPrecache(entries)],
+    manifestTransforms: [entries => transformPrecache(entries, pwaOptions.outDir)],
   },
 };
 const pwaOutput = { name: 'pwa-output', hooks: { 'astro:config:setup': ({ config }) => {
@@ -40,7 +41,7 @@ export default defineConfig({
     outDir: '.notice-build',
   } : {}),
   site: SITE_ORIGIN,
-  integrations: [preact(), sitemap(sitemapOptions), pwaOutput, pwa(pwaOptions), buildMetaIntegration()],
+  integrations: [vendorIntegration(), preact(), sitemap(sitemapOptions), pwaOutput, pwa(pwaOptions), buildMetaIntegration()],
   vite: {
     ...(process.env.NOTICE_ANALYZE === '1' ? { build: { sourcemap: true } } : {}),
     plugins: [libarchiveVendorPlugin()],

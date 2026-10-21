@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { LOCALES } from '../src/i18n/locales.ts';
 import { SITE_PAGES, pagePath } from '../src/seo/url-model.ts';
 
-const vendorPaths = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js'];
+import { vendors, publicVendorPath } from './vendor-distribution.mjs';
 export const sitePagePaths = (model = { sitePages: SITE_PAGES, pagePath }) => new Set(LOCALES.flatMap(locale =>
   model.sitePages.map(page => model.pagePath(locale.code, page))));
 // Compatibility name for build metadata callers; precache covers SITE, not only indexable PUBLIC pages.
@@ -27,19 +27,21 @@ export async function transformPrecache(entries, root = 'public', model) {
     if (!assets.has(asset)) throw new Error(`Missing precache asset: ${asset}`);
   }
   if (![...assets].some(asset => /^_astro\/worker-[^/]+\.js$/.test(asset))) throw new Error('Missing application worker');
-  const vendor = await Promise.all(vendorPaths.map(async path => {
-    const matches = result.filter(entry => entry.url.replace(/^\//, '') === path);
-    if (matches.length !== 1) throw new Error(`Missing or duplicate vendor asset: ${path}`);
-    return { path, entry: matches[0], bytes: await readFile(join(root, path)) };
-  }));
-  const revisionHash = createHash('sha256');
-  for (const { path, bytes } of vendor) {
-    revisionHash.update(path).update('\0').update(createHash('sha256').update(bytes).digest('hex')).update('\0');
-  }
-  const revision = revisionHash.digest('hex');
-  for (const { entry, bytes } of vendor) {
-    entry.revision = revision;
-    entry.integrity = `sha256-${createHash('sha256').update(bytes).digest('base64')}`;
+  for (const definition of vendors) {
+    const vendor = await Promise.all(definition.publicFiles.map(file => publicVendorPath(definition, file)).map(async path => {
+      const matches = result.filter(entry => entry.url.replace(/^\//, '') === path);
+      if (matches.length !== 1) throw new Error(`Missing or duplicate vendor asset: ${path}`);
+      return { path, entry: matches[0], bytes: await readFile(join(root, path)) };
+    }));
+    const revisionHash = createHash('sha256');
+    for (const { path, bytes } of vendor) {
+      revisionHash.update(path).update('\0').update(createHash('sha256').update(bytes).digest('hex')).update('\0');
+    }
+    const revision = revisionHash.digest('hex');
+    for (const { entry, bytes } of vendor) {
+      entry.revision = revision;
+      entry.integrity = `sha256-${createHash('sha256').update(bytes).digest('base64')}`;
+    }
   }
   return { manifest: result, warnings: [] };
 }

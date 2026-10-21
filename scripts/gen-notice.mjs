@@ -1,5 +1,6 @@
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
+import { vendors } from './vendor-distribution.mjs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -95,25 +96,36 @@ export async function generateNotice(root = projectRoot, sources) {
       sections.push(`#### ${material.name}`, '', '```text', material.text.trimEnd(), '```', '');
     }
   }
-  const wasm = await json(join(root, 'vendor/libarchive-lean/components.json'));
-  sections.push('## Lean libarchive WebAssembly build', '',
-    'The five matched artifacts in `vendor/libarchive-lean/` replace the npm package distribution files. The build recipe is `wasm/libarchive-lean/Dockerfile`. Version and attribution data are maintained in `vendor/libarchive-lean/components.json`.', '');
-  for (const component of wasm.components) {
-    if (!component.name || !component.version || !component.spdx || !component.source || !component.copyright || !component.licenseFile) {
-      throw new Error(`Incomplete WASM component: ${component.name ?? '(unnamed)'}`);
+  for (const vendor of vendors) {
+    const wasm = await json(join(root, vendor.metadata, 'components.json'));
+    sections.push(`## ${vendor.title}`, '',
+      `Version, source and license records: ${vendor.metadata}/components.json. Build inputs and verification: ${vendor.metadata}/README.md.`, '');
+    if (vendor.id === 'libarchive') sections.push('The five matched artifacts replace the npm distribution. Build recipe: wasm/libarchive-lean/Dockerfile.', '');
+    else {
+      sections.push('Only /vendor/libheif/libheif.wasm is distributed and precached, unchanged. The wrapper/glue record below is provenance for the verified pair; glue is not delivered to browsers.', '',
+        'Build inputs and corresponding source: the component source trees below, Emscripten 3.1.61, libheif build-emscripten.sh at the recorded source commit, and the release workflow at https://github.com/catdad-experiments/libheif-emscripten/tree/v1.23.5. See vendor/libheif/README.md for packaging inputs and unverified provenance.', '',
+        'Replacement status: node scripts/vendor-libheif.mjs --from replacement only verifies the two pinned files against fixed hashes without writing. Compatible modified builds cannot yet be selected for distribution or have their service-worker hashes updated through this command. That replacement procedure remains incomplete; separate WASM delivery and license texts alone do not complete it.', '');
+      for (const item of wasm.unverified) sections.push(`- Unverified: ${item}`);
+      sections.push('');
     }
-    sections.push(`### ${component.name} ${component.version}`, '',
-      `- License: \`${component.spdx}\``, `- Source: ${component.source}`,
-      `- Copyright: ${component.copyright}`, `- Linkage: ${component.linkage}`, '',
-      '```text', await wasmLicenseText(root, component), '```', '');
+    for (const component of wasm.components) {
+      const files = component.licenseFiles ?? [component.licenseFile];
+      if (!component.name || !component.version || !component.spdx || !component.source || !files.length || files.some(file => !file)) {
+        throw new Error(`Incomplete WASM component: ${component.name ?? '(unnamed)'}`);
+      }
+      if (vendor.id === 'libarchive' && (!component.copyright || !component.licenseFile)) throw new Error('Incomplete WASM component');
+      sections.push(`### ${component.name} ${component.version}`, '',
+        `- License: \`${component.spdx}\``, `- Source: ${component.source}`);
+      for (const key of ['copyright', 'linkage', 'evidence']) if (component[key]) sections.push(`- ${key}: ${component[key]}`);
+      sections.push('');
+      for (const file of files) {
+        const text = await readFile(join(root, vendor.metadata, 'licenses', file), 'utf8');
+        if (!text.trim()) throw new Error(`Empty license text for WASM component: ${component.name}`);
+        sections.push(`#### ${file}`, '', '```text', text, '```', '');
+      }
+    }
   }
   return sections.join('\n').trimEnd() + '\n';
-}
-
-async function wasmLicenseText(root, component) {
-  const text = normalized(await readFile(join(root, 'vendor/libarchive-lean/licenses', component.licenseFile), 'utf8')).trimEnd();
-  if (!text.trim()) throw new Error(`Empty license text for WASM component: ${component.name}`);
-  return text;
 }
 
 export async function checkNotice(root, output) {
@@ -128,14 +140,17 @@ if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToP
     process.exitCode = 1;
   } else {
     try {
-      const build = spawnSync(process.execPath, [join(projectRoot, 'node_modules/astro/astro.js'), 'build'], {
+      const analysisDir = process.env.NOTICE_BUILD_DIR || join(projectRoot, '.notice-build');
+      const build = spawnSync(process.execPath, [join(projectRoot, 'node_modules/astro/astro.js'), 'build', '--outDir', analysisDir], {
         cwd: projectRoot, env: { ...process.env, NOTICE_ANALYZE: '1' }, stdio: 'inherit',
       });
       if (build.error) throw build.error;
       if (build.status !== 0) throw new Error('Analysis build failed');
-      const output = await generateNotice();
+      const output = await generateNotice(projectRoot, await mapSources(analysisDir));
       if (args[0] === '--check') await checkNotice(projectRoot, output);
       else await writeFile(join(projectRoot, 'NOTICE.md'), output);
+      await writeFile(join(analysisDir, 'NOTICE.md'), output);
+      await writeFile(join(analysisDir, 'LICENSE'), await readFile(join(projectRoot, 'LICENSE')));
     } catch (error) {
       console.error(error.message);
       process.exitCode = 1;

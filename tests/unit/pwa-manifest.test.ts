@@ -6,13 +6,13 @@ import { publicPagePaths, transformPrecache } from '../../scripts/pwa-manifest.m
 
 type Entry = { url: string; revision?: string; integrity?: string };
 const html = [...publicPagePaths()].map(url => ({ url: url === '/' ? 'index.html' : `${url.slice(1)}index.html`, revision: url }));
-const vendor = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js'];
+const vendor = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js', 'vendor/libheif/libheif.wasm'];
 const assets = ['manifest.webmanifest', 'icons/app.svg', 'icons/app-192.png', 'icons/app-512.png', 'SECURITY.md', '_astro/worker-abc.js'];
 const manifestEntries = [...html, ...assets.map(url => ({ url, revision: url })), ...vendor.map(url => ({ url, revision: 'old' }))];
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'pwa-manifest-'));
   for (const path of vendor) {
-    mkdirSync(join(root, 'vendor/libarchive'), { recursive: true });
+    mkdirSync(join(root, path, '..'), { recursive: true });
     writeFileSync(join(root, path), path);
   }
   return root;
@@ -24,7 +24,7 @@ describe('precache transform', () => {
       const result = await transformPrecache(manifestEntries, root);
       expect(result.manifest.filter((entry: Entry) => entry.url.endsWith('/')).map((entry: Entry) => entry.url).sort()).toEqual([...publicPagePaths()].sort());
       for (const entry of html) expect(result.manifest.find((item: Entry) => item.revision === entry.revision)?.url).toBe(entry.revision);
-      const pair = result.manifest.filter((entry: Entry) => entry.url.startsWith('vendor/'));
+      const pair = result.manifest.filter((entry: Entry) => entry.url.startsWith('vendor/libarchive/'));
       expect(pair[0].revision).toBe(pair[1].revision);
       expect(pair[0].integrity).not.toBe(pair[1].integrity);
       writeFileSync(join(root, vendor[0]), 'changed');

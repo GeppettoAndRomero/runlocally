@@ -145,3 +145,9 @@ owns white JPG compositing and output encoding. The pinned WASM successfully
 decodes the synthetic 240×240 fixture, including derived irot/imir cases with
 all pixels checked. This does not establish browser/device memory limits or
 native HEIC support; browser worker execution remains separate validation.
+
+## libheif WASM distribution
+
+The current build serves and precaches only the unchanged WASM at /vendor/libheif/libheif.wasm. The adapter's static glue import and its wasmBinary injection remain internal; neither the decoder worker nor the image UI is connected to a public entry. Image pages remain coming soon and noindex. Earlier dormant-stage descriptions above describe the engine integration, while binary delivery now exists independently.
+
+Astro setup verifies the pinned WASM/glue pair and prepares only WASM for public output through `scripts/vendor-distribution.mjs`. Generated NOTICE records the component sources, build inputs and license texts. `--from` still only verifies pinned bytes without writing; compatible modified-build selection and service-worker hash updates remain pending before image publication. See [distribution records](../vendor/libheif/README.md).

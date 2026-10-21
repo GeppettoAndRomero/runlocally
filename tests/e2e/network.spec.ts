@@ -85,7 +85,8 @@ async function precached(context: BrowserContext, page: import('@playwright/test
       const cache = await caches.open(name);
       const keys = await cache.keys();
       if (keys.some(request => new URL(request.url).pathname === '/vendor/libarchive/libarchive.wasm') &&
-          keys.some(request => new URL(request.url).pathname === '/vendor/libarchive/worker-bundle.js')) return true;
+          keys.some(request => new URL(request.url).pathname === '/vendor/libarchive/worker-bundle.js') &&
+          keys.some(request => new URL(request.url).pathname === '/vendor/libheif/libheif.wasm')) return true;
     }
     return false;
   }, undefined, { timeout: 60_000 });

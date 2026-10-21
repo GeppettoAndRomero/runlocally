@@ -64,7 +64,7 @@ for (const { code } of LOCALES) {
     const island = [...zip.matchAll(/<astro-island\b[^>]*>/g)].map(match => match[0]).find(tag => tag.includes('component-export="Workbench"'));
     const entry = island?.match(/component-url="([^"]+)"/)?.[1];
     expect(entry).toBeTruthy();
-    const vendor = ['/vendor/libarchive/libarchive.wasm', '/vendor/libarchive/worker-bundle.js'];
+    const vendor = ['/vendor/libarchive/libarchive.wasm', '/vendor/libarchive/worker-bundle.js', '/vendor/libheif/libheif.wasm'];
     const forbidden = [new URL(entry!, origin).pathname, ...vendor];
     const violations: string[] = [];
     const workerRequests: string[] = [];

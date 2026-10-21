@@ -15,7 +15,7 @@ import { publicPagePaths, sitePagePaths, transformPrecache } from '../../scripts
 const model = __createUrlModel(['image']);
 const imagePaths = ['/image/', '/en/image/'];
 const temps: string[] = [];
-const vendor = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js'];
+const vendor = ['vendor/libarchive/libarchive.wasm', 'vendor/libarchive/worker-bundle.js', 'vendor/libheif/libheif.wasm'];
 const assets = ['manifest.webmanifest', 'icons/app.svg', 'icons/app-192.png', 'icons/app-512.png',
   'SECURITY.md', '_astro/worker-abc.js', ...vendor];
 const html = [...sitePagePaths(model)].map(url => ({
@@ -97,6 +97,7 @@ describe('site precache', () => {
   it('requires both image URLs and preserves their revisions', async () => {
     const root = await temp('site-precache-');
     await mkdir(join(root, 'vendor/libarchive'), { recursive: true });
+    await mkdir(join(root, 'vendor/libheif'), { recursive: true });
     for (const path of vendor) await writeFile(join(root, path), path);
     expect(sitePagePaths(model).size).toBe(16);
     for (const path of imagePaths) expect(sitePagePaths(model).has(path)).toBe(true);

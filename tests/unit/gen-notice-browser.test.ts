@@ -18,6 +18,9 @@ function fixture() {
   roots.push(root);
   mkdirSync(join(root, 'scripts'));
   copyFileSync(script, join(root, 'scripts/gen-notice.mjs'));
+  copyFileSync(join(process.cwd(), 'scripts/vendor-distribution.mjs'), join(root, 'scripts/vendor-distribution.mjs'));
+  put(root, 'vendor/libheif/components.json', JSON.stringify({ components: [], unverified: [] }));
+  put(root, 'LICENSE', 'Project license');
   for (const name of ['alpha', 'zeta', 'libarchive.js', 'comlink']) {
     put(root, `node_modules/${name}/package.json`, JSON.stringify({ name, version: '1.0.0', license: 'MIT', author: { email: 'private@example.invalid' } }));
     put(root, `node_modules/${name}/LICENSE`, `Permission for ${name}\n`);
