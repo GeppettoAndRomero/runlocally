@@ -15,6 +15,7 @@ const pwaOptions = {
     sourcemap: process.env.NOTICE_ANALYZE === '1',
     inlineWorkboxRuntime: true, cleanupOutdatedCaches: true, skipWaiting: false,
     navigateFallback: null, globPatterns: ['**/*.{html,js,css,wasm,webmanifest,png,svg}', 'vendor/**', 'SECURITY.md'],
+    globIgnores: [NOT_FOUND_FILE],
     maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
     manifestTransforms: [entries => transformPrecache(entries, pwaOptions.outDir)],
   },
@@ -24,6 +25,7 @@ const pwaOutput = { name: 'pwa-output', hooks: { 'astro:config:setup': ({ config
 } } };
 import { DEFAULT_LOCALE, LOCALES } from './src/i18n/locales.ts';
 import { alternates, isPublicPageUrl, publicPageFromUrl, sitemapI18n, SITE_ORIGIN } from './src/seo/page.ts';
+import { NOT_FOUND_FILE } from './src/seo/url-model.ts';
 import { libarchiveVendorPlugin } from './scripts/libarchive-vendor-plugin.mjs';
 
 export const sitemapOptions = {

@@ -14,6 +14,9 @@ export const PUBLIC_PAGES: readonly PublicPage[] = ['hub', ...ZIP_PAGES];
 export const UNLISTED_PAGES: readonly UnlistedPage[] = ['image'];
 export const SITE_PAGES: readonly SitePage[] = [...PUBLIC_PAGES, ...UNLISTED_PAGES];
 
+// The only built HTML outside SITE: the host serves it with status 404 for unmatched URLs. It is never precached.
+export const NOT_FOUND_FILE = '404.html';
+
 const availableSlugs = new Map<string, string>(AVAILABLE_OPS.map(op => [op.id, ZIP_SLUGS[op.id]]));
 
 // Internal test seam: each model owns its registry and never changes the production model.

@@ -2,7 +2,9 @@
 import { LOCALES, type Locale } from '../i18n/locales';
 import { imagePageContent } from '../i18n/image-page';
 import { hubContent } from '../i18n/hub';
+import { operationLabel, AVAILABLE_OPS } from '../i18n/ops';
 import { pageContent } from '../i18n/pages';
+import { menuUi, ui } from '../i18n/ui';
 import { pagePath, type SitePage } from '../seo/page';
 import { SITE_PAGES } from '../seo/url-model';
 import Base from '../layouts/Base.astro';
@@ -33,6 +35,9 @@ const hub = page === 'hub' ? hubContent(locale) : undefined;
       <article class="hub-card">
         <h2><a href={pagePath(locale, 'top')}>{hub.zipCardTitle}</a></h2>
         <p>{hub.zipCardDescription}</p>
+        <ul class="hub-card__links" data-hub-operations>
+          {AVAILABLE_OPS.map(op => <li><a href={pagePath(locale, op.id)}>{operationLabel(op, ui[locale].workbench, menuUi[locale])}</a></li>)}
+        </ul>
       </article>
       <article class="hub-card">
         <h2><a href={pagePath(locale, 'image')}>{hub.imageCardTitle}</a></h2>
@@ -73,4 +78,5 @@ const hub = page === 'hub' ? hubContent(locale) : undefined;
   .hub-card h2 { margin-bottom: var(--space-3); }
   .hub-card a { color: var(--color-link); text-decoration: underline; }
   .hub-card p { margin-bottom: 0; color: var(--color-subtle); }
+  .hub-card__links { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: var(--space-3) 0 0; padding: 0; list-style: none; }
 </style>

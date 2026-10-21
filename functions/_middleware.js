@@ -78,6 +78,16 @@ function withHostHeader(response, hostname) {
   });
 }
 
+// The sitemap once lived at /sitemap.xml; search engines that still request it reach the current index.
+const SITEMAP_REDIRECTS = new Map([['/sitemap.xml', '/sitemap-index.xml']]);
+
+function movedTo(url, pathname) {
+  return new Response(null, {
+    status: 301,
+    headers: { Location: new URL(pathname, url).href, 'Cache-Control': 'public, max-age=3600' },
+  });
+}
+
 function gone() {
   return new Response(null, {
     status: 410,
@@ -95,6 +105,8 @@ export async function onRequest(context) {
     response = gone();
   } else if (GONE_ROOTS.has(slug)) {
     response = gone();
+  } else if (SITEMAP_REDIRECTS.has(url.pathname)) {
+    response = movedTo(url, SITEMAP_REDIRECTS.get(url.pathname));
   } else {
     response = await context.next();
   }

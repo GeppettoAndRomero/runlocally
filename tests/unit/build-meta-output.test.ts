@@ -4,7 +4,7 @@ import { join, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { LOCALES } from '../../src/i18n/locales';
-import { SITE_PAGES, pagePath } from '../../src/seo/url-model';
+import { NOT_FOUND_FILE, SITE_PAGES, pagePath } from '../../src/seo/url-model';
 import { addBuildMetaToOutput, resolveBuildSha } from '../../scripts/build-meta.mjs';
 
 function htmlFiles(dir: string): string[] {
@@ -18,7 +18,7 @@ describe('production HTML output', () => {
   it('covers each public page once with the same SHA and existing head data', () => {
     const root = 'dist';
     const files = htmlFiles(root);
-    const expected = new Set(LOCALES.flatMap(locale => SITE_PAGES.map(page => pagePath(locale.code, page))));
+    const expected = new Set([...LOCALES.flatMap(locale => SITE_PAGES.map(page => pagePath(locale.code, page))), `/${NOT_FOUND_FILE}`]);
     const urls = new Set(files.map(file => {
       const path = relative(root, file).split(sep).join('/');
       return path === 'index.html' ? '/' : `/${path.replace(/index\.html$/, '')}`;
@@ -28,6 +28,8 @@ describe('production HTML output', () => {
     for (const file of files) {
       const html = readFileSync(file, 'utf8');
       expect(html.match(/<meta name="build" content="[^"]*">/g)).toEqual([`<meta name="build" content="${sha}">`]);
+      // The not-found document is stamped but deliberately has no canonical, alternates or structured data.
+      if (relative(root, file) === NOT_FOUND_FILE) continue;
       expect(html).toMatch(/<link rel="canonical"/);
       expect(html).toMatch(/hreflang="x-default"/);
       expect(html).toMatch(/<link rel="manifest"/);

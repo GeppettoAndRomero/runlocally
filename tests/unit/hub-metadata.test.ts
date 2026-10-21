@@ -78,7 +78,7 @@ describe('hub content and metadata', () => {
       expect(data.og).toMatchObject({ type: 'website', url, title: content.title,
         description: content.description, locale: ogLocale });
       expect(data.application).toEqual({ '@context': 'https://schema.org', '@type': 'WebSite',
-        name: content.h1, description: content.description, url, inLanguage: hreflang });
+        name: 'runlocally', alternateName: content.h1, description: content.description, url, inLanguage: hreflang });
       expect(data.application).not.toHaveProperty('featureList');
       expect(JSON.parse(data.jsonLd)).toEqual(data.application);
     }

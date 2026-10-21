@@ -9,7 +9,7 @@ import { OPS } from '../../src/i18n/ops';
 import { pageContent } from '../../src/i18n/pages';
 import { ui } from '../../src/i18n/ui';
 import { ogLocale, pageUrl, SITE_ORIGIN } from '../../src/seo/page';
-import { PUBLIC_PAGES, SITE_PAGES, ZIP_PAGES } from '../../src/seo/url-model';
+import { NOT_FOUND_FILE, PUBLIC_PAGES, SITE_PAGES, ZIP_PAGES } from '../../src/seo/url-model';
 
 function htmlPaths(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
@@ -36,8 +36,11 @@ describe('built sitemap', () => {
       });
       const expected = LOCALES.flatMap(({ code }) => PUBLIC_PAGES.map(page => pageUrl(code, page)));
       expect(expected).toHaveLength(14);
-      expect(generatedPages).toHaveLength(16);
-      expect(generatedPages.sort()).toEqual(LOCALES.flatMap(({ code }) => SITE_PAGES.map(page => pageUrl(code, page))).sort());
+      expect(generatedPages).toHaveLength(17);
+      expect(generatedPages.sort()).toEqual([
+        ...LOCALES.flatMap(({ code }) => SITE_PAGES.map(page => pageUrl(code, page))),
+        `${SITE_ORIGIN}/${NOT_FOUND_FILE}`,
+      ].sort());
       for (const { code } of LOCALES) for (const page of ZIP_PAGES) {
         const html = readFileSync(join(output, new URL(pageUrl(code, page)).pathname.slice(1), 'index.html'), 'utf8');
         const content = pageContent(code, page);

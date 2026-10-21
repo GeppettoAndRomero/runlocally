@@ -52,9 +52,22 @@ describe('legacy routes', () => {
       const { response, calls } = await visit(path);
       expect([response.status, calls]).toEqual([410, 0]);
     }
-    for (const path of ['/', '/en/', '/en/zip/view/', '/zip-viewer-other/', '/_astro/a.js', '/vendor/a.js', '/sw.js', '/manifest.webmanifest', '/robots.txt', '/sitemap-index.xml', '/SECURITY.md']) {
+    for (const path of ['/', '/en/', '/en/zip/view/', '/zip-viewer-other/', '/_astro/a.js', '/vendor/a.js', '/sw.js', '/manifest.webmanifest', '/robots.txt', '/sitemap-index.xml', '/sitemap-0.xml', '/SECURITY.md', '/404.html', '/no-such-page/']) {
       const { response, calls } = await visit(path);
       expect([response.status, calls]).toEqual([200, 1]);
+    }
+  });
+
+  it('redirects the retired sitemap path to the current index without touching other sitemap files', async () => {
+    for (const host of ['runlocally.app', 'project.pages.dev']) {
+      const { response, calls } = await visit('/sitemap.xml', host);
+      expect([response.status, response.headers.get('Location'), calls]).toEqual([301, `https://${host}/sitemap-index.xml`, 0]);
+      expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
+      expect(await response.text()).toBe('');
+    }
+    for (const path of ['/sitemap.xml/', '/en/sitemap.xml', '/sitemap.xml?x=1']) {
+      const { response, calls } = await visit(path);
+      expect([response.status, calls]).toEqual(path.includes('?') ? [301, 0] : [200, 1]);
     }
   });
 
