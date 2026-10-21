@@ -10,6 +10,7 @@ import { sniffImageFormat } from '../../engine/image/sniff';
 import type { ImageErrorCode, ImageOutputFormat } from '../../engine/image/types';
 import { createImageClient, type ImageClient } from './client';
 import { CapabilityList } from './CapabilityList';
+import { DropArea } from './DropArea';
 import './image-converter.css';
 
 type Log = { id: number; name: string; status: 'waiting' | 'converting' | 'saved' | 'failed'; code?: ImageErrorCode; avif?: boolean };
@@ -128,9 +129,8 @@ export function ImageConverter({ locale, clientFactory = createImageClient, save
           onChange={() => { if (safe() && !isUpdateApplying()) { state.current.format = value; setFormat(value); } }} />{t.formats[value]}
       </label>)}
     </fieldset>
-    <label>{t.labels.selectImages}<input type="file" multiple accept="image/*,.heic,.heif,.avif" disabled={applying}
-      onChange={event => { const input = event.currentTarget; enqueue(Array.from(input.files ?? [])); input.value = ''; }} /></label>
-    <p>{t.input.dropZone}</p>
+    <DropArea locale={locale} disabled={applying}
+      onChange={event => { const input = event.currentTarget; enqueue(Array.from(input.files ?? [])); input.value = ''; }} />
     <GlobalDropZone locale={locale} disabled={applying} />
     <ul aria-live="polite">{logs.map(log => <li key={log.id}>
       <span>{log.name}</span> — {t.statuses[log.status]}

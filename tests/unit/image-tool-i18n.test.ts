@@ -19,7 +19,7 @@ describe('image tool dictionaries', () => {
     const groups = {
       labels: ['outputFormat', 'selectImages'],
       formats: ['jpg', 'png'],
-      input: ['dropZone'],
+      input: ['dropZone', 'idle', 'release'],
       statuses: ['waiting', 'converting', 'saved', 'failed'],
       notices: ['metadata', 'onDevice', 'chrome', 'safari', 'avif', 'heic'],
       errors: ['unsupported-type', 'decode-failed', 'heic-decoder-unavailable',
