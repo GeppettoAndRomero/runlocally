@@ -1,0 +1,110 @@
+{
+  "package": {
+    "name": "libheif-js",
+    "version": "1.23.5",
+    "license": "LGPL-3.0",
+    "repository": "https://github.com/catdad-experiments/libheif-js",
+    "integrity": "sha512-umXZPthnWZtF3iG/5mQG+AZ2V6i0UeYpo3z2CkggTEgL8dKmIIwJT6TDuAMuabXa1yTW8uJ1ZAgR+CxNTklYYw==",
+    "dependencies": []
+  },
+  "note": "Dormant verification metadata; no artifacts are copied or served. Source/build provenance and upstream byte comparisons were supplied with the artifact review; local checks reproduce hashes, sizes and runtime descriptors. License paths are relative to licenses/.",
+  "components": [
+    {
+      "name": "libheif",
+      "version": "1.23.5",
+      "spdx": "LGPL-3.0",
+      "source": "https://github.com/strukturag/libheif/tree/413e2a87e6a70b3eccc3a3adc5801179dd2d9e00",
+      "licenseFiles": [
+        "libheif-COPYING.txt",
+        "GPL-3.0.txt"
+      ],
+      "evidence": "Release source commit (tag v1.23.5); heif_get_version() reports 1.23.5. Built-in mask encoder is part of libheif."
+    },
+    {
+      "name": "libde265",
+      "version": "1.0.15",
+      "spdx": "LGPL-3.0",
+      "source": "https://github.com/strukturag/libde265/tree/17bb8d9fcea62db8cdeb0fc7ef8d15dbd19a22e4",
+      "licenseFiles": [
+        "libde265-COPYING.txt",
+        "GPL-3.0.txt"
+      ],
+      "evidence": "libheif build-emscripten.sh defaults ENABLE_LIBDE265=1 and LIBDE265_VERSION=1.0.15. Runtime exposes one HEVC decoder. Static proof of inclusion in the artifact has not been established."
+    },
+    {
+      "name": "Emscripten runtime",
+      "version": "3.1.61",
+      "spdx": "MIT OR NCSA",
+      "source": "https://github.com/emscripten-core/emscripten/tree/3.1.61",
+      "licenseFiles": [
+        "emscripten-LICENSE.txt"
+      ],
+      "evidence": "libheif-emscripten workflow EMSCRIPTEN_VERSION=3.1.61; generated WASM and JavaScript runtime support."
+    },
+    {
+      "name": "musl",
+      "version": "1.2.5",
+      "spdx": "MIT",
+      "source": "https://github.com/emscripten-core/emscripten/tree/3.1.61/system/lib/libc/musl",
+      "licenseFiles": [
+        "musl-COPYRIGHT.txt"
+      ],
+      "evidence": "C runtime supplied by Emscripten 3.1.61; version from its musl source metadata."
+    },
+    {
+      "name": "libc++",
+      "version": "Emscripten 3.1.61 bundled revision (exact LLVM revision unverified)",
+      "spdx": "Apache-2.0 WITH LLVM-exception",
+      "source": "https://github.com/emscripten-core/emscripten/tree/3.1.61/system/lib/libcxx",
+      "licenseFiles": [
+        "libcxx-LICENSE.txt"
+      ],
+      "evidence": "C++ runtime supplied by the Emscripten toolchain. Exact LLVM revision used for the release is unverified."
+    },
+    {
+      "name": "libc++abi",
+      "version": "Emscripten 3.1.61 bundled revision (exact LLVM revision unverified)",
+      "spdx": "Apache-2.0 WITH LLVM-exception",
+      "source": "https://github.com/emscripten-core/emscripten/tree/3.1.61/system/lib/libcxxabi",
+      "licenseFiles": [
+        "libcxxabi-LICENSE.txt"
+      ],
+      "evidence": "C++ ABI runtime supplied by the Emscripten toolchain. Exact LLVM revision used for the release is unverified."
+    },
+    {
+      "name": "embind",
+      "version": "3.1.61",
+      "spdx": "MIT OR NCSA",
+      "source": "https://github.com/emscripten-core/emscripten/tree/3.1.61/system/lib/embind",
+      "licenseFiles": [
+        "emscripten-LICENSE.txt"
+      ],
+      "evidence": "libheif JavaScript bindings built with Emscripten embind; version belongs to the toolchain, not the npm wrapper."
+    },
+    {
+      "name": "libheif-js wrapper/glue",
+      "version": "1.23.5",
+      "spdx": "LGPL-3.0",
+      "source": "https://github.com/catdad-experiments/libheif-js/tree/1.23.5",
+      "licenseFiles": [
+        "libheif-js-LGPL-3.0.txt",
+        "GPL-3.0.txt"
+      ],
+      "evidence": "npm package metadata; selected glue is the release glue transformed with esbuild target es2019 and minify=true."
+    }
+  ],
+  "excludedComponents": [
+    "dav1d",
+    "openh264",
+    "aom",
+    "x265",
+    "kvazaar",
+    "rav1e",
+    "OpenJPH"
+  ],
+  "unverified": [
+    "Exact LLVM/libc++ revision used by Emscripten 3.1.61 for this release",
+    "Static proof of libde265 inclusion beyond build defaults and runtime decoder counts",
+    "Other npm artifacts, including bundle variants"
+  ]
+}
