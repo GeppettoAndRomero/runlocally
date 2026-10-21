@@ -1,14 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { LOCALES, type Locale } from '../../src/i18n/locales';
-import { imageSoonContent } from '../../src/i18n/image-soon';
+import { imagePageContent } from '../../src/i18n/image-page';
 import { SITE_PAGES, PUBLIC_PAGES, pagePath } from '../../src/seo/url-model';
 import { origin } from './_covenant-support';
 
 const sitePaths = LOCALES.flatMap(({ code }) => SITE_PAGES.map(page => pagePath(code, page)));
 
 async function imageReady(page: Page, locale: Locale) {
-  const content = imageSoonContent(locale);
+  const content = imagePageContent(locale);
   await expect(page.locator('h1')).toHaveCount(1);
   await expect(page.locator('#page-heading')).toHaveText(content.h1);
   await expect(page.locator('#page-content')).toContainText(content.lead);
@@ -16,9 +16,11 @@ async function imageReady(page: Page, locale: Locale) {
   await expect(page.locator('#page-content a')).toHaveCount(2);
   await expect(page.getByRole('link', { name: content.hubLink, exact: true })).toHaveAttribute('href', pagePath(locale, 'hub'));
   await expect(page.getByRole('link', { name: content.zipLink, exact: true })).toHaveAttribute('href', pagePath(locale, 'top'));
-  await expect(page.locator('[data-chrome-nav], .workbench, input[type="file"], main button, .operation-cards')).toHaveCount(0);
+  await expect(page.locator('[data-chrome-nav], .workbench, .operation-cards')).toHaveCount(0);
   await expect(page.locator('astro-island[component-export="Workbench"]')).toHaveCount(0);
-  await expect(page.locator('astro-island[component-export="PwaStartup"]')).toHaveCount(1);
+  await expect(page.locator('astro-island[component-export="PwaStartup"]')).toHaveCount(0);
+  await expect(page.locator('astro-island[component-export="ImageConverter"]')).toHaveCount(1);
+  await expect(page.locator('input[type="file"]')).toHaveCount(1);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `https://runlocally.app${pagePath(locale, 'image')}`);
   for (const { code } of LOCALES) {
@@ -35,10 +37,10 @@ for (const { code } of LOCALES) {
     const other = code === 'ja' ? 'en' : 'ja';
     await page.locator(`[data-chrome-locale="${other}"]`).click();
     await imageReady(page, other);
-    await page.getByRole('link', { name: imageSoonContent(other).hubLink, exact: true }).click();
+    await page.getByRole('link', { name: imagePageContent(other).hubLink, exact: true }).click();
     await page.locator(`.hub-card a[href="${pagePath(other, 'image')}"]`).click();
     await imageReady(page, other);
-    await page.getByRole('link', { name: imageSoonContent(other).zipLink, exact: true }).click();
+    await page.getByRole('link', { name: imagePageContent(other).zipLink, exact: true }).click();
     await expect(page).toHaveURL(new URL(pagePath(other, 'top'), origin).href);
   });
 
@@ -48,7 +50,7 @@ for (const { code } of LOCALES) {
       const page = await context.newPage();
       expect([200, 304]).toContain((await page.goto(new URL(pagePath(code, 'image'), origin).href))?.status());
       await imageReady(page, code);
-      await page.getByRole('link', { name: imageSoonContent(code).hubLink, exact: true }).click();
+      await page.getByRole('link', { name: imagePageContent(code).hubLink, exact: true }).click();
       await page.locator(`.hub-card a[href="${pagePath(code, 'image')}"]`).click();
       await imageReady(page, code);
     } finally { await context.close(); }
@@ -65,7 +67,7 @@ for (const { code } of LOCALES) {
     const entry = island?.match(/component-url="([^"]+)"/)?.[1];
     expect(entry).toBeTruthy();
     const vendor = ['/vendor/libarchive/libarchive.wasm', '/vendor/libarchive/worker-bundle.js', '/vendor/libheif/libheif.wasm'];
-    const forbidden = [new URL(entry!, origin).pathname, ...vendor];
+    const forbidden = [new URL(entry!, origin).pathname, ...vendor.filter(path => !path.includes('libheif'))];
     const violations: string[] = [];
     const workerRequests: string[] = [];
     const context = await browser.newContext({ serviceWorkers: 'allow' });

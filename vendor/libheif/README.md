@@ -199,7 +199,7 @@ release; static proof of libde265 inclusion (only build defaults and runtime
 decoder enumeration are confirmed); other npm files, including bundle variants.
 The rebuild inputs above are not a claim of a locally reproduced full build.
 
-## Dormant decoder adapter
+## Decoder adapter connected to image pages
 
 The internal `src/engine/image/libheif-adapter.ts` statically imports
 `libheif-js/libheif-wasm/libheif.js` and receives the selected WASM through
@@ -207,7 +207,7 @@ The internal `src/engine/image/libheif-adapter.ts` statically imports
 `/vendor/libheif/libheif.wasm`; redirects are rejected and input images are never
 included in that request. Tests supply the installed pinned WASM locally.
 
-No public entry imports the adapter. Only the WASM URL is served and precached; glue is not copied to public/dist. Image pages remain coming soon. Compatible modified WASM selection is available as described above.
+Both image pages connect ImageConverter and the decoder worker. Glue is bundled into heic-worker, with no raw glue copy under vendor assets. Both workers and the separate WASM URL are precached. Image pages retain noindex. Compatible modified WASM selection is available as described above. This records build output only.
 
 ## Remaining replacement work
 

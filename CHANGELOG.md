@@ -22,8 +22,14 @@
 
 この項目は画面の対応範囲を記録するもので、公開や配信の完了を示すものではありません。
 
+## Image page integration
+
+日英の画像ページを ImageConverter に接続し、JPG／PNG の個別自動ダウンロードを開始するビルドに変更しました。画像ページの PWA 起動は ImageConverter が所有します。画像2 URL の noindex、sitemap の14 URL、生成・precache の16ページ、ハブカードの表示は維持します。
+
+HEIC worker の glue を専用サイズ枠へ分け、JS/CSS/HTML の枠は画像ツールの追加分（実測で約 11 KB）を見込み 200 KB から 210 KB へ広げ、非圧縮 WASM の5 MB枠は維持します。生成資産の計測漏れ・重複・precache と、実ページの変換・通信・オフライン・BFCache の検査を追加しました。現時点のサイズ検査結果と残課題は docs/PWA.md を参照してください。本項は本番反映を示しません。
+
 ## libheif WASM distribution
 
 ビルド成果物へ無改変の libheif WASM と必須 precache を追加。画像ページを開かない利用者も初回に取得し、非圧縮資産量は 1,463,506 bytes（約 1.46 MB）増えます。実際の転送量は未測定です。部品のライセンス全文・版・対応ソース・ビルド入力を NOTICE に生成し、LICENSE とともに同梱します。
 
-画像変換は準備中で、glue は公開配布しません。`--from` は固定バイトの検証のみです。`LIBHEIF_WASM_REPLACEMENT` で互換改変版を指定して再ビルドでき、無改変コピーと SW の revision/integrity 更新に対応しました。不正入力はビルド時に拒否します。差し替え版のライセンス・対応ソースの提供は配布者の責務で、NOTICE は固定版の記述を維持します。本項は本番反映を示しません。[配布記録](vendor/libheif/README.md)を参照してください。
+この WASM 配布段階では画像変換は準備中で、glue は未配布でした。上の画像ページ接続段階で bundle 配布へ変更しています。`--from` は固定バイトの検証のみです。`LIBHEIF_WASM_REPLACEMENT` で互換改変版を指定して再ビルドでき、無改変コピーと SW の revision/integrity 更新に対応しました。不正入力はビルド時に拒否します。差し替え版のライセンス・対応ソースの提供は配布者の責務で、NOTICE は固定版の記述を維持します。本項は本番反映を示しません。[配布記録](vendor/libheif/README.md)を参照してください。

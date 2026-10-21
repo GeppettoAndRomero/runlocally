@@ -73,8 +73,13 @@
   "size-limit": [
     {
       "name": "precache",
-      "path": "dist/**/*.{js,css,html}",
-      "limit": "200 KB"
+      "path": ["dist/**/*.{js,css,html}", "!dist/_astro/heic-worker-*.js"],
+      "limit": "210 KB"
+    },
+    {
+      "name": "heic-glue",
+      "path": "dist/_astro/heic-worker-*.js",
+      "limit": "34 KB"
     },
     {
       "name": "wasm",

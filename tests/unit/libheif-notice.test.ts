@@ -15,8 +15,8 @@ describe('libheif notices', () => {
       expect(notice).toContain(component.source);
       for (const file of component.licenseFiles) expect(notice).toContain(readFileSync(join('vendor/libheif/licenses', file), 'utf8'));
     }
-    expect(notice).toContain('glue is not delivered to browsers');
-    expect(notice).toContain('replacement procedure remains incomplete');
+    expect(notice).toContain('bundled decoder worker with wrapper/glue are distributed and precached');
+    expect(notice).toContain('LIBHEIF_WASM_REPLACEMENT selects a compatible modified WASM');
     expect(notice).toContain('wasm/libarchive-lean/Dockerfile');
   });
   it('rejects missing and empty libheif license bodies', async () => {

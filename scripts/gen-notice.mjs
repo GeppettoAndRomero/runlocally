@@ -102,9 +102,9 @@ export async function generateNotice(root = projectRoot, sources) {
       `Version, source and license records: ${vendor.metadata}/components.json. Build inputs and verification: ${vendor.metadata}/README.md.`, '');
     if (vendor.id === 'libarchive') sections.push('The five matched artifacts replace the npm distribution. Build recipe: wasm/libarchive-lean/Dockerfile.', '');
     else {
-      sections.push('Only /vendor/libheif/libheif.wasm is distributed and precached, unchanged. The wrapper/glue record below is provenance for the verified pair; glue is not delivered to browsers.', '',
+      sections.push('The unchanged /vendor/libheif/libheif.wasm and bundled decoder worker with wrapper/glue are distributed and precached. Raw glue is not copied into vendor assets.', '',
         'Build inputs and corresponding source: the component source trees below, Emscripten 3.1.61, libheif build-emscripten.sh at the recorded source commit, and the release workflow at https://github.com/catdad-experiments/libheif-emscripten/tree/v1.23.5. See vendor/libheif/README.md for packaging inputs and unverified provenance.', '',
-        'Replacement status: node scripts/vendor-libheif.mjs --from replacement only verifies the two pinned files against fixed hashes without writing. Compatible modified builds cannot yet be selected for distribution or have their service-worker hashes updated through this command. That replacement procedure remains incomplete; separate WASM delivery and license texts alone do not complete it.', '');
+        'Replacement status: node scripts/vendor-libheif.mjs --from replacement only verifies the two pinned files against fixed hashes without writing. LIBHEIF_WASM_REPLACEMENT selects a compatible modified WASM for the build; its bytes determine service-worker revision and integrity. Distributors must provide licenses and corresponding source for modified builds.', '');
       for (const item of wasm.unverified) sections.push(`- Unverified: ${item}`);
       sections.push('');
     }

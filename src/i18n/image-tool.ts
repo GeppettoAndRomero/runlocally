@@ -22,7 +22,7 @@ export const imageTool = {
     labels: { outputFormat: '出力形式', selectImages: '画像を選択' },
     formats: { jpg: 'JPG', png: 'PNG' },
     input: { dropZone: '画像をここにドロップするか、ファイルを選択してください。' },
-    statuses: { waiting: '待機', converting: '変換中', saved: '保存済み', failed: '失敗' },
+    statuses: { waiting: '待機', converting: '変換中', saved: 'ダウンロード開始', failed: '失敗' },
     notices: {
       metadata: '変換時に再エンコードするため、EXIF・GPS・ICC の情報は出力に引き継がれません。',
       onDevice: '画像は端末内で処理され、サーバーに送信されません。',
@@ -45,7 +45,7 @@ export const imageTool = {
     labels: { outputFormat: 'Output format', selectImages: 'Select images' },
     formats: { jpg: 'JPG', png: 'PNG' },
     input: { dropZone: 'Drop images here or select files.' },
-    statuses: { waiting: 'Waiting', converting: 'Converting', saved: 'Saved', failed: 'Failed' },
+    statuses: { waiting: 'Waiting', converting: 'Converting', saved: 'Download started', failed: 'Failed' },
     notices: {
       metadata: 'Images are re-encoded during conversion. EXIF, GPS and ICC metadata are not retained in the output.',
       onDevice: 'Images are processed on your device and are not sent to a server.',

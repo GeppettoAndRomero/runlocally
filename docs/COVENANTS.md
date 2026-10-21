@@ -35,7 +35,7 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 
 `tests/e2e/_helpers.ts` の一巡は ZIP の閲覧・取り出し・削除・名前修復、ファイルからの ZIP 作成と明示保存、7z の閲覧・取り出し、保存・再入力、入れ子 ZIP を含む。`tests/e2e/_covenant-support.ts` は公開操作に対応する fixture の欠落を失敗にする。通信監視は初回読み込み前に開始し、precache、操作、保存・再入力を観測する。失敗した許可外リクエストも失敗条件になる。通信を許可するページは SITE の16 URL と完全一致、資産は限定した接頭辞で許可する。CSP に遮断されて通信イベントにならない試行は CSP 検査で補う。静的 URL 検査の例外は通信先の許可を意味しない。
 
-`tests/unit/image-soon.test.ts` と `tests/e2e/image-soon.spec.ts` は、日英の準備中本文、ハブからの到達、noindex、sitemap 非掲載、公開14ページの robots メタ不在を検査する。準備中ページからの PWA 起動・precache・オフライン再読込と SW 発通信は Chromium が対象で、他ブラウザと実インストールは実機確認が必要。
+`tests/unit/image-soon.test.ts` と `tests/e2e/image-soon.spec.ts` は、日英の画像本文、ハブからの到達、noindex、sitemap 非掲載、公開14ページの robots メタ不在を検査する。画像ページからの PWA 起動・precache・オフライン再読込と SW 発通信は Chromium が対象で、他ブラウザと実インストールは実機確認が必要。
 
 フォルダの選択・ドロップの相対パスはブラウザに依存するため、作成 ZIP の名前と内容を実機で確認する。`tests/e2e/create.spec.ts` にはフォルダ選択の検査があるが、自動操作の非対応による skip はブラウザ自体の非対応を示さない。オフラインの自動検証は Chromium のみで、Firefox／WebKit は実機確認が必要。
 
@@ -60,6 +60,10 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 
 `tests/unit/libheif-distribution.test.ts` compares normal and analysis output bytes, detects duplicate binaries and public glue, checks precache integrity and independent revisions, and rejects missing/duplicate/unreadable assets. It also checks that NOTICE and LICENSE accompany both outputs. `tests/unit/libheif-notice.test.ts` checks unchanged component license bodies, generation determinism, and missing/empty text failures.
 
-`tests/e2e/pwa-hub.spec.ts` fetches the WASM offline after initial precache in Chromium and checks its SHA-256. The existing hub, coming-soon and network tests now require the additional cached asset while keeping the sixteen-page contract and the same communication allowlist. These tests do not verify modified-build selection, other-browser offline behavior or actual installation. Image UI and glue remain disconnected from public entries. Every user's initial precache adds 1,463,506 uncompressed bytes; actual transferred bytes are unmeasured. See [PWA delivery details](PWA.md#libheif-wasm-distribution).
+`tests/e2e/pwa-hub.spec.ts` fetches the WASM offline after initial precache in Chromium and checks its SHA-256. The existing hub, image and network tests now require the additional cached asset while keeping the sixteen-page contract and the same communication allowlist. These tests do not verify modified-build selection, other-browser offline behavior or actual installation. Image pages now mount ImageConverter and distribute bundled decoder glue. Every user's initial precache adds 1,463,506 uncompressed bytes; actual transferred bytes are unmeasured. See [PWA delivery details](PWA.md#libheif-wasm-distribution).
 
-The `--from` command only verifies fixed bytes without writing. Compatible modified-build replacement and SW hash updates remain incomplete and must be completed before image publication; see [distribution records](../vendor/libheif/README.md).
+The `--from` command only verifies fixed bytes without writing. LIBHEIF_WASM_REPLACEMENT selects compatible modified WASM and recalculates SW hashes; see [distribution records](../vendor/libheif/README.md).
+
+## Image page integration checks
+
+`tests/unit/image-page-build.test.ts` checks nonempty worker output, precache membership, glue sourcemap provenance and disjoint, exhaustive size budgets. `tests/e2e/image-page.spec.ts` uses the product pages for downloads, pixel checks, queue locking, HEIC decode-path evidence, cold offline conversion and context-level communication monitoring. `tests/e2e/image-bfcache.spec.ts` requires `pageshow.persisted` for picker, drop, paste and delayed folder input. The sandbox blocked the local e2e server with EPERM/EMFILE; these browser checks have not run. Synthetic component lifecycle tests do not establish BFCache behavior. No shared input fix was applied without reproduction. Installation, multiple-download permission, OS save completion and device memory limits remain device checks.

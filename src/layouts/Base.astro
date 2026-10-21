@@ -6,7 +6,7 @@ import '../styles/chrome.css';
 import { LOCALES, type Locale } from '../i18n/locales';
 import { operationLabel, AVAILABLE_OPS } from '../i18n/ops';
 import type { PageContent } from '../i18n/types';
-import type { ImageSoonContent } from '../i18n/image-soon';
+import type { ImagePageContent } from '../i18n/image-page';
 import type { HubContent } from '../i18n/hub';
 import { alternates, checkMetadataLength, headData, ogLocale, pagePath, pageUrl, type SitePage } from '../seo/page';
 import { chromeUi, menuUi, ui } from '../i18n/ui';
@@ -17,7 +17,7 @@ interface Props {
   title?: string;
   description?: string;
   page?: SitePage;
-  content?: PageContent | HubContent | ImageSoonContent;
+  content?: PageContent | HubContent | ImagePageContent;
 }
 
 const { lang, page = 'top', content } = Astro.props;
@@ -71,7 +71,7 @@ const og = metadata?.og ?? {
       </div>
     </header>
     <slot />
-    {(page === 'hub' || page === 'image') && <PwaStartup locale={lang} client:load />}
+    {page === 'hub' && <PwaStartup locale={lang} client:load />}
     <footer class="site-footer">
       <p>Some code was written with AI assistance; all review and decisions are the maintainer's.</p>
       <a id="footer-security" href="/SECURITY.md">{ui[lang].shared.security}</a>
