@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest';
 
 const expectedManifest = {
   id: '/',
-  start_url: '/zip/',
+  start_url: '/',
   scope: '/',
   display: 'standalone',
   lang: 'ja',
-  name: 'runlocally — ZIPワークベンチ',
+  name: 'runlocally',
   short_name: 'runlocally',
-  description: 'ファイルを送信せず、ブラウザでZIPを閲覧・取り出し・修正できます。',
+  description: 'ファイルを送信せず、ブラウザ内でファイルを扱うツールサイトです。',
   theme_color: '#4f46e5',
   background_color: '#ffffff',
   icons: [
