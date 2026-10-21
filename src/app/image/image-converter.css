@@ -1,0 +1,6 @@
+.image-converter { display: grid; gap: 1rem; }
+.image-converter fieldset { display: flex; gap: 1rem; }
+.image-converter label { display: inline-flex; align-items: center; gap: .5rem; }
+.image-converter ul { padding-inline-start: 1.5rem; overflow-wrap: anywhere; }
+.image-converter li { margin-block: .5rem; }
+.image-converter p { margin-block: .25rem; }

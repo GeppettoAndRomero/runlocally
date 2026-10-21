@@ -57,3 +57,35 @@ Optional `PanelProps.active` follows the shared menu selection. Creation uses `o
 The creation panel accepts drops only when active, ready for intake, and neither busy nor updating (including the synchronous update guard). Workbench skips archive acceptance for the current create session, hides its shared picker, and alone emits `filesProcessed` once per drop, including ignored drops. The published creation panel owns its file and folder inputs. It lists selected paths and sizes, skips re-additions matching relative path, name, size, and modification time, and preserves other name collisions with (1), (2) suffixes in the ZIP. Empty selection and a combined size above 1,000,000,000 bytes disable execution; the exact limit is accepted, but processing may still fail. Failure shows retry guidance and retains the selection. Progress identifies the next file. Success shows the file count and `created.zip` with an explicit Save control, without an automatic download. The screen offers no password or encryption. Folder selection and drop relative paths depend on the browser and need device verification; an automation skip does not establish browser incompatibility.
 
 Register the operation in `src/i18n/ops.ts` with its short public `ZIP_SLUGS` slug and representative engine entry point. Historical slugs live separately in `legacy/slugs.json`; publishing an operation does not revive its old URL. Extend input and output types, route and reducer guards, then controller execution and resource cleanup. Add progress, result fields, and actual counts, then tabs, localized text, keyboard and accessible names. Set `available` only after the screen, guards, text, and verification are ready; an engine API alone does not make an operation publishable. Page and navigation generation should use the derived available list. Test worker transfer and component behavior, and update public documentation.
+
+## Dormant image UI
+
+`src/app/image/ImageConverter.tsx` is an independent, unmounted image tool. No public
+page imports it. It owns one PWA startup component; page integration must remove
+the coming-soon page's existing startup mount to avoid duplication.
+
+Picker, global drop and clipboard paste enter one serial queue. Drop notifications
+are acknowledged immediately after registration, without waiting for conversion.
+JPG is the default; the selected format stays locked until the queue drains,
+including additional inputs received during conversion. Inputs are identified by
+bytes, not their extension or MIME hint. Logs contain names, states and error
+codes only; filenames are rendered as text. AVIF guidance appears only for a
+byte-identified AVIF decode failure.
+
+Unlike ZIP's explicit saves, each successful image immediately starts a browser
+download. Names are unique across the mount, including previous numbered names
+and format changes. A thrown download error is logged as failure and processing
+continues. “Saved” records a successful download initiation, not OS confirmation.
+The queue releases each completed input and Blob before the next conversion;
+there is no preview, retained result Blob, or re-save action.
+
+Synchronous queue state protects update safety before rendering. Only unfinished
+work blocks updates; completed logs do not. Update application stops all intake
+and readiness. Page departure clears pending inputs, invalidates late results and
+terminates the client and its workers. Unmount also removes subscriptions and
+input listeners. Returning from the back-forward cache accepts fresh inputs with
+a new client and never replays interrupted work.
+
+Multiple download permission, OS saves, real worker execution, browser decoding,
+and device memory limits remain unverified for this dormant UI. Public image
+pages retain coming-soon content and noindex.
