@@ -71,6 +71,29 @@ bytes, not their extension or MIME hint. Logs contain names, states and error
 codes only; filenames are rendered as text. AVIF guidance appears only for a
 byte-identified AVIF decode failure.
 
+The image-only DropArea keeps a large dashed frame alongside the existing
+full-screen overlay. Its file drag state changes both the frame and the visible
+instruction. It only displays drag state: GlobalDropZone receives drops, while
+the native picker uses the existing onChange handler and clears its value for
+reselection. Neither path adds a second queue. The visible label opens the
+picker; Tab reaches the native input, with Enter and Space opening the picker.
+Focus outlines remain visible, colors follow light/dark tokens, and reduced
+motion disables animation, transitions and scaling. Update application disables
+the input and clears highlighting; conversion alone still permits more input.
+Drop, drag end and page departure also clear highlighting, with capture listeners
+observing completion before the global receiver stops propagation.
+
+DropArea component tests cover nested drags, termination, disabled transitions,
+picker reselection and intake during conversion. Tests using the real global
+receiver check one conversion and save for drops on the frame, child and input.
+The dedicated browser spec covers real DataTransfer/File drops and downloads,
+overlay coexistence, picker opening by click/Enter/Space, and both languages at
+360px with light/dark colors, focus and reduced motion across the three configured
+browsers. Local browser execution was blocked before tests started: Wrangler
+reported EPERM writing its log, EMFILE while watching files, and permission denied
+binding its loopback inspector. Browser behavior remains unverified; automated
+picker events do not establish device picker display or OS save completion.
+
 Unlike ZIP's explicit saves, each successful image immediately starts a browser
 download. Names are unique across the mount, including previous numbered names
 and format changes. A thrown download error is logged as failure and processing

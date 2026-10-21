@@ -1,0 +1,30 @@
+.image-converter .image-drop-area {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-6) var(--space-4);
+  border: 2px dashed var(--color-control-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.image-drop-area svg { color: var(--color-link); flex-shrink: 0; }
+.image-drop-area__hint { max-width: 100%; }
+.image-drop-area.is-dragging {
+  border-color: var(--color-link);
+  border-style: solid;
+  background: var(--color-primary-alpha);
+}
+.image-drop-area:focus-within {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.image-drop-area.is-disabled { cursor: default; color: var(--color-subtle); border-style: dotted; }
+@media (prefers-reduced-motion: reduce) {
+  .image-drop-area, .image-drop-area * { animation: none; transition: none; transform: none; }
+}

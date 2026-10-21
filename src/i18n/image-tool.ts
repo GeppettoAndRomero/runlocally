@@ -4,7 +4,7 @@ import { LOCALES, type Locale } from './locales';
 export interface ImageToolStrings {
   labels: { outputFormat: string; selectImages: string };
   formats: { jpg: string; png: string };
-  input: { dropZone: string };
+  input: { dropZone: string; idle: string; release: string };
   statuses: { waiting: string; converting: string; saved: string; failed: string };
   notices: {
     metadata: string;
@@ -21,7 +21,8 @@ export const imageTool = {
   ja: {
     labels: { outputFormat: '出力形式', selectImages: '画像を選択' },
     formats: { jpg: 'JPG', png: 'PNG' },
-    input: { dropZone: '画像をここにドロップするか、ファイルを選択してください。' },
+    input: { dropZone: '画像をここにドロップするか、ファイルを選択してください。',
+      idle: 'ここに画像をドロップ／クリックして選択', release: '放して追加' },
     statuses: { waiting: '待機', converting: '変換中', saved: 'ダウンロード開始', failed: '失敗' },
     notices: {
       metadata: '変換時に再エンコードするため、EXIF・GPS・ICC の情報は出力に引き継がれません。',
@@ -44,7 +45,8 @@ export const imageTool = {
   en: {
     labels: { outputFormat: 'Output format', selectImages: 'Select images' },
     formats: { jpg: 'JPG', png: 'PNG' },
-    input: { dropZone: 'Drop images here or select files.' },
+    input: { dropZone: 'Drop images here or select files.',
+      idle: 'Drop images here / click to select', release: 'Release to add' },
     statuses: { waiting: 'Waiting', converting: 'Converting', saved: 'Download started', failed: 'Failed' },
     notices: {
       metadata: 'Images are re-encoded during conversion. EXIF, GPS and ICC metadata are not retained in the output.',
@@ -69,7 +71,7 @@ export const imageTool = {
 const limits = {
   labels: { outputFormat: 32, selectImages: 32 },
   formats: { jpg: 32, png: 32 },
-  input: { dropZone: 160 },
+  input: { dropZone: 160, idle: 160, release: 160 },
   statuses: { waiting: 32, converting: 32, saved: 32, failed: 32 },
   notices: { metadata: 240, onDevice: 240, chrome: 240, safari: 240, avif: 240, heic: 240 },
   errors: {
