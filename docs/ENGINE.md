@@ -98,6 +98,17 @@ Failures are values: `unsupported-type` for unknown bytes; `decode-failed` for r
 
 `tests/unit/image-convert.test.ts` exercises injected failures, limits, cleanup, cancellation and the DOM-independent worker API. `tests/e2e/image-convert.spec.ts` builds a test-only harness outside dist and serves it temporarily, exercising real module workers and caller-created DOM canvases with the existing synthetic fixtures. It checks orientation, white compositing, alpha, first-frame GIF output and browser-specific AVIF/HEIC decode capability. The harness, server and workers are released after tests; browser results do not establish iOS device limits or peak memory behavior.
 
+## Image capability probe
+
+`probeImageCapabilities()` probes seven inline synthetic images with parallel
+`createImageBitmap` calls using `imageOrientation: 'from-image'`. Each bitmap is
+closed immediately. Missing APIs, synchronous throws and rejected decodes become
+per-format false values. The pending Promise and results live only in module
+memory for the page lifetime; nothing runs at import time or is persisted or sent.
+There are no DOM elements or network requests. `createImageCapabilityProbe(decode)`
+creates an independent cache for injected tests. Sample bytes, provenance, encoded
+sizes and reproduction/verification details are documented in `probe.ts`.
+
 ## HEIC rescue decoder
 
 `heic-client.ts`, `heic-worker.ts` and `libheif-adapter.ts` implement an internal rescue

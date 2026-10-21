@@ -1,0 +1,11 @@
+.image-capability { margin-block-end: 1.5rem; overflow-wrap: anywhere; }
+.image-capability h2 { font-size: 1.1rem; }
+.image-capability dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: .5rem 1rem; }
+.image-capability dl > div { min-width: 0; }
+.image-capability dt { font-weight: bold; }
+.image-capability dd { margin: 0; display: grid; }
+.image-capability dd > span { grid-area: 1 / 1; }
+.image-capability .capability-reserve { visibility: hidden; display: grid; line-height: 1.5; }
+.image-capability .capability-reserve > span { grid-area: 1 / 1; }
+.image-capability .capability-value { line-height: 1.5; }
+.image-capability .capability-heic { grid-column: 1 / -1; }
