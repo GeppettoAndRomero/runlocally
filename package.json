@@ -29,9 +29,9 @@
     "size": "size-limit",
     "prepare": "git config core.hooksPath .githooks || true",
     "ci": "npm run typecheck && npm run lint && npm run license:check && npm run check-leaks && npm run check:engine-dom && npm run build && npm run check:egress && npm run test:unit -- --coverage && npm run legacy:check && npm run headers:check && npm run notice:check && npm run size",
-    "postinstall": "node scripts/vendor-libarchive.mjs",
-    "prebuild": "node scripts/vendor-libarchive.mjs",
-    "predev": "node scripts/vendor-libarchive.mjs",
+    "postinstall": "node scripts/vendor-libarchive.mjs && node scripts/vendor-libheif.mjs --verify",
+    "prebuild": "node scripts/vendor-libarchive.mjs && node scripts/vendor-libheif.mjs --verify",
+    "predev": "node scripts/vendor-libarchive.mjs && node scripts/vendor-libheif.mjs --verify",
     "headers:generate": "node scripts/gen-headers.mjs",
     "headers:check": "node scripts/gen-headers.mjs --check",
     "postbuild": "npm run headers:generate",
@@ -45,6 +45,7 @@
     "astro": "^4.16.18",
     "comlink": "4.4.2",
     "libarchive.js": "2.0.2",
+    "libheif-js": "1.23.5",
     "preact": "^10.24.3"
   },
   "devDependencies": {

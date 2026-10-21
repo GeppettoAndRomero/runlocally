@@ -12,7 +12,7 @@ if [[ ${1:-} == --cached ]]; then
 fi
 
 exclude_paths=('--' '.' ':!scripts/check-leaks.sh' ':!.gitignore' ':!package-lock.json' ':!vendor/libarchive-lean/*.js' ':!vendor/libarchive-lean/*.mjs' ':!vendor/libarchive-lean/*.wasm')
-general_exclude_paths=("${exclude_paths[@]}" ':!NOTICE.md' ':!vendor/libarchive-lean/licenses/**')
+general_exclude_paths=("${exclude_paths[@]}" ':!NOTICE.md' ':!vendor/libarchive-lean/licenses/**' ':!vendor/libheif/licenses/**')
 general_patterns=(
   -e '/Users/'
   -e '/home/[a-z]'
