@@ -139,13 +139,18 @@ test('HEIC follows the browser decode path on the real page', async ({ page, bro
   const pending = page.waitForEvent('download');
   await page.locator('input[type=file]').setInputFiles(fixture('sample.heic'));
   const download = await pending;
+  // Whether the browser decodes HEIC itself depends on its build and platform, so ask it.
+  const bytes = [...await readFile(fixture('sample.heic'))];
+  const native = await page.evaluate(async bytes => {
+    try { (await createImageBitmap(new Blob([new Uint8Array(bytes)]))).close(); return true; } catch { return false; }
+  }, bytes);
   const data = await pixels(page, download, 'png', [240, 240]);
   for (const [index, expected] of [1, 1, 3].entries()) expect(Math.abs(data[index] - expected)).toBeLessThanOrEqual(6);
   expect(data[3]).toBe(255);
   expect(workers.some(url => /image-worker-/.test(url))).toBe(true);
   const rescue = workers.some(url => /heic-worker-/.test(url));
   test.info().annotations.push({ type: 'decode-path', description: `${browserName}: ${rescue ? 'WASM worker' : 'native'}` });
-  expect(rescue, `${browserName} decode path changed; inspect the browser capability`).toBe(browserName !== 'webkit');
+  expect(rescue, `${browserName} native HEIC support: ${native}; the WASM worker must run exactly when it is missing`).toBe(!native);
 });
 
 test('first HEIC conversion works offline after cold precache and reload', async ({ context, page, browserName }) => {
