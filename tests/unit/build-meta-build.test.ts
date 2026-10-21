@@ -5,7 +5,7 @@ import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { hashesFromHtml, generateHeaders } from '../../scripts/gen-headers.mjs';
 import { LOCALES } from '../../src/i18n/locales';
-import { SITE_PAGES, pagePath } from '../../src/seo/url-model';
+import { NOT_FOUND_FILE, SITE_PAGES, pagePath } from '../../src/seo/url-model';
 
 const expectedPages = LOCALES.flatMap(locale => SITE_PAGES.map(page => pagePath(locale.code, page)));
 
@@ -72,7 +72,8 @@ describe('build hook ordering and update meaning', () => {
       const b = snapshot(join(root, 'dist'));
       expect([...a.keys()]).toEqual([...b.keys()]);
       const htmlPaths = [...a.keys()].filter(path => path.endsWith('.html'));
-      expect(htmlPaths).toHaveLength(expectedPages.length);
+      expect(htmlPaths).toHaveLength(expectedPages.length + 1);
+      expect(htmlPaths).toContain(NOT_FOUND_FILE);
       for (const path of htmlPaths) {
         const left = a.get(path)!.toString();
         const right = b.get(path)!.toString();
@@ -101,7 +102,7 @@ describe('build hook ordering and update meaning', () => {
       build(root, shaA, true);
       const noticeHtml = readFileSync(join(root, '.notice-build/index.html'), 'utf8');
       expect(noticeHtml.match(/<meta name="build" content="[^"]+">/g)).toEqual([`<meta name="build" content="${shaA}">`]);
-      expect(files(join(root, '.notice-build')).filter(path => path.endsWith('.html'))).toHaveLength(expectedPages.length);
+      expect(files(join(root, '.notice-build')).filter(path => path.endsWith('.html'))).toHaveLength(expectedPages.length + 1);
     } finally {
       rmSync(parent, { recursive: true, force: true });
     }

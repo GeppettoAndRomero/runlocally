@@ -1,0 +1,51 @@
+---
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/chrome.css';
+import { DEFAULT_LOCALE, LOCALES } from '../i18n/locales';
+import { chromeUi } from '../i18n/ui';
+import { notFoundContent } from '../i18n/not-found';
+import { pagePath } from '../seo/page';
+
+// One static document serves every unmatched URL, so it carries each locale and never claims a canonical URL.
+const sections = LOCALES.map(locale => ({ locale, content: notFoundContent(locale.code) }));
+const primary = notFoundContent(DEFAULT_LOCALE);
+---
+<!doctype html>
+<html lang={DEFAULT_LOCALE}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#4f46e5" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/app-192.png" />
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
+    <meta name="robots" content="noindex" />
+    <title>{primary.title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="site-header__brand" data-chrome-home href={pagePath(DEFAULT_LOCALE, 'hub')} aria-label={chromeUi[DEFAULT_LOCALE].home}>runlocally</a>
+      </div>
+    </header>
+    <main class="not-found">
+      {sections.map(({ locale, content }) => (
+        <section class="not-found__section" lang={locale.code} data-not-found-locale={locale.code} aria-labelledby={`not-found-${locale.code}`}>
+          <h1 id={`not-found-${locale.code}`}>{content.heading}</h1>
+          <p>{content.body}</p>
+          <ul>
+            <li><a href={pagePath(locale.code, 'hub')}>{content.hubLink}</a></li>
+            <li><a href={pagePath(locale.code, 'top')}>{content.zipLink}</a></li>
+          </ul>
+        </section>
+      ))}
+    </main>
+  </body>
+</html>
+
+<style>
+  .not-found { max-width: 72rem; margin: 0 auto; padding: var(--space-5) 1rem; }
+  .not-found__section + .not-found__section { margin-top: var(--space-5); padding-top: var(--space-5); border-top: 1px solid var(--color-border); }
+  .not-found h1 { margin-bottom: var(--space-3); }
+  .not-found a { color: var(--color-link); text-decoration: underline; }
+</style>

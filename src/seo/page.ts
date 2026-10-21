@@ -5,6 +5,7 @@ import type { HubContent } from '../i18n/hub';
 import { pagePath as modelPagePath, publicPageFromPath, zipPageFromPath, isIndexable, type PublicPage, type SitePage, type UrlModel } from './url-model';
 
 export const SITE_ORIGIN = 'https://runlocally.app';
+export const SITE_NAME = 'runlocally';
 export type { PublicPage, SitePage } from './url-model';
 export { publicPageFromPath, zipPageFromPath };
 
@@ -71,11 +72,12 @@ export function headData(locale: Locale, page: SitePage, content: PageContent | 
   const url = pageUrl(locale, page, model);
   const localeInfo = LOCALES.find(entry => entry.code === locale)!;
   const common = { '@context': 'https://schema.org', name: content.h1, description, url, inLanguage: localeInfo.hreflang };
-  let application: typeof common & { '@type': 'WebSite' | 'WebPage'; featureList?: never } |
-    typeof common & { '@type': 'SoftwareApplication'; featureList: string[] };
+  let application: typeof common & { '@type': 'WebSite'; alternateName: string; featureList?: never } |
+    typeof common & { '@type': 'SoftwareApplication'; featureList: string[]; alternateName?: never };
   if (page === 'hub') {
     if ('steps' in content) throw new Error('Hub requires hub content');
-    application = { ...common, '@type': 'WebSite' };
+    // The WebSite node names the site itself; the heading describes what it offers.
+    application = { ...common, '@type': 'WebSite', name: SITE_NAME, alternateName: content.h1 };
   } else if (page === 'image') {
     application = { ...common, '@type': 'SoftwareApplication', featureList: ['JPG', 'PNG'] };
   } else {
@@ -94,7 +96,7 @@ export function headData(locale: Locale, page: SitePage, content: PageContent | 
       url,
       title,
       description,
-      siteName: 'runlocally',
+      siteName: SITE_NAME,
       locale: ogLocale(locale),
       alternateLocales: LOCALES.filter(entry => entry.code !== locale).map(entry => ogLocale(entry.code)),
     },

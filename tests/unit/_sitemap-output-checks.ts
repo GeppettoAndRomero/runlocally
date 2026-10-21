@@ -5,6 +5,7 @@ import { JSDOM } from 'jsdom';
 import { expect } from 'vitest';
 import { hubContent } from '../../src/i18n/hub';
 import { SITE_ORIGIN } from '../../src/seo/page';
+import { NOT_FOUND_FILE } from '../../src/seo/url-model';
 
 const pairs = [
   ['/', '/en/'],
@@ -50,8 +51,9 @@ export function checkBuiltSitemap(output: string): void {
   expect(new Set(entries.map(entry => entry.loc)).size).toBe(14);
 
   const files = htmlFiles(output);
-  expect(files).toHaveLength(16);
-  expect(files.map(file => url(`/${relative(output, file).replace(/(^|\/)index\.html$/, '$1')}`)).sort()).toEqual([...expected, url('/image/'), url('/en/image/')].sort());
+  expect(files).toHaveLength(17);
+  expect(files.map(file => url(`/${relative(output, file).replace(/(^|\/)index\.html$/, '$1')}`)).sort())
+    .toEqual([...expected, url('/image/'), url('/en/image/'), url(`/${NOT_FOUND_FILE}`)].sort());
 
   for (const [ja, en] of pairs) for (const path of [ja, en]) {
     const pageUrl = url(path);

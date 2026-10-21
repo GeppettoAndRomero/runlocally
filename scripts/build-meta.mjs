@@ -3,6 +3,7 @@ import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { publicPagePaths } from './pwa-manifest.mjs';
+import { NOT_FOUND_FILE } from '../src/seo/url-model.ts';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const shaPattern = /^(?:[a-f\d]{40}|[a-f\d]{64})$/i;
@@ -70,6 +71,11 @@ export async function addBuildMetaToOutput(dir, sha) {
   const updates = [];
   for (const file of files) {
     const path = relative(output, file).split(sep).join('/');
+    if (path === NOT_FOUND_FILE) {
+      // The not-found document is stamped like every page but sits outside the SITE page set.
+      updates.push([file, insertBuildMeta(await readFile(file, 'utf8'), sha)]);
+      continue;
+    }
     const url = path === 'index.html' ? '/' : `/${path.replace(/index\.html$/, '')}`;
     if (!path.endsWith('index.html') || !expected.has(url) || seen.has(url)) throw new Error(`Unexpected or duplicate HTML: ${path}`);
     seen.add(url);
