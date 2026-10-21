@@ -22,6 +22,10 @@
 
 この項目は画面の対応範囲を記録するもので、公開や配信の完了を示すものではありません。
 
+## Hub image entry and site manifest
+
+日英ハブの画像カードを実装済みの JPG／PNG 変換への案内にし、SEO・見出しにも ZIP 操作と画像変換を含めました。入力形式の対応はブラウザに依存します。サイト共通 manifest の名前を runlocally、起動先を日本語ハブ `/` に変更し、id・scope・アイコンは維持します。画像の noindex、sitemap 14 URL、生成・precache 16ページは維持します。既存インストールへの manifest 反映と OS 表示・実起動は未検証です。本項は本番反映を示しません。
+
 ## Image page integration
 
 日英の画像ページを ImageConverter に接続し、JPG／PNG の個別自動ダウンロードを開始するビルドに変更しました。画像ページの PWA 起動は ImageConverter が所有します。画像2 URL の noindex、sitemap の14 URL、生成・precache の16ページ、ハブカードの表示は維持します。

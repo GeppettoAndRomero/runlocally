@@ -27,6 +27,7 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 | 静的 URL | `scripts/check-egress.mjs`; `tests/unit/egress-allowlist.test.ts`: `accepts only scoped public URLs and exact namespace literals`; `tests/unit/egress-scan.test.ts`: `rejects an empty dist and catches minified JS URLs` | `npm run ci` のビルド成果物にある HTML・JS の URL リテラル。動的通信や配信時注入とは検査対象が異なる。 |
 | オフライン・URL | `tests/e2e/covenants.spec.ts`: `session URLs and offline operations`; `tests/e2e/network.spec.ts`: `chromium: offline repeats the same operations` | CI と、承認後の本番 smoke。URL・履歴・言語切替は3ブラウザ。公開ページ巡回と操作のオフライン再現は Chromium。事前保存と SW 制御開始を待ってから検査する。 |
 | manifest・登録・公開ページ・報告経路 | `tests/e2e/covenants.spec.ts`: `published pages, manifest and reporting path` | CI と、承認後の本番 smoke。3ブラウザで manifest、icons、theme、公開ページ、root SW、配信された SECURITY.md とフッターのリンクを検査。CDP による installability は Chromium。 |
+| ハブの画像導線・起動先 | `tests/unit/hub-image-metadata.test.ts`; `tests/e2e/hub-image-launch.spec.ts` | 日英カード・SEO・OG・WebSite JSON-LD・8キー・文字数境界。画像入力 UI への到達は3ブラウザ、保存後に同一 context の新ページで manifest の `/` を開き、再読込・画像遷移の SW 応答を確認する検査は Chromium。OS からの実起動の代替ではない。 |
 | 操作メニュー | `tests/e2e/menu.spec.ts`: 入力前の公開操作と直接訪問、動詞名と補足、準備前の実行不可、URL・入力・結果の保持、広い画面のキー操作、360px の折り返し、ヘッダーから作業領域へのフォーカス順 | CI の日本語・英語と Chromium・Firefox・WebKit。タブとパネルの対応、横スクロールの不在も確認する。 |
 | 外枠・ページ同期 | `tests/e2e/chrome.spec.ts`: 外枠の初期表示、操作・言語・履歴・入力形式による同期、File と結果の保持、アイコンと precache | CI の3ブラウザ。外枠の hover・focus・SPA 遷移後の追加リクエストを検査する。全操作時の通信と SW 発通信は `network.spec.ts` が検査する。 |
 | precache | `tests/unit/pwa-build.test.ts`: `contains one root worker and manifest with all public pages and matched vendor assets`; `tests/unit/pwa-manifest.test.ts`: `uses every public URL and keeps each HTML revision`; `rejects absent pages, duplicates and an incomplete vendor pair` | CI のビルドと単体検査。SITE の生成16ページと資産の構成を確認する。 |
@@ -39,6 +40,8 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 
 フォルダの選択・ドロップの相対パスはブラウザに依存するため、作成 ZIP の名前と内容を実機で確認する。`tests/e2e/create.spec.ts` にはフォルダ選択の検査があるが、自動操作の非対応による skip はブラウザ自体の非対応を示さない。オフラインの自動検証は Chromium のみで、Firefox／WebKit は実機確認が必要。
 
+実インストール更新の契機・反映時期・承認 UI、OS の名称・アイコン・ショートカットと実起動は未検証で、自動検証の対象外とする。manifest の更新と SW の更新通知は別の確認対象である。
+
 自動検証は、実インストール完了、報告への応答 SLA、全 CDN 拠点、既存端末のキャッシュ更新完了を検証しない。SECURITY 経路の検査は配信文書とリンクまでであり、報告送信、メール配送、Private Vulnerability Reporting の受付動作を確認しない。配信時の注入は CI 内のビルド検査だけでは確認できない。本番 smoke が配信応答の確認経路だが、実配信と初回実行は承認後であり、現時点では未実施。
 
 `astro.config.mjs` の build meta は SW 生成後、`scripts/gen-headers.mjs` のヘッダ生成前に、`scripts/build-meta.mjs` がSITE の全16 HTML へ挿入する。SHA だけの変更では precache revision は変わらず、ページ内容の変更では更新を検知する。既存端末の DOM に残る SHA は現在の配信 SHA の判定に使わない。
@@ -50,9 +53,9 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 実インストールと端末固有の動作は、検証用の安全な配信環境で実ブラウザを操作して確かめる。本番反映は別途承認後に行う。
 
 1. **準備:** 同じ origin とブラウザプロファイルを使う。ブラウザ・OS・版、対象 SHA、開始時の SW 登録・キャッシュを記録する。用いる fixture は `tests/fixtures` と `tests/e2e/_covenant-support.ts` を参照する。
-2. **インストール:** manifest とブラウザの診断を確認し、ページまたはブラウザの導線からインストールする。起動後の表示、単独ウィンドウでの起動、再起動後の操作を確認する。導線がない環境は理由と未確認項目を記録する。
-3. **オフライン:** 事前保存と SW 制御開始を確認後、ネットワークを切断する。公開ページの再読込・遷移、ZIP の閲覧・取り出し・削除・名前修復、ファイルからの ZIP 作成と明示保存、7z の閲覧・取り出し、保存・再入力、入れ子 ZIP を fixture で確認する。終了後にオンラインへ戻す。
-4. **更新:** ローカル検証用の内容が異なる2ビルドを同じ origin で切り替える。SHA だけの変更を更新発生条件にしない。待機中の SW を確認し、別タブあり・処理中・File 保持中・未実行の作成選択あり・作成実行済み入力あり・作成結果ありで更新が保留されることを確認する。保存だけでは解除されないため、Reset と別タブ終了後に適用する。作業中のタブを強制再読込して代替しない。2ビルド間の更新は実機確認が必要。選択クリア後も作成実行済み入力と結果が残る場合は保留が続き、Reset で解除されることを確認する。新しいアーカイブの入力と結果の再入力でも作成の状態は初期化される。
+2. **インストール:** manifest とブラウザの診断を確認し、ページまたはブラウザの導線からインストールする。起動後の表示、単独ウィンドウでの起動、再起動後の操作を確認する。導線がない環境は理由と未確認項目を記録する。旧 manifest でインストールした同じ origin・プロファイルを、サイトデータを消さずに更新する。ブラウザの manifest 反映後に `/` 起動、名称・アイコン・ショートカットを確認する。固定された `/zip/` のリンクは引き続き有効とする。
+3. **オフライン:** 事前保存と SW 制御開始を確認後、ネットワークを切断する。同じ context の新ページで `/` を開き、ハブ再読込と画像カードから入力 UI への遷移を確認する。公開ページの再読込・遷移、ZIP の閲覧・取り出し・削除・名前修復、ファイルからの ZIP 作成と明示保存、7z の閲覧・取り出し、保存・再入力、入れ子 ZIP を fixture で確認する。終了後にオンラインへ戻す。
+4. **更新:** ローカル検証用の内容が異なる2ビルドを同じ origin で切り替える。SHA だけの変更を更新発生条件にしない。待機中の SW を確認し、別タブあり・処理中・File 保持中・未実行の作成選択あり・作成実行済み入力あり・作成結果ありで更新が保留されることを確認する。保存だけでは解除されないため、Reset と別タブ終了後に適用する。作業中のタブを強制再読込して代替しない。2ビルド間の更新は実機確認が必要。`/` 起動時も待機更新の通知と適用、別タブ・協調不可による保留を確認する。選択クリア後も作成実行済み入力と結果が残る場合は保留が続き、Reset で解除されることを確認する。新しいアーカイブの入力と結果の再入力でも作成の状態は初期化される。
 5. **旧 SW 移行:** 実際の旧登録を持つ検証用プロファイルではサイトデータを消さずに移行前後を比較する。再現用登録なら実端末の旧状態と区別する。root 以外の登録と非 Workbox キャッシュの除去、root SW の動作、旧 SW URL の 410・転送なし、移行後の操作を確認する。検証用 SW を本番へ配置しない。
 6. **記録:** 実施日時、環境、origin、対象 SHA、SW を介さない HTTP 取得で観測した SHA、fixture、操作、期待結果・実結果、成功／失敗／未確認、SW・キャッシュの前後、必要な画面とログを非公開の記録へ残す。旧 DOM の SHA だけで配信や更新の成功を判定しない。
 
@@ -67,3 +70,7 @@ The `--from` command only verifies fixed bytes without writing. LIBHEIF_WASM_REP
 ## Image page integration checks
 
 `tests/unit/image-page-build.test.ts` checks nonempty worker output, precache membership, glue sourcemap provenance and disjoint, exhaustive size budgets. `tests/e2e/image-page.spec.ts` uses the product pages for downloads, pixel checks, queue locking, HEIC decode-path evidence, cold offline conversion and context-level communication monitoring. `tests/e2e/image-bfcache.spec.ts` requires `pageshow.persisted` for picker, drop, paste and delayed folder input. The sandbox blocked the local e2e server with EPERM/EMFILE; these browser checks have not run. Synthetic component lifecycle tests do not establish BFCache behavior. No shared input fix was applied without reproduction. Installation, multiple-download permission, OS save completion and device memory limits remain device checks.
+
+## Hub image entry validation
+
+Local validation passed typecheck, lint, all 158 component tests and the full build-before-unit CI sequence (121 files, 1,091 tests). The browser suite could not start: the local server reported EPERM, EMFILE and a denied loopback bind. Hub-to-image navigation and the saved manifest launch browser checks therefore remain unverified. No server configuration was changed to bypass this restriction. Updating an existing installation, OS name/icons/shortcuts, actual offline app launch and the waiting-update notification/application across two content-different builds remain unverified device checks.

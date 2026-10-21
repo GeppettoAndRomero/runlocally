@@ -1,6 +1,6 @@
 # Workbench UI
 
-The Japanese and English ZIP top (`/zip/` and `/en/zip/`) and available operation pages each mount the same Workbench. The hubs (`/` and `/en/`) have a ZIP card and an image conversion coming-soon card, but no Workbench. The image pages (`/image/` and `/en/image/`) mount ImageConverter with explanatory text and ordinary links, without Workbench or ZIP operation navigation. Workbench owns the session, controller lifecycle, input intake, routing, menu, updates, feedback, results and saves, and dispatches actions to the pure session reducer. Operation components in `src/app/panels/` own panel contents, display calculations and paging state. Workbench renders their tabpanel sections in the available operation order; nonselected panels stay mounted with `hidden`. Pager positions survive operation and language changes and reset when the session generation changes. The controller owns asynchronous listing and jobs, creates and closes one ZIP client or archive handle per request, and ignores notifications after invalidation. The engine performs local parsing and rewriting. `downloadBlob` handles explicit saves. Results are separate Blobs; creating one neither saves it nor replaces the input.
+The Japanese and English ZIP top (`/zip/` and `/en/zip/`) and available operation pages each mount the same Workbench. The hubs (`/` and `/en/`) have a ZIP card and an image conversion card linking to the working tool, but no Workbench. The image pages (`/image/` and `/en/image/`) mount ImageConverter with explanatory text and ordinary links, without Workbench or ZIP operation navigation. Workbench owns the session, controller lifecycle, input intake, routing, menu, updates, feedback, results and saves, and dispatches actions to the pure session reducer. Operation components in `src/app/panels/` own panel contents, display calculations and paging state. Workbench renders their tabpanel sections in the available operation order; nonselected panels stay mounted with `hidden`. Pager positions survive operation and language changes and reset when the session generation changes. The controller owns asynchronous listing and jobs, creates and closes one ZIP client or archive handle per request, and ignores notifications after invalidation. The engine performs local parsing and rewriting. `downloadBlob` handles explicit saves. Results are separate Blobs; creating one neither saves it nor replaces the input.
 
 ## State and transitions
 
@@ -61,7 +61,7 @@ Register the operation in `src/i18n/ops.ts` with its short public `ZIP_SLUGS` sl
 ## Image UI
 
 `src/app/image/ImageConverter.tsx` is mounted with `client:load` on both image pages.
-It owns the image page's only PWA startup component; Base owns startup only on hubs.
+It owns the image page's only PWA startup component; Base owns startup only on hubs. The hub image card navigates normally to the same language's image page and its file input; ZIP stays the first card. The card describes JPG/PNG output and browser-dependent input support.
 
 Picker, global drop and clipboard paste enter one serial queue. Drop notifications
 are acknowledged immediately after registration, without waiting for conversion.

@@ -39,7 +39,7 @@
 | 名前修復 | `/zip/fix-names/` | `/en/zip/fix-names/` |
 | 作成 | `/zip/create/` | `/en/zip/create/` |
 
-各ハブには同じ言語の ZIP top と画像変換ページへ進むカードがあります。Workbench は ZIP ページだけに載ります。画像ページは ImageConverter を載せますが、ハブカードの準備中表示は据え置きます。ZIP 内の操作・言語切替では現在の File と処理結果を保持しますが、ハブへの通常遷移と再読込では保持しません。旧操作 URL は410を返し、新 URL へ301転送しません。言語とページの追加手順は [I18N 文書](docs/I18N.md) を参照してください。Service Worker・更新・ヘッダ・旧 URL の仕組みは [PWA 文書](docs/PWA.md) を参照してください。公約と自動検証の対応、検証の限界、実ブラウザ確認の手順は [公約の検証](docs/COVENANTS.md) を参照してください。
+各ハブには同じ言語の ZIP top と画像変換ページへ進むカードがあります。Workbench は ZIP ページだけに載ります。画像ページは ImageConverter を載せ、ハブカードは端末内での JPG／PNG 変換とブラウザによる入力形式の対応差を案内します。サイト共通 PWA の名前は runlocally、起動先は日本語ハブ `/` です。ZIP 内の操作・言語切替では現在の File と処理結果を保持しますが、ハブへの通常遷移と再読込では保持しません。旧操作 URL は410を返し、新 URL へ301転送しません。言語とページの追加手順は [I18N 文書](docs/I18N.md) を参照してください。Service Worker・更新・ヘッダ・旧 URL の仕組みは [PWA 文書](docs/PWA.md) を参照してください。公約と自動検証の対応、検証の限界、実ブラウザ確認の手順は [公約の検証](docs/COVENANTS.md) を参照してください。
 
 ### 開発
 
@@ -91,7 +91,7 @@ The four promises are no additional client requests, offline use, PWA installati
 | Fix names | `/zip/fix-names/` | `/en/zip/fix-names/` |
 | Create | `/zip/create/` | `/en/zip/create/` |
 
-Each hub has cards linking to ZIP top and the image conversion page in the same language. Only ZIP pages mount the Workbench. Image pages mount ImageConverter; the hub card still says coming soon. Switching operations or languages within ZIP keeps the current File and results; ordinary navigation to a hub and reloading start a new session. Old operation URLs return 410 rather than redirecting to the new URLs with 301. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
+Each hub has cards linking to ZIP top and the image conversion page in the same language. Only ZIP pages mount the Workbench. Image pages mount ImageConverter; the hub card describes on-device JPG/PNG conversion and browser-dependent input support. The shared site PWA is named runlocally and launches the Japanese hub at `/`. Switching operations or languages within ZIP keeps the current File and results; ordinary navigation to a hub and reloading start a new session. Old operation URLs return 410 rather than redirecting to the new URLs with 301. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
 
 Development requires Node.js 24 or newer: run `npm ci`, `npm run dev` and `npm run ci`. Self-hosting with Docker is planned for v0.4.0. License: [MIT](LICENSE).
 
@@ -99,6 +99,6 @@ Run unit tests with `npm run test:unit -- --coverage` and component tests with `
 
 ## libheif WASM distribution
 
-ビルド成果物には、無改変の libheif WASM を /vendor/libheif/libheif.wasm に配置し、全利用者の初回 precache に含めます。非圧縮資産量は 1,463,506 bytes（約 1.46 MB）増えます。NOTICE には部品の版・ソース・ライセンス全文を生成し、LICENSE とともに配布成果物へ同梱します。画像2ページは ImageConverter に接続し、JPG／PNG の個別自動ダウンロードを開始するビルドです。glue はデコーダ worker に bundle され、WASM とともに precache します。noindex とハブカードの準備中表示は維持します。本番への反映を示すものではありません。
+ビルド成果物には、無改変の libheif WASM を /vendor/libheif/libheif.wasm に配置し、全利用者の初回 precache に含めます。非圧縮資産量は 1,463,506 bytes（約 1.46 MB）増えます。NOTICE には部品の版・ソース・ライセンス全文を生成し、LICENSE とともに配布成果物へ同梱します。画像2ページは ImageConverter に接続し、JPG／PNG の個別自動ダウンロードを開始するビルドです。glue はデコーダ worker に bundle され、WASM とともに precache します。画像ページの noindex は維持し、ハブカードから同じ言語の変換画面へ進めます。本番への反映を示すものではありません。
 
 `--from` は固定バイトの検証のみです。`LIBHEIF_WASM_REPLACEMENT=./replacement/libheif.wasm npm run build` で互換改変版を無改変で配置し、実バイトから SW の revision/integrity を更新できます。再ビルドごとに変数を指定し、未設定なら固定版に戻ります。差し替えは自己責任で、配布者が改変版のライセンス・対応ソースを提供する責務を負います。NOTICE は固定版の記述のままです。[配布記録](vendor/libheif/README.md)と[取得量・キャッシュの説明](docs/PWA.md#libheif-wasm-distribution)を参照してください。
