@@ -91,3 +91,14 @@ The local sandbox could not start the e2e server (EPERM/EMFILE), so those browse
 checks and actual BFCache restoration remain unverified. No delayed-scan fix was
 applied without browser reproduction. Multiple download permission, OS save
 completion and device memory limits still require device verification.
+
+### Input format check
+
+The capability list sits after the page explanation and before output settings.
+SSR and hydration show neutral “Checking…” text; an effect then displays textual
+readable/unreadable results for PNG, JPEG, GIF, WebP, BMP, ICO and AVIF. Space for
+all states and the permanent note is reserved from the initial render. The list
+uses a definition list and adds no log entries or islands. HEIC / HEIF has a
+separate fixed on-device decoder description; displaying it does not start that
+decoder. Tiny samples indicate a decoding path, never success for every file or
+conversion. Checks do not gate readiness, file selection or conversion.

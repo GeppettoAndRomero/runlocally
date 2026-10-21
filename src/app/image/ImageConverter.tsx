@@ -9,6 +9,7 @@ import { imageOutputName } from '../../engine/image/output';
 import { sniffImageFormat } from '../../engine/image/sniff';
 import type { ImageErrorCode, ImageOutputFormat } from '../../engine/image/types';
 import { createImageClient, type ImageClient } from './client';
+import { CapabilityList } from './CapabilityList';
 import './image-converter.css';
 
 type Log = { id: number; name: string; status: 'waiting' | 'converting' | 'saved' | 'failed'; code?: ImageErrorCode; avif?: boolean };
@@ -119,6 +120,7 @@ export function ImageConverter({ locale, clientFactory = createImageClient, save
     };
   }, []);
   return <section class="image-converter">
+    <CapabilityList locale={locale} />
     <fieldset disabled={busy || applying}>
       <legend>{t.labels.outputFormat}</legend>
       {(['jpg', 'png'] as const).map(value => <label key={value}>
