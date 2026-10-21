@@ -12,6 +12,7 @@ const expectedPages = [
   '/zip/remove/', '/en/zip/remove/',
   '/zip/fix-names/', '/zip/create/', '/en/zip/fix-names/', '/en/zip/create/',
 ];
+const sitePages = [...expectedPages, '/image/', '/en/image/'];
 const vendor = ['/vendor/libarchive/libarchive.wasm', '/vendor/libarchive/worker-bundle.js'];
 
 test('public pages are the fourteen distinct routes', () => {
@@ -32,7 +33,9 @@ async function cachePaths(page: Page) {
 
 async function offlineDocument(page: Page, path: string, reload = false) {
   const response = reload ? await page.reload() : await page.goto(new URL(path, origin).href);
-  await publicReady(page);
+  if (path === '/image/' || path === '/en/image/') {
+    await expect(page.locator('#page-heading')).toHaveText(path === '/image/' ? '画像変換（準備中）' : 'Image conversion (coming soon)');
+  } else await publicReady(page);
   expect(new URL(page.url()).pathname).toBe(path);
   await expect(page.locator('#page-heading')).toBeVisible();
   await expect(page.locator('#page-content')).toBeVisible();
@@ -54,13 +57,13 @@ for (const locale of LOCALES) {
       await activeRootWorker(page);
       const paths = await cachePaths(page);
       const savedPages = paths.filter(path => path.endsWith('/'));
-      expect(savedPages).toHaveLength(14);
-      expect([...savedPages].sort()).toEqual([...expectedPages].sort());
+      expect(savedPages).toHaveLength(16);
+      expect([...savedPages].sort()).toEqual([...sitePages].sort());
       for (const path of vendor) expect(paths).toContain(path);
 
       await context.setOffline(true);
       await offlineDocument(page, hub, true);
-      for (const path of expectedPages) {
+      for (const path of sitePages) {
         await offlineDocument(page, path);
         await offlineDocument(page, path, true);
       }

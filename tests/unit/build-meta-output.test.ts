@@ -4,7 +4,7 @@ import { join, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { LOCALES } from '../../src/i18n/locales';
-import { PUBLIC_PAGES, pagePath } from '../../src/seo/url-model';
+import { SITE_PAGES, pagePath } from '../../src/seo/url-model';
 import { addBuildMetaToOutput, resolveBuildSha } from '../../scripts/build-meta.mjs';
 
 function htmlFiles(dir: string): string[] {
@@ -18,7 +18,7 @@ describe('production HTML output', () => {
   it('covers each public page once with the same SHA and existing head data', () => {
     const root = 'dist';
     const files = htmlFiles(root);
-    const expected = new Set(LOCALES.flatMap(locale => PUBLIC_PAGES.map(page => pagePath(locale.code, page))));
+    const expected = new Set(LOCALES.flatMap(locale => SITE_PAGES.map(page => pagePath(locale.code, page))));
     const urls = new Set(files.map(file => {
       const path = relative(root, file).split(sep).join('/');
       return path === 'index.html' ? '/' : `/${path.replace(/index\.html$/, '')}`;
@@ -38,7 +38,7 @@ describe('production HTML output', () => {
   it('uses the supplied output directory and rejects missing or unexpected pages', async () => {
     const root = mkdtempSync(join(tmpdir(), 'build-meta-output-'));
     try {
-      const paths = LOCALES.flatMap(locale => PUBLIC_PAGES.map(page =>
+      const paths = LOCALES.flatMap(locale => SITE_PAGES.map(page =>
         join(root, pagePath(locale.code, page).slice(1), 'index.html')));
       for (const file of paths) {
         mkdirSync(join(file, '..'), { recursive: true });

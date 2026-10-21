@@ -6,8 +6,9 @@ import '../styles/chrome.css';
 import { LOCALES, type Locale } from '../i18n/locales';
 import { operationLabel, AVAILABLE_OPS } from '../i18n/ops';
 import type { PageContent } from '../i18n/types';
+import type { ImageSoonContent } from '../i18n/image-soon';
 import type { HubContent } from '../i18n/hub';
-import { alternates, checkMetadataLength, headData, ogLocale, pagePath, pageUrl, type PublicPage } from '../seo/page';
+import { alternates, checkMetadataLength, headData, ogLocale, pagePath, pageUrl, type SitePage } from '../seo/page';
 import { chromeUi, menuUi, ui } from '../i18n/ui';
 import { PwaStartup } from '../ui/PwaStartup';
 
@@ -15,8 +16,8 @@ interface Props {
   lang: Locale;
   title?: string;
   description?: string;
-  page?: PublicPage;
-  content?: PageContent | HubContent;
+  page?: SitePage;
+  content?: PageContent | HubContent | ImageSoonContent;
 }
 
 const { lang, page = 'top', content } = Astro.props;
@@ -44,6 +45,7 @@ const og = metadata?.og ?? {
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
     <meta name="description" content={description} />
+    {metadata?.robots && <meta name="robots" content={metadata.robots} />}
     <title>{title}</title>
     <link rel="canonical" href={canonical} />
     {links.map(link => <link rel="alternate" hreflang={link.hreflang} href={link.href} />)}
@@ -60,7 +62,7 @@ const og = metadata?.og ?? {
     <header class="site-header">
       <div class="site-header__inner">
         <a class="site-header__brand" data-chrome-home href={pagePath(lang, 'hub')} aria-label={chromeUi[lang].home} aria-current={page === 'hub' ? 'page' : undefined}>runlocally</a>
-        {page !== 'hub' && <nav class="site-nav" aria-label={chromeUi[lang].navigation} data-chrome-nav>
+        {page !== 'hub' && page !== 'image' && <nav class="site-nav" aria-label={chromeUi[lang].navigation} data-chrome-nav>
           {AVAILABLE_OPS.map(op => <a data-chrome-page={op.id} href={pagePath(lang, op.id)} aria-current={page === op.id ? 'page' : undefined}>{operationLabel(op, ui[lang].workbench, menuUi[lang])}</a>)}
         </nav>}
         <nav class="site-languages" aria-label={chromeUi[lang].languages} data-chrome-languages>
@@ -69,7 +71,7 @@ const og = metadata?.og ?? {
       </div>
     </header>
     <slot />
-    {page === 'hub' && <PwaStartup locale={lang} client:load />}
+    {(page === 'hub' || page === 'image') && <PwaStartup locale={lang} client:load />}
     <footer class="site-footer">
       <p>Some code was written with AI assistance; all review and decisions are the maintainer's.</p>
       <a id="footer-security" href="/SECURITY.md">{ui[lang].shared.security}</a>

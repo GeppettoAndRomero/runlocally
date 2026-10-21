@@ -21,8 +21,12 @@ async function checkHub(page: Page, locale: Locale) {
   await expect(brand).toHaveAttribute('aria-label', dictionaries[locale].chrome.home);
   await expect(brand).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('[data-chrome-nav], [data-chrome-page]')).toHaveCount(0);
-  const card = page.locator('.hub-card');
+  await expect(page.locator('.hub-card')).toHaveCount(2);
+  const card = page.locator('.hub-card').filter({ has: page.locator(`a[href="${zipHome(locale)}"]`) });
   await expect(card).toHaveCount(1);
+  const imageCard = page.locator('.hub-card').filter({ has: page.locator(`a[href="${pagePath(locale, 'image')}"]`) });
+  await expect(imageCard.locator('h2 a')).toHaveText(content.imageCardTitle);
+  await expect(imageCard.locator('p')).toHaveText(content.imageCardDescription);
   await expect(card.locator('h2 a')).toHaveText(content.zipCardTitle);
   await expect(card.locator('h2 a')).toHaveAttribute('href', zipHome(locale));
   await expect(card.locator('p')).toHaveText(content.zipCardDescription);
@@ -51,7 +55,7 @@ for (const { code } of LOCALES) {
     await checkHub(page, other);
     await page.locator(`[data-chrome-locale="${code}"]`).click();
     await checkHub(page, code);
-    await page.locator('.hub-card h2 a').click();
+    await page.locator('.hub-card h2 a[href$="/zip/"]').click();
     await expect(page).toHaveURL(new RegExp(`${zipHome(code).replaceAll('/', '\\/')}$`));
     await ready(page);
     await expect(page.locator('[data-chrome-home]')).not.toHaveAttribute('aria-current');
@@ -68,7 +72,7 @@ test('both hubs render without JavaScript', async ({ browser, baseURL }) => {
       const other = code === 'ja' ? 'en' : 'ja';
       await page.locator(`[data-chrome-locale="${other}"]`).click();
       await checkHub(page, other);
-      await page.locator('.hub-card h2 a').click();
+      await page.locator('.hub-card h2 a[href$="/zip/"]').click();
       await expect(page).toHaveURL(new RegExp(`${zipHome(other).replaceAll('/', '\\/')}$`));
     }
   } finally { await context.close(); }
@@ -121,7 +125,7 @@ test('hub does not request the Workbench component or engine assets', async ({ b
     expect(requests.filter(path => /libarchive.*(?:worker|\.wasm)/i.test(path))).toEqual([]);
     await expect(page.locator('astro-island[component-export="Workbench"], input[type="file"], [data-op]')).toHaveCount(0);
     expect(await page.evaluate(() => window.__toolReady)).toBeUndefined();
-    await page.locator('.hub-card h2 a').click();
+    await page.locator('.hub-card h2 a[href$="/zip/"]').click();
     await expect(page).toHaveURL(new RegExp(`${zipHome('en').replaceAll('/', '\\/')}$`));
     await ready(page);
     expect(requests).toContain(componentPath);

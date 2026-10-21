@@ -95,7 +95,7 @@ test('hydration, route changes, input, and reset update content and cards', asyn
   await page.locator('[data-chrome-home]').click();
   await expect(page).toHaveURL(new RegExp(`${pagePath('ja', 'hub').replaceAll('/', '\\/')}$`));
   await expect(page.locator('#page-heading')).toHaveText(hubContent('ja').h1);
-  await page.locator('.hub-card h2 a').click();
+  await page.locator('.hub-card h2 a[href$="/zip/"]').click();
   await ready(page);
   await assertContent(page, 'ja', 'top');
   await assertCards(page, 'ja', 'top');

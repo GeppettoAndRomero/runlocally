@@ -2,11 +2,13 @@ import { test, expect, type BrowserContext, type Request } from '@playwright/tes
 import { readFile } from 'node:fs/promises';
 import { ready, roundTrip } from './_helpers';
 import { publicPaths, visit } from './_covenant-support';
+import { LOCALES } from '../../src/i18n/locales';
+import { SITE_PAGES, pagePath } from '../../src/seo/url-model';
 import { zipHome } from './_paths';
 
 const baseURL = process.env.BASE_URL || 'http://localhost:8788';
 const origin = new URL(baseURL).origin;
-const pages = new Set(publicPaths);
+const pages = new Set(LOCALES.flatMap(({ code }) => SITE_PAGES.map(page => pagePath(code, page))));
 const fixed = new Set(['/sw.js', '/manifest.webmanifest', '/SECURITY.md']);
 const asset = (path: string) => ['/_astro/', '/vendor/', '/icons/'].some(prefix => path.startsWith(prefix));
 

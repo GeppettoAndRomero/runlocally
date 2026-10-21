@@ -5,9 +5,9 @@ import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { hashesFromHtml, generateHeaders } from '../../scripts/gen-headers.mjs';
 import { LOCALES } from '../../src/i18n/locales';
-import { PUBLIC_PAGES, pagePath } from '../../src/seo/url-model';
+import { SITE_PAGES, pagePath } from '../../src/seo/url-model';
 
-const expectedPages = LOCALES.flatMap(locale => PUBLIC_PAGES.map(page => pagePath(locale.code, page)));
+const expectedPages = LOCALES.flatMap(locale => SITE_PAGES.map(page => pagePath(locale.code, page)));
 
 const shaA = 'a'.repeat(40);
 const shaB = 'b'.repeat(40);

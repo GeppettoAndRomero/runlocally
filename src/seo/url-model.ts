@@ -10,8 +10,8 @@ export type PageRoute<Page extends SitePage = PublicPage> = { locale: Locale; pa
 export const ZIP_PAGES: readonly ZipPage[] = ['top', ...AVAILABLE_OPS.map(op => op.id)];
 export const PUBLIC_PAGES: readonly PublicPage[] = ['hub', ...ZIP_PAGES];
 
-// PUBLIC is indexable; SITE also includes unlisted pages. Keep this registry dormant.
-export const UNLISTED_PAGES: readonly UnlistedPage[] = [];
+// PUBLIC is indexable; SITE also includes unlisted pages. Unlisted pages are generated but excluded from indexing.
+export const UNLISTED_PAGES: readonly UnlistedPage[] = ['image'];
 export const SITE_PAGES: readonly SitePage[] = [...PUBLIC_PAGES, ...UNLISTED_PAGES];
 
 const availableSlugs = new Map<string, string>(AVAILABLE_OPS.map(op => [op.id, ZIP_SLUGS[op.id]]));

@@ -49,7 +49,7 @@ describe('hub routes', () => {
 describe('hub content and metadata', () => {
   it('has only both locale dictionaries with complete matching hub keys', () => {
     expect(Object.keys(hubs).sort()).toEqual(LOCALES.map(locale => locale.code).sort());
-    const keys = ['title', 'description', 'h1', 'lead', 'zipCardTitle', 'zipCardDescription'];
+    const keys = ['title', 'description', 'h1', 'lead', 'zipCardTitle', 'zipCardDescription', 'imageCardTitle', 'imageCardDescription'];
     for (const { code } of LOCALES) {
       const content = hubContent(code);
       expect(Object.keys(content).sort()).toEqual([...keys].sort());
