@@ -175,3 +175,16 @@ Unverified: the exact LLVM (libc++) revision used by Emscripten 3.1.61 for the
 release; static proof of libde265 inclusion (only build defaults and runtime
 decoder enumeration are confirmed); other npm files, including bundle variants.
 The rebuild inputs above are not a claim of a locally reproduced full build.
+
+## Dormant decoder adapter
+
+The internal `src/engine/image/libheif-adapter.ts` statically imports
+`libheif-js/libheif-wasm/libheif.js` and receives the selected WASM through
+`wasmBinary`. Its worker's planned same-origin URL is
+`/vendor/libheif/libheif.wasm`; redirects are rejected and input images are never
+included in that request. Tests supply the installed pinned WASM locally.
+
+No public entry imports the adapter and the URL is not currently served. This
+change does not copy either artifact to public/dist or add precache entries.
+The later distribution work still owns unmodified binary delivery, replacement
+support, attribution and the license/source instructions described above.
