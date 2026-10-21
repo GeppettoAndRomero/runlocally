@@ -22,7 +22,8 @@ describe('libheif distribution', () => {
       expect(readFileSync(join(root, asset))).toEqual(original);
       const duplicates = files(root).filter(path => !path.endsWith('.map') && readFileSync(join(root, path)).equals(original));
       expect(duplicates).toEqual([asset]);
-      expect(files(root).filter(path => /libheif.*\.js$/.test(path))).toEqual([]);
+      expect(files(root).some(path => /heic-worker.*\.js$/.test(path))).toBe(true);
+      expect(files(root).filter(path => /^vendor\/libheif\/.*\.js$/.test(path))).toEqual([]);
       const entries = [...readFileSync(join(root, 'sw.js'), 'utf8').matchAll(/\{url:"vendor\/libheif\/libheif.wasm",revision:"([a-f0-9]+)",integrity:"sha256-([^"]+)"\}/g)];
       expect(entries).toHaveLength(1);
       expect(entries[0][2]).toBe(createHash('sha256').update(original).digest('base64'));

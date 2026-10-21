@@ -43,6 +43,7 @@ export function GlobalDropZone({ locale = ENGLISH_LOCALE, disabled = false }: { 
     let pendingScans = 0;
     let awaitingProcessed = 0;
     let depth = 0;
+    let generation = 0;
     const updateProcessing = () => {
       const busy = pendingScans + awaitingProcessed > 0;
       setProcessing(busy);
@@ -69,10 +70,12 @@ export function GlobalDropZone({ locale = ENGLISH_LOCALE, disabled = false }: { 
       }
       if (entries.length) {
         pendingScans++;
+        const startedIn = generation;
         setCount(flat.length || entries.length);
         updateProcessing();
         expand(entries).then(files => files.length ? files : flat, () => flat).then(result => {
-          if (!active) return;
+          // A scan begun before the page was left must not deliver files after it is restored.
+          if (!active || startedIn !== generation) return;
           pendingScans--;
           if (result.length) dispatch(result); else updateProcessing();
         });
@@ -83,6 +86,11 @@ export function GlobalDropZone({ locale = ENGLISH_LOCALE, disabled = false }: { 
       if (files.length) { event.preventDefault(); dispatch(files); }
     };
     const processed = () => { if (awaitingProcessed) awaitingProcessed--; updateProcessing(); };
+    const leave = () => {
+      generation++; pendingScans = 0; awaitingProcessed = 0; depth = 0;
+      setDragging(false); updateProcessing();
+    };
+    window.addEventListener('pagehide', leave);
     document.body.addEventListener('dragenter', dragEnter);
     document.body.addEventListener('dragleave', dragLeave);
     document.body.addEventListener('dragover', dragOver);
@@ -97,6 +105,7 @@ export function GlobalDropZone({ locale = ENGLISH_LOCALE, disabled = false }: { 
       document.body.removeEventListener('drop', drop);
       document.removeEventListener('paste', paste);
       window.removeEventListener('filesProcessed', processed);
+      window.removeEventListener('pagehide', leave);
     };
   }, [disabled]);
   if (!dragging && !processing) return null;

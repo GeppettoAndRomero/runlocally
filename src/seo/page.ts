@@ -1,6 +1,6 @@
 import { DEFAULT_LOCALE, ENGLISH_LOCALE, LOCALES, type Locale } from '../i18n/locales';
 import type { PageContent } from '../i18n/types';
-import type { ImageSoonContent } from '../i18n/image-soon';
+import type { ImagePageContent } from '../i18n/image-page';
 import type { HubContent } from '../i18n/hub';
 import { pagePath as modelPagePath, publicPageFromPath, zipPageFromPath, isIndexable, type PublicPage, type SitePage, type UrlModel } from './url-model';
 
@@ -64,7 +64,7 @@ export function safeJsonLd(value: object): string {
     .replace(/\u2029/g, '\\u2029');
 }
 
-export function headData(locale: Locale, page: SitePage, content: PageContent | HubContent | ImageSoonContent, model?: UrlModel) {
+export function headData(locale: Locale, page: SitePage, content: PageContent | HubContent | ImagePageContent, model?: UrlModel) {
   const title = content.title;
   const description = content.description;
   checkMetadataLength(locale, page, title, description);
@@ -77,7 +77,7 @@ export function headData(locale: Locale, page: SitePage, content: PageContent | 
     if ('steps' in content) throw new Error('Hub requires hub content');
     application = { ...common, '@type': 'WebSite' };
   } else if (page === 'image') {
-    application = { ...common, '@type': 'WebPage' };
+    application = { ...common, '@type': 'SoftwareApplication', featureList: ['JPG', 'PNG'] };
   } else {
     if (!('steps' in content) || !Array.isArray(content.steps)) throw new Error('ZIP page requires steps');
     application = { ...common, '@type': 'SoftwareApplication',

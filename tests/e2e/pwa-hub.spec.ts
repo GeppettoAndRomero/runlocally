@@ -34,7 +34,7 @@ async function cachePaths(page: Page) {
 async function offlineDocument(page: Page, path: string, reload = false) {
   const response = reload ? await page.reload() : await page.goto(new URL(path, origin).href);
   if (path === '/image/' || path === '/en/image/') {
-    await expect(page.locator('#page-heading')).toHaveText(path === '/image/' ? '画像変換（準備中）' : 'Image conversion (coming soon)');
+    await expect(page.locator('#page-heading')).toHaveText(path === '/image/' ? '画像変換' : 'Image conversion');
   } else await publicReady(page);
   expect(new URL(page.url()).pathname).toBe(path);
   await expect(page.locator('#page-heading')).toBeVisible();

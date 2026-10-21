@@ -1,6 +1,6 @@
 # Workbench UI
 
-The Japanese and English ZIP top (`/zip/` and `/en/zip/`) and available operation pages each mount the same Workbench. The hubs (`/` and `/en/`) have a ZIP card and an image conversion coming-soon card, but no Workbench. The coming-soon pages (`/image/` and `/en/image/`) provide explanatory text, ordinary links and PWA prompts, with no Workbench, ZIP operation navigation or retained work. Workbench owns the session, controller lifecycle, input intake, routing, menu, updates, feedback, results and saves, and dispatches actions to the pure session reducer. Operation components in `src/app/panels/` own panel contents, display calculations and paging state. Workbench renders their tabpanel sections in the available operation order; nonselected panels stay mounted with `hidden`. Pager positions survive operation and language changes and reset when the session generation changes. The controller owns asynchronous listing and jobs, creates and closes one ZIP client or archive handle per request, and ignores notifications after invalidation. The engine performs local parsing and rewriting. `downloadBlob` handles explicit saves. Results are separate Blobs; creating one neither saves it nor replaces the input.
+The Japanese and English ZIP top (`/zip/` and `/en/zip/`) and available operation pages each mount the same Workbench. The hubs (`/` and `/en/`) have a ZIP card and an image conversion coming-soon card, but no Workbench. The image pages (`/image/` and `/en/image/`) mount ImageConverter with explanatory text and ordinary links, without Workbench or ZIP operation navigation. Workbench owns the session, controller lifecycle, input intake, routing, menu, updates, feedback, results and saves, and dispatches actions to the pure session reducer. Operation components in `src/app/panels/` own panel contents, display calculations and paging state. Workbench renders their tabpanel sections in the available operation order; nonselected panels stay mounted with `hidden`. Pager positions survive operation and language changes and reset when the session generation changes. The controller owns asynchronous listing and jobs, creates and closes one ZIP client or archive handle per request, and ignores notifications after invalidation. The engine performs local parsing and rewriting. `downloadBlob` handles explicit saves. Results are separate Blobs; creating one neither saves it nor replaces the input.
 
 ## State and transitions
 
@@ -18,7 +18,7 @@ The results container is always present. Before an operation creates a result, i
 
 The `inputState` text lives in the locale UI dictionaries and is aggregated separately by `src/ui/input-state-copy.ts`. The existing workbench and shared dictionary export keeps its finite key contract.
 
-The URL records only the current public page and locale. On ZIP pages, header operation links, language links, the operation menu, keyboard, entry extraction, repair guidance, and the language select use the same in-page transition. The brand link opens the current language's hub as an ordinary navigation; the hub and coming-soon pages have no ZIP operation navigation. The header marks the current page and language; menu selection marks the current operation. Back and Forward restore the page, locale, and selected operation without rolling back the File, selection, settings, job, or results. Reset clears the session but keeps the current page and locale. Reloading creates a new session. Accepted inputs hide only the page explanation; reset shows the current page explanation again. Header links also have ordinary public URLs for navigation without JavaScript.
+The URL records only the current public page and locale. On ZIP pages, header operation links, language links, the operation menu, keyboard, entry extraction, repair guidance, and the language select use the same in-page transition. The brand link opens the current language's hub as an ordinary navigation; the hub and image pages have no ZIP operation navigation. The header marks the current page and language; menu selection marks the current operation. Back and Forward restore the page, locale, and selected operation without rolling back the File, selection, settings, job, or results. Reset clears the session but keeps the current page and locale. Reloading creates a new session. Accepted inputs hide only the page explanation; reset shows the current page explanation again. Header links also have ordinary public URLs for navigation without JavaScript.
 
 `html[data-zip-top]` exists only on ZIP top. Static HTML and `displayPage()` set it from the same page condition. Operation cards appear only for the current language on ZIP top while the session is closed; their visibility does not depend on the brand link's current-page marker. Workbench continues to manage `data-session`. Reset keeps the current page and language, and the brand link points to the current language's hub.
 
@@ -58,11 +58,10 @@ The creation panel accepts drops only when active, ready for intake, and neither
 
 Register the operation in `src/i18n/ops.ts` with its short public `ZIP_SLUGS` slug and representative engine entry point. Historical slugs live separately in `legacy/slugs.json`; publishing an operation does not revive its old URL. Extend input and output types, route and reducer guards, then controller execution and resource cleanup. Add progress, result fields, and actual counts, then tabs, localized text, keyboard and accessible names. Set `available` only after the screen, guards, text, and verification are ready; an engine API alone does not make an operation publishable. Page and navigation generation should use the derived available list. Test worker transfer and component behavior, and update public documentation.
 
-## Dormant image UI
+## Image UI
 
-`src/app/image/ImageConverter.tsx` is an independent, unmounted image tool. No public
-page imports it. It owns one PWA startup component; page integration must remove
-the coming-soon page's existing startup mount to avoid duplication.
+`src/app/image/ImageConverter.tsx` is mounted with `client:load` on both image pages.
+It owns the image page's only PWA startup component; Base owns startup only on hubs.
 
 Picker, global drop and clipboard paste enter one serial queue. Drop notifications
 are acknowledged immediately after registration, without waiting for conversion.
@@ -75,7 +74,7 @@ byte-identified AVIF decode failure.
 Unlike ZIP's explicit saves, each successful image immediately starts a browser
 download. Names are unique across the mount, including previous numbered names
 and format changes. A thrown download error is logged as failure and processing
-continues. “Saved” records a successful download initiation, not OS confirmation.
+continues. “Download started” records a successful download initiation, not OS confirmation.
 The queue releases each completed input and Blob before the next conversion;
 there is no preview, retained result Blob, or re-save action.
 
@@ -83,9 +82,12 @@ Synchronous queue state protects update safety before rendering. Only unfinished
 work blocks updates; completed logs do not. Update application stops all intake
 and readiness. Page departure clears pending inputs, invalidates late results and
 terminates the client and its workers. Unmount also removes subscriptions and
-input listeners. Returning from the back-forward cache accepts fresh inputs with
-a new client and never replays interrupted work.
+input listeners. Component tests cover fresh input after synthetic page lifecycle events; actual
+BFCache restoration and delayed folder callbacks require the real-browser regression test.
 
-Multiple download permission, OS saves, real worker execution, browser decoding,
-and device memory limits remain unverified for this dormant UI. Public image
-pages retain coming-soon content and noindex.
+The build connects the image pages and retains noindex. Real-page e2e covers
+download signatures, pixels, queue locking, decode paths, offline use and communication.
+The local sandbox could not start the e2e server (EPERM/EMFILE), so those browser
+checks and actual BFCache restoration remain unverified. No delayed-scan fix was
+applied without browser reproduction. Multiple download permission, OS save
+completion and device memory limits still require device verification.

@@ -97,6 +97,22 @@ describe('global file intake', () => {
     await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
     view.unmount(); window.removeEventListener('filesDropped', received);
   });
+  it('drops a folder result whose scan began before the page was left', async () => {
+    const later = new File(['b'], 'later.txt');
+    let finishScan!: (file: File) => void;
+    const entry = { isFile: true, isDirectory: false, fullPath: '/folder/later.txt', file: (ok: (file: File) => void) => { finishScan = ok; } };
+    const received = vi.fn(); window.addEventListener('filesDropped', received);
+    const view = render(<GlobalDropZone />);
+    fireEvent.drop(document.body, { dataTransfer: { files: [], items: [{ webkitGetAsEntry: () => entry }] } });
+    window.dispatchEvent(new Event('pagehide')); window.dispatchEvent(new Event('pageshow'));
+    finishScan(later);
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(received).not.toHaveBeenCalled();
+    const fresh = new File(['c'], 'fresh.txt');
+    fireEvent.drop(document.body, { dataTransfer: { files: [fresh], items: [] } });
+    expect(received).toHaveBeenCalledTimes(1);
+    view.unmount(); window.removeEventListener('filesDropped', received);
+  });
   it('suppresses a folder result after unmount and traversal completion', async () => {
     vi.useFakeTimers();
     try {

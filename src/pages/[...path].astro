@@ -1,12 +1,13 @@
 ---
 import { LOCALES, type Locale } from '../i18n/locales';
-import { imageSoonContent } from '../i18n/image-soon';
+import { imagePageContent } from '../i18n/image-page';
 import { hubContent } from '../i18n/hub';
 import { pageContent } from '../i18n/pages';
 import { pagePath, type SitePage } from '../seo/page';
 import { SITE_PAGES } from '../seo/url-model';
 import Base from '../layouts/Base.astro';
 import Page from '../layouts/Page.astro';
+import { ImageConverter } from '../app/image/ImageConverter';
 import { Workbench } from '../app/Workbench';
 import OperationCards from '../ui/OperationCards.astro';
 import '../styles/content.css';
@@ -21,7 +22,7 @@ export function getStaticPaths() {
 const { locale, page } = Astro.props as { locale: Locale; page: SitePage };
 const zipPage = page === 'hub' || page === 'image' ? undefined : page;
 const zipContent = zipPage ? pageContent(locale, zipPage) : undefined;
-const image = page === 'image' ? imageSoonContent(locale) : undefined;
+const image = page === 'image' ? imagePageContent(locale) : undefined;
 const hub = page === 'hub' ? hubContent(locale) : undefined;
 ---
 {hub ? <Base lang={locale} page="hub" content={hub}>
@@ -45,6 +46,7 @@ const hub = page === 'hub' ? hubContent(locale) : undefined;
     <section id="page-content" class="page-content" aria-label={image.h1}>
       <p class="page-lead">{image.lead}</p>
       <p>{image.body}</p>
+      <ImageConverter locale={locale} client:load />
       <ul>
         <li><a href={pagePath(locale, 'hub')}>{image.hubLink}</a></li>
         <li><a href={pagePath(locale, 'top')}>{image.zipLink}</a></li>

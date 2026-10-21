@@ -84,7 +84,7 @@ See [UI.md](UI.md) for the connected operation screen. Removal and name repair a
 
 ## Dormant image conversion
 
-`src/engine/image/convert.ts` exports `convertImage(input: Blob, format: 'jpg' | 'png', adapters?: ImageAdapters): Promise<ImageResult<Blob>>`. File inputs are accepted as Blobs. The dormant image UI calls this pipeline through a dedicated client; no product page imports that UI. Its dedicated worker is not a production entry or distributed asset; the image pages remain coming-soon pages. The dormant UI owns automatic download initiation and collision-safe naming.
+`src/engine/image/convert.ts` exports `convertImage(input: Blob, format: 'jpg' | 'png', adapters?: ImageAdapters): Promise<ImageResult<Blob>>`. File inputs are accepted as Blobs. Both image pages call this pipeline through ImageConverter and its dedicated client. The image and HEIC workers are distributed and precached. The UI owns automatic download initiation and collision-safe naming; image pages remain noindex.
 
 The converter reads the leading 64 KiB for `sniffImageFormat`, independently of names and MIME types. Only an unrecognized input larger than that prefix requires a complete read. It then calls `createImageBitmap` with `imageOrientation: 'from-image'`. Dimensions are checked after orientation, without another rotation. Even same-format inputs are drawn and re-encoded. JPG uses a white background, `image/jpeg` and quality 0.92; PNG retains alpha. Output must have the requested MIME and nonzero size. Original EXIF, GPS and ICC metadata are not copied; an encoder may generate its own information. Animated inputs produce a static first frame.
 
@@ -94,15 +94,15 @@ The converter reads the leading 64 KiB for `sniffImageFormat`, independently of 
 
 Failures are values: `unsupported-type` for unknown bytes; `decode-failed` for read/decode failures or invalid dimensions; `heic-decoder-unavailable` for native HEIC/HEIF failure without a rescue adapter; `too-large`; `out-of-memory` only for an explicit adapter `ImageMemoryError`; `encode-failed` for canvas, drawing, empty/null output, MIME fallback or encoding failure; and `interrupted`. Arbitrary exceptions are not assumed to indicate memory exhaustion. Only HEIC/HEIF native decode failure can call the optional rescue decoder. The image worker injects the HEIC rescue manager; AVIF never enters that path. Excessive dimensions and interruption do not retry decoding. Native HEIC support and HEIC pixel output require browser/device verification.
 
-`createImageWorkerApi()` is exposed by the thin `image-worker.ts` Comlink entry. `convert({ type: 'convert', requestId, input, format })` returns `{ type: 'result', requestId, result }`; `interrupt({ type: 'interrupt', requestId })` affects only that active ID. IDs are nonnegative safe integers and must increase for the worker's lifetime, so reuse needs no growing history set. There is one active conversion; concurrent requests and invalid/reused IDs receive `interrupted`. Unknown or completed interrupts are harmless. Cancellation is checked around async stages and late success becomes `interrupted`; native operations themselves cannot be forcibly interrupted. The dormant image client reuses one image worker for its serial queue and owns physical termination on departure, including discarded jobs and the lazily created rescue worker. Image failures do not use the ZIP exception transfer handler.
+`createImageWorkerApi()` is exposed by the thin `image-worker.ts` Comlink entry. `convert({ type: 'convert', requestId, input, format })` returns `{ type: 'result', requestId, result }`; `interrupt({ type: 'interrupt', requestId })` affects only that active ID. IDs are nonnegative safe integers and must increase for the worker's lifetime, so reuse needs no growing history set. There is one active conversion; concurrent requests and invalid/reused IDs receive `interrupted`. Unknown or completed interrupts are harmless. Cancellation is checked around async stages and late success becomes `interrupted`; native operations themselves cannot be forcibly interrupted. The image client reuses one image worker for its serial queue and owns physical termination on departure, including discarded jobs and the lazily created rescue worker. Image failures do not use the ZIP exception transfer handler.
 
 `tests/unit/image-convert.test.ts` exercises injected failures, limits, cleanup, cancellation and the DOM-independent worker API. `tests/e2e/image-convert.spec.ts` builds a test-only harness outside dist and serves it temporarily, exercising real module workers and caller-created DOM canvases with the existing synthetic fixtures. It checks orientation, white compositing, alpha, first-frame GIF output and browser-specific AVIF/HEIC decode capability. The harness, server and workers are released after tests; browser results do not establish iOS device limits or peak memory behavior.
 
-## Dormant HEIC rescue decoder
+## HEIC rescue decoder
 
 `heic-client.ts`, `heic-worker.ts` and `libheif-adapter.ts` implement an internal rescue
-adapter. The dormant image worker composes the rescue adapter locally; no public page or product entry imports it. The public image
-pages remain preparation pages; the glue and WASM are absent from distribution and
+adapter. The image worker composes the rescue adapter locally. The product image
+pages connect the worker; bundled glue and separate WASM are included in distribution and
 precache. The existing image converter contract above is unchanged.
 
 `HeicWorkerManager.rescueDecode` implements `ImageAdapters.rescueDecode`. It checks
@@ -112,14 +112,14 @@ When both execution and the queue are empty, proxy/listeners are released and th
 worker is terminated. A later request creates another worker. The injected
 `subscribePagehide` source and explicit `terminate()` interrupt all pending work
 once and permanently stop that manager; late responses are discarded. Actual page
-events are wired by the dormant UI. The client requests manager shutdown and immediately settles pending calls and terminates both physical workers without waiting for acknowledgement. Worker errors during startup return
+events are wired by the image UI. The client requests manager shutdown and immediately settles pending calls and terminates both physical workers without waiting for acknowledgement. Worker errors during startup return
 `heic-decoder-unavailable`; errors during decoding return `decode-failed`.
 
 The image client first selects owned rescue connections with `ownRescue()`. Without that optional setup, existing direct worker callers retain the manager's nested-worker connection. The manager requests a lazy owned rescue connection through a MessagePort. The owning image client creates the rescue worker and relays protocol messages, so it can terminate both workers even if the image worker cannot respond. Adapter functions and decoded-image objects remain inside the image worker.
 
 The adapter statically imports the pinned non-bundle glue. It explicitly fetches
 only same-origin `/vendor/libheif/libheif.wasm`, rejects redirects and failed
-responses, and supplies `wasmBinary`. That URL is **not served yet**. Tests inject
+responses, and supplies `wasmBinary`. That URL is served and mandatorily precached. Unit tests inject
 local WASM bytes. Initialization/availability failures, unsupported types, invalid
 input/results, excessive dimensions, identifiable allocation failures and explicit
 interruption use the existing result codes; arbitrary runtime traps and worker
@@ -148,6 +148,6 @@ native HEIC support; browser worker execution remains separate validation.
 
 ## libheif WASM distribution
 
-The current build serves and precaches only the unchanged WASM at /vendor/libheif/libheif.wasm. The adapter's static glue import and its wasmBinary injection remain internal; neither the decoder worker nor the image UI is connected to a public entry. Image pages remain coming soon and noindex. Earlier dormant-stage descriptions above describe the engine integration, while binary delivery now exists independently.
+The current build connects both image pages to ImageConverter and distributes the image worker and HEIC worker with bundled glue. The separate WASM at /vendor/libheif/libheif.wasm remains mandatorily precached. Both image pages retain noindex. This describes build output; real-page browser checks remain unverified locally because the e2e server could not start.
 
-Astro setup verifies the pinned WASM/glue pair and prepares only WASM for public output through `scripts/vendor-distribution.mjs`. Generated NOTICE records the component sources, build inputs and license texts. `--from` still only verifies pinned bytes without writing; compatible modified-build selection and service-worker hash updates remain pending before image publication. See [distribution records](../vendor/libheif/README.md).
+Astro setup verifies the pinned WASM/glue pair and prepares only WASM for public output through `scripts/vendor-distribution.mjs`. Generated NOTICE records the component sources, build inputs and license texts. `--from` still only verifies pinned bytes without writing; LIBHEIF_WASM_REPLACEMENT selects compatible modified WASM and updates service-worker revision/integrity from the copied bytes. Distributors must supply the corresponding licenses and source. See [distribution records](../vendor/libheif/README.md).

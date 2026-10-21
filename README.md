@@ -26,12 +26,12 @@
 3. PWA としてインストール可能 — ブラウザのインストール導線と DevTools の Application → Manifest で確認できます。
 4. 脆弱性報告経路を維持する — [SECURITY.md](SECURITY.md) と GitHub Private Vulnerability Reporting で確認できます。
 
-正確な文言は [原則](docs/PRINCIPLES.md) を参照してください。Service Worker は初回の事前保存完了後に索引対象14ページ（ハブ2ページと ZIP 12ページ）と準備中2ページ（precache 計16ページ）と操作資産をオフラインで提供します。対応ブラウザではインストール案内が表示されます。実際のオフライン操作とインストールは実機確認が必要です。画面の状態と操作は [UI 文書](docs/UI.md) を参照してください。
+正確な文言は [原則](docs/PRINCIPLES.md) を参照してください。Service Worker は初回の事前保存完了後に索引対象14ページ（ハブ2ページと ZIP 12ページ）とnoindex の画像2ページ（precache 計16ページ）と操作資産をオフラインで提供します。対応ブラウザではインストール案内が表示されます。実際のオフライン操作とインストールは実機確認が必要です。画面の状態と操作は [UI 文書](docs/UI.md) を参照してください。
 
 | ページ | 日本語 | 英語 |
 | --- | --- | --- |
 | ハブ | `/` | `/en/` |
-| 画像変換（準備中・noindex） | `/image/` | `/en/image/` |
+| 画像変換（noindex） | `/image/` | `/en/image/` |
 | ZIP top | `/zip/` | `/en/zip/` |
 | 閲覧 | `/zip/view/` | `/en/zip/view/` |
 | 取り出し | `/zip/extract/` | `/en/zip/extract/` |
@@ -39,7 +39,7 @@
 | 名前修復 | `/zip/fix-names/` | `/en/zip/fix-names/` |
 | 作成 | `/zip/create/` | `/en/zip/create/` |
 
-各ハブには同じ言語の ZIP top と画像変換の準備中ページへ進むカードがあります。Workbench は ZIP ページだけに載ります。ZIP 内の操作・言語切替では現在の File と処理結果を保持しますが、ハブへの通常遷移と再読込では保持しません。旧操作 URL は410を返し、新 URL へ301転送しません。言語とページの追加手順は [I18N 文書](docs/I18N.md) を参照してください。Service Worker・更新・ヘッダ・旧 URL の仕組みは [PWA 文書](docs/PWA.md) を参照してください。公約と自動検証の対応、検証の限界、実ブラウザ確認の手順は [公約の検証](docs/COVENANTS.md) を参照してください。
+各ハブには同じ言語の ZIP top と画像変換ページへ進むカードがあります。Workbench は ZIP ページだけに載ります。画像ページは ImageConverter を載せますが、ハブカードの準備中表示は据え置きます。ZIP 内の操作・言語切替では現在の File と処理結果を保持しますが、ハブへの通常遷移と再読込では保持しません。旧操作 URL は410を返し、新 URL へ301転送しません。言語とページの追加手順は [I18N 文書](docs/I18N.md) を参照してください。Service Worker・更新・ヘッダ・旧 URL の仕組みは [PWA 文書](docs/PWA.md) を参照してください。公約と自動検証の対応、検証の限界、実ブラウザ確認の手順は [公約の検証](docs/COVENANTS.md) を参照してください。
 
 ### 開発
 
@@ -78,12 +78,12 @@ Encrypted ZIP entries cannot be extracted; batch extraction skips them. Removal 
 
 The actual screen, unedited: a ZIP with garbled file names has been added and the name repair candidates are being reviewed.
 
-The four promises are no additional client requests, offline use, PWA installation and a maintained vulnerability reporting path. Check them through DevTools Network, DevTools Offline, the browser install prompt and DevTools Application → Manifest, and [SECURITY.md](SECURITY.md) with Private Vulnerability Reporting, respectively. See the exact wording in [Principles](docs/PRINCIPLES.md). After initial precaching completes, the Service Worker serves the fourteen indexable pages (two hubs and twelve ZIP pages) and two coming-soon pages (sixteen precached pages in total) and operation assets offline. Supported browsers can show an install prompt. Offline operations and installation still need device verification. See [Covenant verification](docs/COVENANTS.md) for the automated checks, their limits, and device verification steps.
+The four promises are no additional client requests, offline use, PWA installation and a maintained vulnerability reporting path. Check them through DevTools Network, DevTools Offline, the browser install prompt and DevTools Application → Manifest, and [SECURITY.md](SECURITY.md) with Private Vulnerability Reporting, respectively. See the exact wording in [Principles](docs/PRINCIPLES.md). After initial precaching completes, the Service Worker serves the fourteen indexable pages (two hubs and twelve ZIP pages) and two noindex image pages (sixteen precached pages in total) and operation assets offline. Supported browsers can show an install prompt. Offline operations and installation still need device verification. See [Covenant verification](docs/COVENANTS.md) for the automated checks, their limits, and device verification steps.
 
 | Page | Japanese | English |
 | --- | --- | --- |
 | Hub | `/` | `/en/` |
-| Image conversion (coming soon, noindex) | `/image/` | `/en/image/` |
+| Image conversion (noindex) | `/image/` | `/en/image/` |
 | ZIP top | `/zip/` | `/en/zip/` |
 | Browse | `/zip/view/` | `/en/zip/view/` |
 | Extract | `/zip/extract/` | `/en/zip/extract/` |
@@ -91,7 +91,7 @@ The four promises are no additional client requests, offline use, PWA installati
 | Fix names | `/zip/fix-names/` | `/en/zip/fix-names/` |
 | Create | `/zip/create/` | `/en/zip/create/` |
 
-Each hub has cards linking to ZIP top and the image conversion coming-soon page in the same language. Only ZIP pages mount the Workbench. Switching operations or languages within ZIP keeps the current File and results; ordinary navigation to a hub and reloading start a new session. Old operation URLs return 410 rather than redirecting to the new URLs with 301. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
+Each hub has cards linking to ZIP top and the image conversion page in the same language. Only ZIP pages mount the Workbench. Image pages mount ImageConverter; the hub card still says coming soon. Switching operations or languages within ZIP keeps the current File and results; ordinary navigation to a hub and reloading start a new session. Old operation URLs return 410 rather than redirecting to the new URLs with 301. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
 
 Development requires Node.js 24 or newer: run `npm ci`, `npm run dev` and `npm run ci`. Self-hosting with Docker is planned for v0.4.0. License: [MIT](LICENSE).
 
@@ -99,6 +99,6 @@ Run unit tests with `npm run test:unit -- --coverage` and component tests with `
 
 ## libheif WASM distribution
 
-ビルド成果物には、無改変の libheif WASM を /vendor/libheif/libheif.wasm に配置し、全利用者の初回 precache に含めます。非圧縮資産量は 1,463,506 bytes（約 1.46 MB）増えます。NOTICE には部品の版・ソース・ライセンス全文を生成し、LICENSE とともに配布成果物へ同梱します。画像変換ページは準備中のままで、glue とデコーダは公開 entry に接続していません。本番への反映を示すものではありません。
+ビルド成果物には、無改変の libheif WASM を /vendor/libheif/libheif.wasm に配置し、全利用者の初回 precache に含めます。非圧縮資産量は 1,463,506 bytes（約 1.46 MB）増えます。NOTICE には部品の版・ソース・ライセンス全文を生成し、LICENSE とともに配布成果物へ同梱します。画像2ページは ImageConverter に接続し、JPG／PNG の個別自動ダウンロードを開始するビルドです。glue はデコーダ worker に bundle され、WASM とともに precache します。noindex とハブカードの準備中表示は維持します。本番への反映を示すものではありません。
 
 `--from` は固定バイトの検証のみです。`LIBHEIF_WASM_REPLACEMENT=./replacement/libheif.wasm npm run build` で互換改変版を無改変で配置し、実バイトから SW の revision/integrity を更新できます。再ビルドごとに変数を指定し、未設定なら固定版に戻ります。差し替えは自己責任で、配布者が改変版のライセンス・対応ソースを提供する責務を負います。NOTICE は固定版の記述のままです。[配布記録](vendor/libheif/README.md)と[取得量・キャッシュの説明](docs/PWA.md#libheif-wasm-distribution)を参照してください。

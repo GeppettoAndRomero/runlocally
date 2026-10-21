@@ -1,3 +1,4 @@
+// Historical coming-soon dictionary; current pages use image-page.ts.
 import { LOCALES, type Locale } from './locales';
 
 export interface ImageSoonContent {
