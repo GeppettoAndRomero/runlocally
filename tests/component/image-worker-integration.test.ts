@@ -51,15 +51,16 @@ it('owns rescue worker termination without waiting for image worker responses', 
   expect(worker.terminate).toHaveBeenCalledTimes(1);
 });
 it('composes rescue in the existing image API and retains convert and interrupt', async () => {
+  vi.stubGlobal('self', { postMessage: vi.fn() });
   await import('../../src/engine/image/image-worker');
   expect(mocks.exposed.convert).toBeTypeOf('function'); expect(mocks.exposed.interrupt).toBeTypeOf('function');
   expect(mocks.options.factory).toBeTypeOf('function');
-  mocks.exposed.terminate(); expect(mocks.managerStop).toHaveBeenCalledTimes(1);
   const bytes = new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112, 104, 101, 105, 99, 0, 0, 0, 0, 104, 101, 105, 99]);
   const input = { size: bytes.length, slice: () => ({ arrayBuffer: async () => bytes.buffer }) };
   vi.stubGlobal('createImageBitmap', vi.fn().mockRejectedValue(new Error('native')));
   mocks.rescue.mockResolvedValue({ ok: false, code: 'heic-decoder-unavailable' });
   const result = await mocks.exposed.convert({ requestId: 0, input, format: 'jpg' });
-  expect(result.result.code).toBe('heic-decoder-unavailable'); expect(mocks.rescue).toHaveBeenCalledWith(input);
+  expect(result.result.code).toBe('heic-decoder-unavailable'); expect(mocks.rescue).toHaveBeenCalledWith(input, expect.any(Function));
+  mocks.exposed.terminate(); expect(mocks.managerStop).toHaveBeenCalledTimes(1);
   vi.unstubAllGlobals();
 });

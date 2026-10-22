@@ -98,6 +98,21 @@ Failures are values: `unsupported-type` for unknown bytes; `decode-failed` for r
 
 `tests/unit/image-convert.test.ts` exercises injected failures, limits, cleanup, cancellation and the DOM-independent worker API. `tests/e2e/image-convert.spec.ts` builds a test-only harness outside dist and serves it temporarily, exercising real module workers and caller-created DOM canvases with the existing synthetic fixtures. It checks orientation, white compositing, alpha, first-frame GIF output and browser-specific AVIF/HEIC decode capability. The harness, server and workers are released after tests; browser results do not establish iOS device limits or peak memory behavior.
 
+Optional `ImageAdapters.onStage` receives the closed `ImageStage` union exported
+from `convert.ts`: `reading`, `decoding`, `heic-decoder-preparing`, `drawing`, and
+`encoding`. Notifications precede byte reading, native decoding, canvas allocation
+(after valid dimensions), and encoding. Unreached stages are never synthesized;
+observer exceptions cannot change results or cleanup. Main-thread adapters receive
+the same callbacks directly without a Worker or DOM dependency in the engine.
+
+`createImageWorkerApi(adapters?, post?)` injects an optional progress transport.
+The worker posts `{ type: 'image-progress', requestId, stage }` separately from
+Comlink results and rescue-port messages. Rejected, inactive, interrupted and
+terminated jobs cannot send progress. `ImageClient.convert(input, format, onStage?)`
+registers callbacks by request ID before submission, validates IDs and stage names,
+and removes callbacks before settling results, including rejection or ID mismatch.
+Termination clears pending registrations and listeners; stale messages are ignored.
+
 ## Image capability probe
 
 `probeImageCapabilities()` probes seven inline synthetic images with parallel
@@ -125,6 +140,13 @@ worker is terminated. A later request creates another worker. The injected
 once and permanently stop that manager; late responses are discarded. Actual page
 events are wired by the image UI. The client requests manager shutdown and immediately settles pending calls and terminates both physical workers without waiting for acknowledgement. Worker errors during startup return
 `heic-decoder-unavailable`; errors during decoding return `decode-failed`.
+
+The rescue adapter accepts an optional second `onStage` argument per job, retaining
+compatibility with single-argument adapters. For eligible rescue work it notifies
+`heic-decoder-preparing` before connection creation and `ready()`, then `decoding`
+after readiness succeeds and before decode. Preparation failure ends there. A
+reused ready connection needs no preparation notification. Invalidation or
+termination suppresses late notifications; observer errors do not affect cleanup.
 
 The image client first selects owned rescue connections with `ownRescue()`. Without that optional setup, existing direct worker callers retain the manager's nested-worker connection. The manager requests a lazy owned rescue connection through a MessagePort. The owning image client creates the rescue worker and relays protocol messages, so it can terminate both workers even if the image worker cannot respond. Adapter functions and decoded-image objects remain inside the image worker.
 

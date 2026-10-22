@@ -71,6 +71,23 @@ bytes, not their extension or MIME hint. Logs contain names, states and error
 codes only; filenames are rendered as text. AVIF guidance appears only for a
 byte-identified AVIF decode failure.
 
+### Conversion progress
+
+The same image island displays a native overall progress bar between the global
+DropZone and the existing live log. The count includes successful and failed
+jobs, rather than successful conversions or completed operating-system saves.
+Additional inputs increase the same batch total. The panel stays visible while
+the final file is active, even with an empty queue, and resets only when the queue
+and active job have drained, or on departure/unmount. Completed logs remain.
+
+The current filename and stage are ordinary text outside all live regions. The
+log retains Waiting, Converting, Download started and Failed. Decorative segments
+show reading, decoding (including HEIC decoder preparation), drawing and encoding;
+they do not estimate a file percentage or remaining time. Preparation and decoding
+share a position so returning from preparation does not move backward. Encoding
+is still an active stage. Reduced motion stops both highlight animation and width
+transitions while stage text and positions continue to update.
+
 The image-only DropArea keeps a large dashed frame alongside the existing
 full-screen overlay. Its file drag state changes both the frame and the visible
 instruction. It only displays drag state: GlobalDropZone receives drops, while

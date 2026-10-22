@@ -11,6 +11,7 @@ import type { ImageErrorCode, ImageOutputFormat } from '../../engine/image/types
 import { createImageClient, type ImageClient } from './client';
 import { CapabilityList } from './CapabilityList';
 import { DropArea } from './DropArea';
+import { ProgressPanel, type ImageProgressProps } from './ProgressPanel';
 import './image-converter.css';
 
 type Log = { id: number; name: string; status: 'waiting' | 'converting' | 'saved' | 'failed'; code?: ImageErrorCode; avif?: boolean };
@@ -21,10 +22,12 @@ export function ImageConverter({ locale, clientFactory = createImageClient, save
   const t = imageToolContent(locale);
   const [format, setFormat] = useState<ImageOutputFormat>('jpg');
   const [logs, setLogs] = useState<Log[]>([]);
+  const [progress, setProgress] = useState<Omit<ImageProgressProps, 'locale'>>({ total: 0, done: 0 });
   const [busy, setBusy] = useState(false);
   const [applying, setApplying] = useState(isUpdateApplying);
   const state = useRef({ queue: [] as Job[], busy: false, hidden: false, mounted: false,
     applying: isUpdateApplying(), generation: 0, nextId: 0, format, client: undefined as ImageClient | undefined,
+    batch: { total: 0, done: 0 }, active: undefined as Job | undefined,
     names: new Set<string>() });
   const safe = () => !state.current.busy && state.current.queue.length === 0;
   const updateLog = (id: number, patch: Partial<Log>) => setLogs(previous => previous.map(log => log.id === id ? { ...log, ...patch } : log));
@@ -38,13 +41,17 @@ export function ImageConverter({ locale, clientFactory = createImageClient, save
   }
   async function process(job: Job, generation: number): Promise<void> {
     const s = state.current;
-    const current = () => s.mounted && !s.hidden && s.generation === generation;
+    s.active = job;
+    setProgress({ ...s.batch });
+    const current = () => s.mounted && !s.hidden && s.generation === generation && s.active === job;
     updateLog(job.id, { status: 'converting' });
     try {
       // A worker failure stops its client for good; later inputs need a fresh one.
       if (s.client?.stopped) s.client = undefined;
       s.client ??= clientFactory();
-      const result = await s.client.convert(job.file, s.format);
+      const result = await s.client.convert(job.file, s.format, stage => {
+        if (current()) setProgress({ ...s.batch, current: { name: job.file.name, stage } });
+      });
       if (!current()) return;
       if (result.ok) {
         const name = uniqueName(job.file.name);
@@ -68,19 +75,26 @@ export function ImageConverter({ locale, clientFactory = createImageClient, save
       }
     } catch {
       if (current()) updateLog(job.id, { status: 'failed', code: 'encode-failed' });
+    } finally {
+      if (current()) {
+        s.batch.done++; s.active = undefined;
+        setProgress({ ...s.batch });
+      }
     }
   }
   async function drain(generation: number): Promise<void> {
     const s = state.current;
     // Each awaited helper releases its input and output before the next job.
     while (s.queue.length && s.generation === generation) await process(s.queue.shift()!, generation);
-    if (s.generation === generation) { s.busy = false; setBusy(false); }
+    if (s.generation === generation) { s.busy = false; s.batch = { total: 0, done: 0 }; setProgress({ ...s.batch }); setBusy(false); }
   }
   function enqueue(files: File[]): void {
     const s = state.current;
     if (!s.mounted || s.hidden || s.applying || isUpdateApplying()) return;
     const jobs = files.map(file => ({ id: s.nextId++, file }));
     s.queue.push(...jobs);
+    s.batch.total += jobs.length;
+    setProgress(previous => ({ ...previous, ...s.batch }));
     setLogs(previous => [...previous, ...jobs.map(({ id, file }) => ({ id, name: file.name, status: 'waiting' as const }))]);
     if (jobs.length && !s.busy) {
       s.busy = true; setBusy(true);
@@ -99,6 +113,7 @@ export function ImageConverter({ locale, clientFactory = createImageClient, save
     };
     const stop = () => {
       s.hidden = true; s.generation++; s.queue.length = 0; s.busy = false;
+      s.active = undefined; s.batch = { total: 0, done: 0 }; setProgress({ ...s.batch });
       s.client?.terminate(); s.client = undefined;
       setBusy(false);
       setLogs(previous => previous.map(log => log.status === 'waiting' || log.status === 'converting'
@@ -132,6 +147,7 @@ export function ImageConverter({ locale, clientFactory = createImageClient, save
     <DropArea locale={locale} disabled={applying}
       onChange={event => { const input = event.currentTarget; enqueue(Array.from(input.files ?? [])); input.value = ''; }} />
     <GlobalDropZone locale={locale} disabled={applying} />
+    <ProgressPanel locale={locale} {...progress} />
     <ul aria-live="polite">{logs.map(log => <li key={log.id}>
       <span>{log.name}</span> — {t.statuses[log.status]}
       {log.code && <span> — {t.errors[log.code]}</span>}

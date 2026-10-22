@@ -1,0 +1,9 @@
+.progress-panel { margin-block: var(--space-4); overflow-wrap: anywhere; }
+.progress-panel progress { width: 100%; accent-color: var(--color-primary); }
+.progress-panel__stages { display: flex; gap: var(--space-2); overflow: hidden; }
+.progress-panel__stages span { position: relative; flex: 1; height: var(--space-2); background: var(--color-border); overflow: hidden; }
+.progress-panel__stages span::before { content: ''; display: block; width: 0; height: 100%; background: var(--color-primary); transition: width var(--dur-fast) var(--ease); }
+.progress-panel__stages .is-reached::before { width: 100%; }
+.progress-panel__stages .is-reached::after { content: ''; position: absolute; inset: 0; background: var(--color-primary-ink); opacity: .25; animation: image-stage-highlight 1.5s linear infinite; }
+@keyframes image-stage-highlight { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .progress-panel__stages span::before, .progress-panel__stages .is-reached::after { animation: none; transition: none; } }
