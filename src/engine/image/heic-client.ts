@@ -1,5 +1,5 @@
 import { wrap, releaseProxy, type Endpoint } from 'comlink';
-import { ImageMemoryError, type DecodedImage, type ImageAdapters } from './convert';
+import { ImageMemoryError, type DecodedImage, type ImageAdapters, type ImageStage } from './convert';
 import { checkImageDimensions } from './limits';
 import { sniffImageFormat } from './sniff';
 import type { ImageErrorCode, ImageResult } from './types';
@@ -53,7 +53,7 @@ async function bitmapImage(value: RgbaImage): Promise<DecodedImage> {
   return { width: bitmap.width, height: bitmap.height,
     paint: context => context.drawImage(bitmap, 0, 0), close: () => bitmap.close() };
 }
-interface Job { input: Blob; finish: (result: ImageResult<DecodedImage>) => void }
+interface Job { input: Blob; onStage?: (stage: ImageStage) => void; finish: (result: ImageResult<DecodedImage>) => void }
 export interface HeicManagerOptions {
   factory?: () => HeicConnection;
   subscribePagehide?: (listener: () => void) => () => void;
@@ -69,10 +69,10 @@ export class HeicWorkerManager {
   private stage: ImageErrorCode = 'heic-decoder-unavailable';
   constructor(private readonly options: HeicManagerOptions = {}) {}
 
-  readonly rescueDecode: NonNullable<ImageAdapters['rescueDecode']> = input => {
+  readonly rescueDecode: NonNullable<ImageAdapters['rescueDecode']> = (input, onStage) => {
     if (this.stopped) return Promise.resolve(failed('interrupted'));
     return new Promise(resolve => {
-      this.queue.push({ input, finish: resolve });
+      this.queue.push({ input, onStage, finish: resolve });
       if (!this.active) void this.drain();
     });
   };
@@ -101,6 +101,11 @@ export class HeicWorkerManager {
     if (!job || this.stopped) return;
     this.active = job;
     this.stage = 'decode-failed';
+    const notify = (stage: ImageStage) => {
+      if (this.active === job && !this.stopped) {
+        try { job.onStage?.(stage); } catch { /* Observers must not affect decoding. */ }
+      }
+    };
     let image: DecodedImage | undefined;
     try {
       this.unsubscribePagehide ??= this.options.subscribePagehide?.(() => this.terminate());
@@ -111,6 +116,8 @@ export class HeicWorkerManager {
       if (format !== 'heic' && format !== 'heif') { job.finish(failed('unsupported-type')); return; }
       if (!this.connection) {
         this.stage = 'heic-decoder-unavailable';
+        notify('heic-decoder-preparing');
+        if (this.active !== job) return;
         this.connection = (this.options.factory ?? createHeicConnection)();
         const connection = this.connection;
         this.unsubscribeFailure = connection.subscribeFailure(() => {
@@ -122,6 +129,8 @@ export class HeicWorkerManager {
         if (!ready.ok) { this.cleanup(); job.finish(ready); return; }
       }
       this.stage = 'decode-failed';
+      notify('decoding');
+      if (this.active !== job) return;
       const result = await this.connection.decode(bytes);
       if (this.active !== job) return;
       if (!result.ok) { job.finish(result); return; }

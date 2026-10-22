@@ -18,10 +18,13 @@ export interface ImageCanvas {
 // Adapters may report memory exhaustion only when their decoder can identify it.
 export class ImageMemoryError extends Error {}
 
+export type ImageStage = 'reading' | 'decoding' | 'heic-decoder-preparing' | 'drawing' | 'encoding';
+
 export interface ImageAdapters {
+  onStage?: (stage: ImageStage) => void;
   decode(input: Blob): Promise<DecodedImage>;
   canvas(width: number, height: number): ImageCanvas;
-  rescueDecode?: (input: Blob) => Promise<ImageResult<DecodedImage>>;
+  rescueDecode?: (input: Blob, onStage?: (stage: ImageStage) => void) => Promise<ImageResult<DecodedImage>>;
   interrupted?: () => boolean;
 }
 
@@ -78,8 +81,14 @@ export async function convertImage(input: Blob, format: ImageOutputFormat,
   let canvas: ImageCanvas | undefined;
   let stage: ImageErrorCode = 'decode-failed';
   const interrupted = () => adapters.interrupted?.() === true;
+  const notify = (stage: ImageStage) => {
+    if (!interrupted()) {
+      try { adapters.onStage?.(stage); } catch { /* Observers must not affect conversion. */ }
+    }
+  };
   try {
     if (interrupted()) return failed('interrupted');
+    notify('reading');
     // Only the leading bytes identify the format; do not read a whole photo into memory for this.
     let bytes = new Uint8Array(await input.slice(0, SNIFF_BYTES).arrayBuffer());
     if (interrupted()) return failed('interrupted');
@@ -92,13 +101,14 @@ export async function convertImage(input: Blob, format: ImageOutputFormat,
     }
     if (detected === 'unknown') return failed('unsupported-type');
     try {
+      notify('decoding');
       image = await adapters.decode(input);
     } catch (error) {
       if (interrupted()) return failed('interrupted');
       if (memoryFailure(error)) return failed('out-of-memory');
       if (detected !== 'heic' && detected !== 'heif') return failed('decode-failed');
       if (!adapters.rescueDecode) return failed('heic-decoder-unavailable');
-      const rescued = await adapters.rescueDecode(input);
+      const rescued = await adapters.rescueDecode(input, notify);
       if (rescued.ok) image = rescued.value;
       if (interrupted()) return failed('interrupted');
       if (!rescued.ok) return rescued;
@@ -108,6 +118,7 @@ export async function convertImage(input: Blob, format: ImageOutputFormat,
     const dimensions = checkImageDimensions(image.width, image.height);
     if (!dimensions.ok) return dimensions;
     stage = 'encode-failed';
+    notify('drawing');
     canvas = adapters.canvas(image.width, image.height);
     if (!canvas.context) return failed('encode-failed');
     const spec = IMAGE_OUTPUT_SPECS[format];
@@ -117,6 +128,7 @@ export async function convertImage(input: Blob, format: ImageOutputFormat,
     }
     image.paint(canvas.context);
     if (interrupted()) return failed('interrupted');
+    notify('encoding');
     const blob = await canvas.encode(spec);
     if (interrupted()) return failed('interrupted');
     return blob && blob.size > 0 && blob.type === spec.mime

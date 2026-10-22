@@ -27,5 +27,5 @@ function rescueConnection(): HeicConnection {
 let ownedRescue = false;
 const manager = new HeicWorkerManager({ factory: () => ownedRescue ? rescueConnection() : createHeicConnection() });
 const api = createImageWorkerApi({ decode: decodeNativeImage,
-  canvas: createOffscreenImageCanvas, rescueDecode: manager.rescueDecode });
-expose({ ...api, ownRescue: () => { ownedRescue = true; }, terminate: () => manager.terminate() });
+  canvas: createOffscreenImageCanvas, rescueDecode: manager.rescueDecode }, message => self.postMessage(message));
+expose({ ...api, ownRescue: () => { ownedRescue = true; }, terminate: () => { api.terminate(); manager.terminate(); } });
