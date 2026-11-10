@@ -31,21 +31,20 @@ for (const { code } of LOCALES) for (const current of ZIP_PAGES) {
     expect([...region!.querySelectorAll(':scope > dl > dt')].map(node => node.textContent)).toEqual(content.faq.map(item => item.question));
     expect([...region!.querySelectorAll(':scope > dl > dd')].map(node => node.textContent)).toEqual(content.faq.map(item => item.answer));
     expect([...region!.querySelectorAll(':scope > ul > li')].map(node => node.textContent)).toEqual(content.limits);
-    expect(document.querySelectorAll('[data-operation-cards]')).toHaveLength(LOCALES.length);
-    for (const locale of LOCALES) {
-      const cards = document.querySelector(`[data-operation-cards][data-lang="${locale.code}"]`);
-      expect(cards?.classList.contains('page-content')).toBe(true);
-      expect(cards?.parentElement).toBe(region?.parentElement);
-      expect(cards?.getAttribute('aria-label')).toBe(chromeUi[locale.code].navigation);
-      const articles = [...cards!.querySelectorAll('article.operation-cards__card')];
-      expect(articles).toHaveLength(AVAILABLE_OPS.length);
-      for (const [index, op] of AVAILABLE_OPS.entries()) {
-        const link = articles[index].querySelector('h2 > a');
-        expect(link?.textContent).toBe(operationLabel(op, ui[locale.code].workbench, menuUi[locale.code]));
-        expect(link?.getAttribute('href')).toBe(pagePath(locale.code, op.id));
-        expect(articles[index].querySelector('p')?.textContent).toBe(pageContent(locale.code, op.id).description);
-        expect(link?.hasAttribute('data-chrome-page')).toBe(false);
-      }
+    // One operation navigation, in the page's own language; a language change rebuilds it in src/app/page-display.ts.
+    expect(document.querySelectorAll('[data-operation-cards]')).toHaveLength(1);
+    const cards = document.querySelector(`[data-operation-cards][data-lang="${code}"]`);
+    expect(cards?.classList.contains('page-content')).toBe(true);
+    expect(cards?.parentElement).toBe(region?.parentElement);
+    expect(cards?.getAttribute('aria-label')).toBe(chromeUi[code].navigation);
+    const articles = [...cards!.querySelectorAll('article.operation-cards__card')];
+    expect(articles).toHaveLength(AVAILABLE_OPS.length);
+    for (const [index, op] of AVAILABLE_OPS.entries()) {
+      const link = articles[index].querySelector('h2 > a');
+      expect(link?.textContent).toBe(operationLabel(op, ui[code].workbench, menuUi[code]));
+      expect(link?.getAttribute('href')).toBe(pagePath(code, op.id));
+      expect(articles[index].querySelector('p')?.textContent).toBe(pageContent(code, op.id).description);
+      expect(link?.hasAttribute('data-chrome-page')).toBe(false);
     }
   });
 }

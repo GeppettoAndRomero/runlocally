@@ -42,6 +42,10 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
   };
   const [updating, setUpdating] = useState(false);
   useEffect(() => subscribeUpdate(state => setUpdating(state.applying)), []);
+  // The served HTML and the first client render carry only the page's own panel, so the two match. Effects do not run
+  // on the server: the remaining panels mount right after hydration and then stay mounted, hidden when not selected.
+  const [otherPanelsMounted, setOtherPanelsMounted] = useState(false);
+  useEffect(() => setOtherPanelsMounted(true), []);
   const sessionRef = useRef(session);
   sessionRef.current = session;
   const pageHiddenRef = useRef(false);
@@ -182,7 +186,7 @@ export function Workbench({ locale, page: initialPage = 'top', op = 'browse' }: 
     {session.listing.status === 'reading' && <Status spinning>{t.busy}</Status>}
     {session.listing.status === 'error' && <div><Alert>{failureText(session.listing.failure, t, 'listing')} {session.source?.kind === 'zip' ? t.listingZip : session.source?.kind === 'rar' || session.source?.kind === '7z' ? t.listingArchive : session.source?.kind === 'tar' || session.source?.kind === 'gzip' ? t.listingTar : t.listingUnknown}</Alert>
       <AppButton variant="secondary" ariaLabel={`${t.retryListing}: ${session.source?.file.name}`} disabled={busy} onClick={() => void controllerRef.current?.retryListing(session)}>{t.retryListing}</AppButton></div>}
-    {operations.map(({ id }) => {
+    {operations.filter(({ id }) => otherPanelsMounted || id === activeOp).map(({ id }) => {
       const Panel = panelRegistry[id];
       return <section key={id} id={`panel-${id}`} role="tabpanel" aria-labelledby={`tab-${id}`} tabIndex={0} hidden={activeOp !== id}>
         <Panel session={session} locale={route.locale} t={t} busy={busy} updating={updating} publish={publish} active={activeOp === id}

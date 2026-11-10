@@ -15,6 +15,26 @@ function setMeta(selector: string, value: string): void {
   document.querySelector<HTMLMetaElement>(selector)?.setAttribute('content', value);
 }
 
+function operationCard(locale: Locale, op: (typeof AVAILABLE_OPS)[number]): HTMLElement {
+  const link = element('a', operationLabel(op, ui[locale].workbench, menuUi[locale]));
+  link.href = pagePath(locale, op.id);
+  const title = document.createElement('h2');
+  title.append(link);
+  const card = document.createElement('article');
+  card.className = 'operation-cards__card';
+  card.append(title, element('p', pageContent(locale, op.id).description));
+  return card;
+}
+
+// The page carries one operation navigation, in the page's language; follow a language change.
+function displayOperationCards(locale: Locale): void {
+  const nav = document.querySelector<HTMLElement>('[data-operation-cards], .operation-cards');
+  if (!nav) return;
+  nav.dataset.lang = locale;
+  nav.setAttribute('aria-label', chromeUi[locale].navigation);
+  nav.querySelector('.operation-cards__grid')?.replaceChildren(...AVAILABLE_OPS.map(op => operationCard(locale, op)));
+}
+
 export function displayPage(locale: Locale, page: ZipPage): void {
   const content = pageContent(locale, page);
   const head = headData(locale, page, content);
@@ -60,6 +80,7 @@ export function displayPage(locale: Locale, page: ZipPage): void {
   });
   const json = document.querySelector<HTMLScriptElement>('script[type="application/ld+json"]');
   if (json) json.textContent = head.jsonLd;
+  displayOperationCards(locale);
   const heading = document.getElementById('page-heading');
   if (heading) heading.textContent = content.h1;
   const region = document.getElementById('page-content');
