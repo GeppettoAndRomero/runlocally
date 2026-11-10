@@ -62,7 +62,7 @@ const hub = page === 'hub' ? hubContent(locale) : undefined;
   <main>
     <div class="page-identity" aria-live="polite"><h1 id="page-heading">{zipContent.h1}</h1></div>
     <Workbench locale={locale} page={zipPage} op={zipPage === 'top' ? 'browse' : zipPage} client:load />
-    <OperationCards />
+    <OperationCards locale={locale} />
     <section id="page-content" class="page-content" aria-label={zipContent.h1}>
       <p class="page-lead">{zipContent.lead}</p>
       <ol>{zipContent.steps.map(step => <li><h2>{step.heading}</h2><p>{step.body}</p></li>)}</ol>

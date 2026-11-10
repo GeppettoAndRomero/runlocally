@@ -7,6 +7,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/pr
 import { LOCALES } from '../../src/i18n/locales';
 import { displayPage } from '../../src/app/page-display';
 import { Workbench } from '../../src/app/Workbench';
+import { operationLabel, AVAILABLE_OPS } from '../../src/i18n/ops';
+import { pageContent } from '../../src/i18n/pages';
+import { chromeUi, menuUi, ui } from '../../src/i18n/ui';
 import { pagePath } from '../../src/seo/page';
 import { ZIP_PAGES } from '../../src/seo/url-model';
 
@@ -17,16 +20,16 @@ const root = document.documentElement;
 const styleText = readFileSync(join(process.cwd(), 'src/styles/content.css'), 'utf8');
 let style: HTMLStyleElement;
 
-function cards() {
-  return LOCALES.map(({ code }) => document.querySelector<HTMLElement>(`.operation-cards[data-lang="${code}"]`)!);
+// The page carries one operation navigation, in the page's own language.
+function nav() {
+  return document.querySelector<HTMLElement>('.operation-cards')!;
 }
 
 function visible(locale: 'ja' | 'en', top: boolean, open = false) {
   expect(root.lang).toBe(locale);
   expect(root.hasAttribute('data-zip-top')).toBe(top);
-  expect(cards().map(card => getComputedStyle(card).display)).toEqual(
-    LOCALES.map(({ code }) => top && !open && code === locale ? 'block' : 'none'),
-  );
+  expect(nav().dataset.lang).toBe(locale);
+  expect(getComputedStyle(nav()).display).toBe(top && !open ? 'block' : 'none');
 }
 
 function chrome() {
@@ -37,8 +40,7 @@ function chrome() {
     <a data-chrome-locale="ja" href="/zip/">日本語</a>
     <a data-chrome-locale="en" href="/en/zip/">English</a>
     <h1 id="page-heading"></h1><section id="page-content"></section>
-    <nav class="operation-cards" data-lang="ja"></nav>
-    <nav class="operation-cards" data-lang="en"></nav>`;
+    <nav class="operation-cards" data-lang="ja"><div class="operation-cards__grid"></div></nav>`;
 }
 
 function click(selector: string) {
@@ -96,6 +98,23 @@ it('updates the root state before content lookup and leaves session state alone'
       expect(root.dataset.session).toBe('open');
       displayPage(code, 'top');
       expect(root.hasAttribute('data-zip-top')).toBe(true);
+    }
+  }
+});
+
+it('rebuilds the operation cards in the language shown', () => {
+  for (const { code } of LOCALES) {
+    displayPage(code, 'top');
+    expect(document.querySelectorAll('.operation-cards')).toHaveLength(1);
+    expect(nav().dataset.lang).toBe(code);
+    expect(nav().getAttribute('aria-label')).toBe(chromeUi[code].navigation);
+    const articles = [...nav().querySelectorAll('article.operation-cards__card')];
+    expect(articles).toHaveLength(AVAILABLE_OPS.length);
+    for (const [index, op] of AVAILABLE_OPS.entries()) {
+      const link = articles[index].querySelector('h2 > a');
+      expect(link?.textContent).toBe(operationLabel(op, ui[code].workbench, menuUi[code]));
+      expect(link?.getAttribute('href')).toBe(pagePath(code, op.id));
+      expect(articles[index].querySelector('p')?.textContent).toBe(pageContent(code, op.id).description);
     }
   }
 });
