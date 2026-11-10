@@ -39,7 +39,7 @@ An update is never applied by itself. When a new build is waiting, the page offe
 
 Once the user applies an update the page refuses new input, and the same checks run again right before the reload, so a change of state in between cannot lose work. If it is no longer safe, the new worker still becomes active but the page keeps running, and asks the user to reload after finishing.
 
-Pending creation selections also defer updates, even before execution. The executed creation input, running creation, and creation result keep updates pending. Clearing the selection or saving `created.zip` leaves the executed input and result in the session; Reset, a new archive input, or a result re-input clears them. The other-tab and coordination checks apply on hub, image and ZIP pages.
+Pending creation selections also defer updates, even before execution. The executed creation input, running creation, and creation result keep updates pending. Clearing the selection or saving `created.zip` leaves the executed input and result in the session; Reset clears them. A new archive input or a result re-input keeps an existing result and the input that made it (a creation still running or failed is dropped); without a result it starts over. The other-tab and coordination checks apply on hub, image and ZIP pages.
 
 ## Headers and CSP
 
