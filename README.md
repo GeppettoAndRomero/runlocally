@@ -39,7 +39,7 @@
 | 名前修復 | `/zip/fix-names/` | `/en/zip/fix-names/` |
 | 作成 | `/zip/create/` | `/en/zip/create/` |
 
-各ハブには同じ言語の ZIP top と画像変換ページへ進むカードがあります。Workbench は ZIP ページだけに載ります。画像ページは ImageConverter を載せ、ハブカードは端末内での JPG／PNG 変換とブラウザによる入力形式の対応差を案内します。サイト共通 PWA の名前は runlocally、起動先は日本語ハブ `/` です。ZIP 内の操作・言語切替では現在の File と処理結果を保持しますが、ハブへの通常遷移と再読込では保持しません。旧操作 URL は410を返し、新 URL へ301転送しません。言語とページの追加手順は [I18N 文書](docs/I18N.md) を参照してください。Service Worker・更新・ヘッダ・旧 URL の仕組みは [PWA 文書](docs/PWA.md) を参照してください。公約と自動検証の対応、検証の限界、実ブラウザ確認の手順は [公約の検証](docs/COVENANTS.md) を参照してください。
+各ハブには同じ言語の ZIP top と画像変換ページへ進むカードがあります。Workbench は ZIP ページだけに載ります。画像ページは ImageConverter を載せ、ハブカードは端末内での JPG／PNG 変換とブラウザによる入力形式の対応差を案内します。サイト共通 PWA の名前は runlocally、起動先は日本語ハブ `/` です。ZIP 内の操作・言語切替では現在の File と処理結果を保持しますが、ハブへの通常遷移と再読込では保持しません。旧操作 URL は410を返します。ただし後継の公開ページがある旧ページの文書パス（旧 `/zip-viewer/` など5機能）は、同じ言語の新ページへ301転送します。言語とページの追加手順は [I18N 文書](docs/I18N.md) を参照してください。Service Worker・更新・ヘッダ・旧 URL の仕組みは [PWA 文書](docs/PWA.md) を参照してください。公約と自動検証の対応、検証の限界、実ブラウザ確認の手順は [公約の検証](docs/COVENANTS.md) を参照してください。
 
 ### 開発
 
@@ -91,7 +91,7 @@ The four promises are no additional client requests, offline use, PWA installati
 | Fix names | `/zip/fix-names/` | `/en/zip/fix-names/` |
 | Create | `/zip/create/` | `/en/zip/create/` |
 
-Each hub has cards linking to ZIP top and the image conversion page in the same language. Only ZIP pages mount the Workbench. Image pages mount ImageConverter; the hub card describes on-device JPG/PNG conversion and browser-dependent input support. The shared site PWA is named runlocally and launches the Japanese hub at `/`. Switching operations or languages within ZIP keeps the current File and results; ordinary navigation to a hub and reloading start a new session. Old operation URLs return 410 rather than redirecting to the new URLs with 301. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
+Each hub has cards linking to ZIP top and the image conversion page in the same language. Only ZIP pages mount the Workbench. Image pages mount ImageConverter; the hub card describes on-device JPG/PNG conversion and browser-dependent input support. The shared site PWA is named runlocally and launches the Japanese hub at `/`. Switching operations or languages within ZIP keeps the current File and results; ordinary navigation to a hub and reloading start a new session. Old operation URLs return 410, except the document paths of old pages that have a published successor (for example `/zip-viewer/`), which move with a 301 to the page of the same language. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
 
 Development requires Node.js 24 or newer: run `npm ci`, `npm run dev` and `npm run ci`. Self-hosting with Docker is planned for v0.4.0. License: [MIT](LICENSE).
 

@@ -78,6 +78,16 @@ function withHostHeader(response, hostname) {
   });
 }
 
+// Old pages whose function now lives on a published page in the same language move there with a 301. Only these document
+// paths move (the old root was English, /ja/ Japanese; with and without the trailing slash). /en/<slug>/, the other old
+// languages, worker scripts, assets and child paths stay gone. See docs/PWA.md, "Old URLs".
+const LEGACY_DOCUMENT_REDIRECTS = new Map(Object.entries({
+  'zip-viewer': 'view', unzip: 'extract', 'remove-from-zip': 'remove', 'zip-filename-fix': 'fix-names', 'create-zip': 'create',
+}).flatMap(([slug, operation]) => [
+  [`/${slug}/`, `/en/zip/${operation}/`], [`/${slug}`, `/en/zip/${operation}/`],
+  [`/${slug}/ja/`, `/zip/${operation}/`], [`/${slug}/ja`, `/zip/${operation}/`],
+]));
+
 // The sitemap once lived at /sitemap.xml; search engines that still request it reach the current index.
 const SITEMAP_REDIRECTS = new Map([['/sitemap.xml', '/sitemap-index.xml']]);
 
@@ -101,7 +111,11 @@ export async function onRequest(context) {
   const slug = parts[0];
   let response;
 
-  if (LEGACY_SLUG_SET.has(slug) || (slug === 'en' && LEGACY_SLUG_SET.has(parts[1]))) {
+  const documentTarget = ['GET', 'HEAD'].includes(context.request.method) ? LEGACY_DOCUMENT_REDIRECTS.get(url.pathname) : undefined;
+
+  if (documentTarget) {
+    response = movedTo(url, documentTarget);
+  } else if (LEGACY_SLUG_SET.has(slug) || (slug === 'en' && LEGACY_SLUG_SET.has(parts[1]))) {
     response = gone();
   } else if (GONE_ROOTS.has(slug)) {
     response = gone();
