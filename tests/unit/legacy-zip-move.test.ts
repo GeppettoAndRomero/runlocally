@@ -10,6 +10,10 @@ import { onRequest } from '../../functions/_middleware.js';
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const tempDirs: string[] = [];
 const oldZip = ['zip-viewer', 'unzip', 'remove-from-zip', 'zip-filename-fix'];
+// Old pages whose function now lives on a published page of the same language; only their document paths move.
+const moved: Record<string, string> = {
+  'zip-viewer': 'view', unzip: 'extract', 'remove-from-zip': 'remove', 'zip-filename-fix': 'fix-names', 'create-zip': 'create',
+};
 const publicPaths = [
   '/', '/en/', '/zip/', '/zip/view/', '/zip/extract/', '/zip/remove/',
   '/zip/fix-names/', '/zip/create/', '/en/zip/', '/en/zip/view/', '/en/zip/extract/',
@@ -30,6 +34,15 @@ async function expectGone(path: string, method: string) {
   expect(response.status, `${method} ${path}`).toBe(410);
   expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
   expect(response.headers.has('Location')).toBe(false);
+  expect(await response.text()).toBe('');
+  expect(calls).toBe(0);
+}
+
+async function expectMoved(path: string, method: string, target: string) {
+  const { response, calls } = await visit(path, method);
+  expect(response.status, `${method} ${path}`).toBe(301);
+  expect(response.headers.get('Location'), `${method} ${path}`).toBe(`https://runlocally.app${target}`);
+  expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
   expect(await response.text()).toBe('');
   expect(calls).toBe(0);
 }
@@ -63,7 +76,8 @@ describe('old URL retirement', () => {
     expect(slugs).not.toContain('zip');
   });
 
-  it.each(slugs)('returns 410 for every form of %s', async slug => {
+  it.each(slugs)('answers every form of %s: document paths move when a successor exists, the rest is 410', async slug => {
+    const operation = moved[slug];
     for (const method of ['GET', 'HEAD']) {
       for (const path of [
         `/${slug}/`, `/${slug}`, `/${slug}/?from=old`,
@@ -71,8 +85,18 @@ describe('old URL retirement', () => {
         `/${slug}/ja/`, `/${slug}/zh/`, `/${slug}/sw.js`,
         `/${slug}/asset.js?version=1`, `/en/${slug}/ja/`,
         `/en/${slug}/sw.js`, `/en/${slug}/asset.js?version=1`,
-      ]) await expectGone(path, method);
+      ]) {
+        const english = [`/${slug}/`, `/${slug}`, `/${slug}/?from=old`].includes(path);
+        const japanese = path === `/${slug}/ja/`;
+        if (operation && english) await expectMoved(path, method, `/en/zip/${operation}/`);
+        else if (operation && japanese) await expectMoved(path, method, `/zip/${operation}/`);
+        else await expectGone(path, method);
+      }
     }
+  });
+
+  it.each(Object.keys(moved))('keeps other methods on the moved page %s gone', async slug => {
+    for (const method of ['POST', 'PUT', 'DELETE']) await expectGone(`/${slug}/`, method);
   });
 
   it.each(publicPaths)('passes the public route %s to the next handler once', async path => {

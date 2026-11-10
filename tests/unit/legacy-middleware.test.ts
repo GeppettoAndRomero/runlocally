@@ -14,6 +14,11 @@ async function visit(path: string, host = 'runlocally.app', method = 'GET', upst
   return { response, calls };
 }
 
+// Old pages whose function now lives on a published page of the same language: the document paths move, the rest stay gone.
+const moved: Record<string, string> = {
+  'zip-viewer': 'view', unzip: 'extract', 'remove-from-zip': 'remove', 'zip-filename-fix': 'fix-names', 'create-zip': 'create',
+};
+
 describe('legacy routes', () => {
   it('uses the complete historical list', () => {
     expect(slugs).toHaveLength(61);
@@ -21,9 +26,10 @@ describe('legacy routes', () => {
     expect(slugs).toEqual(expect.arrayContaining(['zip-viewer', 'unzip', 'remove-from-zip', 'zip-filename-fix']));
   });
 
-  it.each(slugs)('keeps historical slug %s gone', async slug => {
+  it.each(slugs)('answers the historical slug %s', async slug => {
     const { response, calls } = await visit(`/${slug}/`);
-    expect([response.status, response.headers.get('Location'), calls]).toEqual([410, null, 0]);
+    const target = moved[slug] ? `https://runlocally.app/en/zip/${moved[slug]}/` : null;
+    expect([response.status, response.headers.get('Location'), calls]).toEqual([target ? 301 : 410, target, 0]);
   });
 
   it.each(slugs)('never redirects the old %s service worker', async slug => {
@@ -37,8 +43,8 @@ describe('legacy routes', () => {
 
   it('matches segment boundaries and old roots', async () => {
     for (const [path, status, location] of [
-      ['/zip-viewer', 410, null],
-      ['/zip-viewer/ja', 410, null],
+      ['/zip-viewer', 301, 'https://runlocally.app/en/zip/view/'],
+      ['/zip-viewer/ja', 301, 'https://runlocally.app/zip/view/'],
       ['/zip-viewer/other.js', 410, null],
       ['/recover-zip', 410, null],
       ['/format-json', 410, null],
