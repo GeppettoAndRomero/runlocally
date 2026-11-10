@@ -65,6 +65,14 @@ function defaultInputs(): OpInputs {
 
 function initialCreate(): CreateState { return { input: [], run: { status: 'idle' } }; }
 
+// A new archive input keeps an existing created.zip and the input that made it, as the other operations' results stay
+// across inputs. A creation still running, or one that failed, is dropped; its late notifications are rejected by the
+// generation check. Without a result there is nothing to keep, so the state starts over.
+function createAfterNewInput(create: CreateState): CreateState {
+  if (!create.result) return initialCreate();
+  return { input: create.result.sourceFiles, run: create.run.status === 'succeeded' ? create.run : { status: 'idle' }, result: create.result };
+}
+
 export function initialSession(generation = 0, op: Session['op'] = 'browse'): Session {
   return { generation, create: initialCreate(), source: null, listing: { status: 'idle' }, entries: [], archiveEntries: [],
     selection: new Set(), op, inputs: defaultInputs(), job: { status: 'idle' },
@@ -74,7 +82,7 @@ export function initialSession(generation = 0, op: Session['op'] = 'browse'): Se
 function withSource(state: Session, file: File, kind: ArchiveKind, chain: readonly string[]): Session {
   const failure = inputSizeFailure(file.size);
   if (failure) return { ...state, inputFailure: failure };
-  return { ...state, generation: state.generation + 1, create: initialCreate(), source: { file, kind, chain },
+  return { ...state, generation: state.generation + 1, create: createAfterNewInput(state.create), source: { file, kind, chain },
     listing: { status: 'idle' }, entries: [], archiveEntries: [], selection: new Set(), job: { status: 'idle' },
     inputs: { ...state.inputs, extract: { mode: 'all' } },
     op: kind === 'zip' || (state.op !== 'create' && archiveAvailable(state.op)) ? state.op : 'browse',
