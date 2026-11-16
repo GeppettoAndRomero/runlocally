@@ -56,6 +56,8 @@ npm run ci
 
 セルフホスト用 Docker は v0.4.0 で提供予定です。
 
+sitemap の更新日は生成物 `src/seo/lastmod.json` で管理します。公開本文・見出し・リンク・SEO／構造化データを変更したら `npm run lastmod:update` を実行し、JSON の差分もコミットします。その後 `npm run ci` で再ビルドして日付とハッシュを検査します。変更ページだけ更新実行日の UTC 日付になり、同じ内容の再実行では日付を保ちます。未知の URL は日付なしです。詳しくは [lastmod の運用](docs/I18N.md#sitemap-の-lastmod) を参照してください。
+
 ライセンス: [MIT](LICENSE)。
 
 Colophon: Some code was written with AI assistance; all review and decisions are the maintainer's.
@@ -96,6 +98,8 @@ The four promises are no additional client requests, offline use, PWA installati
 Every footer links to [About this site](/en/about/) in the same language, covering the tools, anonymous operation, AI assistance and steps to check communication and offline use. Each hub has cards linking to ZIP top and the image conversion page in the same language. Only ZIP pages mount the Workbench. Image pages mount ImageConverter; the hub card describes on-device JPG/PNG conversion and browser-dependent input support. The shared site PWA is named runlocally and launches the Japanese hub at `/`. Switching operations or languages within ZIP keeps the current File and results; ordinary navigation to a hub and reloading start a new session. Old operation URLs return 410, except the document paths of old pages that have a published successor (for example `/zip-viewer/`), which move with a 301 to the page of the same language. See [UI behavior](docs/UI.md) for state and [I18N](docs/I18N.md) for adding languages and pages. How the service worker, updates, headers and old URLs work is described in [PWA](docs/PWA.md).
 
 Development requires Node.js 24 or newer: run `npm ci`, `npm run dev` and `npm run ci`. Self-hosting with Docker is planned for v0.4.0. License: [MIT](LICENSE).
+
+After changing public content, headings, links, SEO or structured data, run `npm run lastmod:update` and commit the generated `src/seo/lastmod.json` alongside the change. Then run `npm run ci` to rebuild the sitemap and verify hashes. Only changed pages receive the update command's UTC date; unchanged content keeps its date. Unknown URLs omit lastmod. See [lastmod operations](docs/I18N.md#sitemap-の-lastmod).
 
 Run unit tests with `npm run test:unit -- --coverage` and component tests with `npm run test:component`. Vitest runs unit tests in Node and component tests in jsdom; CI collects both. See the [component contract](src/ui/README.md). Engine coverage thresholds are 80% for lines, functions and statements, and 75% for branches. `npm run check:engine-dom` checks for DOM references in the engine. See the [engine API](docs/ENGINE.md) for signatures and cleanup responsibilities. The notice generator identifies browser-delivered code from analysis-build sourcemaps and statically copied assets. Regenerate [NOTICE](NOTICE.md) with `npm run notice:generate` and verify it with `npm run notice:check`. These checks and `npm run check:egress` are part of `npm run ci`. Build first, then run `npm run test:e2e` as a separate step. Local e2e uses Wrangler Pages.
 

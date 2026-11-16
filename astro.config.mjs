@@ -6,6 +6,10 @@ import sitemap from '@astrojs/sitemap';
 import pwa from '@vite-pwa/astro';
 import { transformPrecache } from './scripts/pwa-manifest.mjs';
 import { buildMetaIntegration } from './scripts/build-meta.mjs';
+import lastmodRegistry from './src/seo/lastmod.json';
+import { sitemapLastmod, validateRegistry } from './scripts/lastmod.mjs';
+
+validateRegistry(lastmodRegistry);
 
 const pwaOptions = {
   outDir: 'dist',
@@ -34,7 +38,7 @@ export const sitemapOptions = {
   serialize(item) {
     const route = publicPageFromUrl(item.url);
     if (!route) throw new Error(`Unexpected sitemap URL: ${item.url}`);
-    return { ...item, links: alternates(route.page).map(({ hreflang, href }) => ({ lang: hreflang, url: href })) };
+    return { ...item, lastmod: sitemapLastmod(lastmodRegistry, item.url), links: alternates(route.page).map(({ hreflang, href }) => ({ lang: hreflang, url: href })) };
   },
 };
 
