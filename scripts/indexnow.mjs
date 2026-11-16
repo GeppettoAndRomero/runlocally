@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { JSDOM } from 'jsdom';
 import { checkDocument } from './check-deployed-build.mjs';
 
-export const KEY = 'b36a6fff0b8102f1103839f0f4854476'; // Public ownership proof, not a secret.
+export const KEY = 'rrB2U7oJB3pr4AKnDdtSGuMesjkNiLYdDDUYTZVw'; // Public ownership proof, not a secret.
 const ORIGIN = 'https://runlocally.app';
 export const KEY_LOCATION = `${ORIGIN}/${KEY}.txt`;
 const SHA = /^[a-f\d]{40}$/;
