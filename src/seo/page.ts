@@ -1,6 +1,7 @@
 import { DEFAULT_LOCALE, ENGLISH_LOCALE, LOCALES, type Locale } from '../i18n/locales';
 import type { PageContent } from '../i18n/types';
 import type { ImagePageContent } from '../i18n/image-page';
+import type { AboutContent } from '../i18n/about';
 import type { HubContent } from '../i18n/hub';
 import { pagePath as modelPagePath, publicPageFromPath, zipPageFromPath, isIndexable, type PublicPage, type SitePage, type UrlModel } from './url-model';
 
@@ -71,19 +72,22 @@ const freeApplication = {
   operatingSystem: 'Web browser',
 } as const;
 
-export function headData(locale: Locale, page: SitePage, content: PageContent | HubContent | ImagePageContent, model?: UrlModel) {
+export function headData(locale: Locale, page: SitePage, content: PageContent | HubContent | ImagePageContent | AboutContent, model?: UrlModel) {
   const title = content.title;
   const description = content.description;
   checkMetadataLength(locale, page, title, description);
   const url = pageUrl(locale, page, model);
   const localeInfo = LOCALES.find(entry => entry.code === locale)!;
   const common = { '@context': 'https://schema.org', name: content.h1, description, url, inLanguage: localeInfo.hreflang };
-  let application: typeof common & { '@type': 'WebSite'; alternateName: string; featureList?: never } |
+  let application: typeof common & { '@type': 'WebPage'; featureList?: never; alternateName?: never } |
+    typeof common & { '@type': 'WebSite'; alternateName: string; featureList?: never } |
     typeof common & typeof freeApplication & { '@type': 'SoftwareApplication'; featureList: string[]; alternateName?: never };
   if (page === 'hub') {
     if ('steps' in content) throw new Error('Hub requires hub content');
     // The WebSite node names the site itself; the heading describes what it offers.
     application = { ...common, '@type': 'WebSite', name: SITE_NAME, alternateName: content.h1 };
+  } else if (page === 'about') {
+    application = { ...common, '@type': 'WebPage' };
   } else if (page === 'image') {
     application = { ...common, ...freeApplication, '@type': 'SoftwareApplication', featureList: ['JPG', 'PNG'] };
   } else {

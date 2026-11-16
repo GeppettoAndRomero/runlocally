@@ -13,6 +13,7 @@ import {
 
 const expectedRoutes = [
   { locale: 'ja', page: 'hub', path: '/' },
+  { locale: 'ja', page: 'about', path: '/about/' },
   { locale: 'ja', page: 'top', path: '/zip/' },
   { locale: 'ja', page: 'browse', path: '/zip/view/' },
   { locale: 'ja', page: 'extract', path: '/zip/extract/' },
@@ -20,6 +21,7 @@ const expectedRoutes = [
   { locale: 'ja', page: 'fix-names', path: '/zip/fix-names/' },
   { locale: 'ja', page: 'create', path: '/zip/create/' },
   { locale: 'en', page: 'hub', path: '/en/' },
+  { locale: 'en', page: 'about', path: '/en/about/' },
   { locale: 'en', page: 'top', path: '/en/zip/' },
   { locale: 'en', page: 'browse', path: '/en/zip/view/' },
   { locale: 'en', page: 'extract', path: '/en/zip/extract/' },
@@ -50,14 +52,14 @@ const legacyRoutes = [
 describe('planned URL model', () => {
   it('derives page sets from the available operation registry', () => {
     expect(ZIP_PAGES).toEqual(['top', ...AVAILABLE_OPS.map(op => op.id)]);
-    expect(PUBLIC_PAGES).toEqual(['hub', ...ZIP_PAGES]);
+    expect(PUBLIC_PAGES).toEqual(['hub', 'about', ...ZIP_PAGES]);
     expect(ZIP_PAGES).toHaveLength(6);
-    expect(PUBLIC_PAGES).toHaveLength(7);
+    expect(PUBLIC_PAGES).toHaveLength(8);
     expect(new Set(ZIP_PAGES).size).toBe(6);
-    expect(new Set(PUBLIC_PAGES).size).toBe(7);
+    expect(new Set(PUBLIC_PAGES).size).toBe(8);
   });
 
-  it('uses the fourteen specified URLs independently of the parser', () => {
+  it('uses the sixteen specified URLs independently of the parser', () => {
     for (const { locale, page, path } of expectedRoutes) {
       expect(pagePath(locale, page)).toBe(path);
     }
@@ -67,13 +69,13 @@ describe('planned URL model', () => {
     const paths = LOCALES.flatMap(({ code }) => PUBLIC_PAGES.map(page => {
       const path = pagePath(code, page);
       expect(publicPageFromPath(path)).toEqual({ locale: code, page });
-      expect(zipPageFromPath(path)).toEqual(page === 'hub' ? undefined : { locale: code, page });
+      expect(zipPageFromPath(path)).toEqual(page === 'hub' || page === 'about' ? undefined : { locale: code, page });
       return path;
     }));
-    expect(paths).toHaveLength(14);
-    expect(new Set(paths).size).toBe(14);
+    expect(paths).toHaveLength(16);
+    expect(new Set(paths).size).toBe(16);
     expect(paths.filter(path => zipPageFromPath(path))).toHaveLength(12);
-    expect(paths.filter(path => !zipPageFromPath(path))).toEqual(['/', '/en/']);
+    expect(paths.filter(path => !zipPageFromPath(path))).toEqual(['/', '/about/', '/en/', '/en/about/']);
   });
 
   it('has one distinct planned slug for each of the eleven registered operations', () => {
@@ -126,13 +128,13 @@ describe('connected ZIP routes', () => {
     ]);
   });
 
-  it('uses the fourteen public URLs and round trips', () => {
-    const pages: CurrentPage[] = ['hub', 'top', ...AVAILABLE_OPS.map(op => op.id)];
+  it('uses the sixteen public URLs and round trips', () => {
+    const pages: CurrentPage[] = ['hub', 'about', 'top', ...AVAILABLE_OPS.map(op => op.id)];
     expect(expectedRoutes).toHaveLength(LOCALES.length * pages.length);
     for (const { locale, page, path } of expectedRoutes) {
       expect(currentPagePath(locale, page)).toBe(path);
       expect(currentPageFromPath(path)).toEqual({ locale, page });
-      expect(currentZipPageFromPath(path)).toEqual(page === 'hub' ? undefined : { locale, page });
+      expect(currentZipPageFromPath(path)).toEqual(page === 'hub' || page === 'about' ? undefined : { locale, page });
     }
     for (const { code } of LOCALES) for (const page of pages) {
       expect(currentPageFromPath(currentPagePath(code, page))).toEqual({ locale: code, page });
@@ -140,7 +142,7 @@ describe('connected ZIP routes', () => {
   });
 
   it('accepts hubs only in the public parser and rejects legacy operations', () => {
-    for (const { path } of expectedRoutes.filter(route => route.page === 'hub')) {
+    for (const { path } of expectedRoutes.filter(route => route.page === 'hub' || route.page === 'about')) {
       expect(currentPageFromPath(path)).toEqual(publicPageFromPath(path));
       expect(currentZipPageFromPath(path)).toBeUndefined();
     }

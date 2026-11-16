@@ -7,6 +7,7 @@ import { DEFAULT_LOCALE, ENGLISH_LOCALE, LOCALES, type Locale } from '../i18n/lo
 import { operationLabel, AVAILABLE_OPS } from '../i18n/ops';
 import type { PageContent } from '../i18n/types';
 import type { ImagePageContent } from '../i18n/image-page';
+import { aboutContent, type AboutContent } from '../i18n/about';
 import type { HubContent } from '../i18n/hub';
 import { alternates, checkMetadataLength, headData, ogLocale, pagePath, pageUrl, type SitePage } from '../seo/page';
 import { chromeUi, menuUi, ui } from '../i18n/ui';
@@ -18,7 +19,7 @@ interface Props {
   title?: string;
   description?: string;
   page?: SitePage;
-  content?: PageContent | HubContent | ImagePageContent;
+  content?: PageContent | HubContent | ImagePageContent | AboutContent;
 }
 
 const { lang, page = 'top', content } = Astro.props;
@@ -63,7 +64,7 @@ const og = metadata?.og ?? {
     <header class="site-header">
       <div class="site-header__inner">
         <a class="site-header__brand" data-chrome-home href={pagePath(lang, 'hub')} aria-label={chromeUi[lang].home} aria-current={page === 'hub' ? 'page' : undefined}>runlocally</a>
-        {page !== 'hub' && page !== 'image' && <nav class="site-nav" aria-label={chromeUi[lang].navigation} data-chrome-nav>
+        {page !== 'hub' && page !== 'about' && page !== 'image' && <nav class="site-nav" aria-label={chromeUi[lang].navigation} data-chrome-nav>
           {AVAILABLE_OPS.map(op => <a data-chrome-page={op.id} href={pagePath(lang, op.id)} aria-current={page === op.id ? 'page' : undefined}>{operationLabel(op, ui[lang].workbench, menuUi[lang])}</a>)}
         </nav>}
         <nav class="site-languages" aria-label={chromeUi[lang].languages} data-chrome-languages>
@@ -72,17 +73,19 @@ const og = metadata?.og ?? {
       </div>
     </header>
     <slot />
-    {page === 'hub' && <PwaStartup locale={lang} client:load />}
+    {(page === 'hub' || page === 'about') && <PwaStartup locale={lang} client:load />}
     <footer class="site-footer">
       <p lang={ENGLISH_LOCALE} data-trust-colophon>Some code was written with AI assistance; all review and decisions are the maintainer's.</p>
       <div data-trust-locale={DEFAULT_LOCALE} lang={DEFAULT_LOCALE}>
         <div>無料で使えるブラウザアプリです。</div>
         <div>コードの一部は AI の支援で書かれています。レビューと判断はすべて運営者が行っています。</div>
+        <div><a data-trust-link="about" href={pagePath(DEFAULT_LOCALE, 'about')}>{aboutContent(DEFAULT_LOCALE).footerLink}</a></div>
         <div><a data-trust-link="source" href={repository}>ソースコード（GitHub）</a> · <a data-trust-link="issues" href={`${repository}/issues`}>不具合・ご意見（GitHub Issues）</a></div>
         <div>脆弱性の報告は、下のセキュリティ窓口をご利用ください。</div>
       </div>
       <div data-trust-locale={ENGLISH_LOCALE} lang={ENGLISH_LOCALE}>
         <div>A free app that runs in your browser.</div>
+        <div><a data-trust-link="about" href={pagePath(ENGLISH_LOCALE, 'about')}>{aboutContent(ENGLISH_LOCALE).footerLink}</a></div>
         <div><a data-trust-link="source" href={repository}>Source code (GitHub)</a> · <a data-trust-link="issues" href={`${repository}/issues`}>Bugs and feedback (GitHub Issues)</a></div>
         <div>To report a vulnerability, use the Security link below.</div>
       </div>

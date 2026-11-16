@@ -35,8 +35,8 @@ describe('built sitemap', () => {
         return new URL(`/${route}`, SITE_ORIGIN).href;
       });
       const expected = LOCALES.flatMap(({ code }) => PUBLIC_PAGES.map(page => pageUrl(code, page)));
-      expect(expected).toHaveLength(14);
-      expect(generatedPages).toHaveLength(17);
+      expect(expected).toHaveLength(16);
+      expect(generatedPages).toHaveLength(19);
       expect(generatedPages.sort()).toEqual([
         ...LOCALES.flatMap(({ code }) => SITE_PAGES.map(page => pageUrl(code, page))),
         `${SITE_ORIGIN}/${NOT_FOUND_FILE}`,

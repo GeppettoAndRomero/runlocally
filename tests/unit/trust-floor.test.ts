@@ -5,6 +5,7 @@ import { JSDOM } from 'jsdom';
 import { describe, expect, it } from 'vitest';
 import { repository } from '../../package.json';
 import { allowedUrl } from '../../scripts/check-egress.mjs';
+import { aboutContent } from '../../src/i18n/about';
 import { hubContent } from '../../src/i18n/hub';
 import { imagePageContent } from '../../src/i18n/image-page';
 import { LOCALES } from '../../src/i18n/locales';
@@ -31,13 +32,15 @@ const text = {
 
 describe('trust floor', () => {
   for (const { code, hreflang } of LOCALES) for (const page of SITE_PAGES) {
-    const content = page === 'hub' ? hubContent(code) : page === 'image'
+    const content = page === 'hub' ? hubContent(code) : page === 'about' ? aboutContent(code) : page === 'image'
       ? imagePageContent(code) : pageContent(code, page);
     const data = headData(code, page, content);
     it(`${code}/${page} keeps tool attributes separate from the hub`, () => {
       expect(JSON.parse(data.jsonLd)).toEqual(data.application);
-      if (page === 'hub') {
-        expect(data.application).toEqual({ '@context': 'https://schema.org', '@type': 'WebSite',
+      if (page === 'hub' || page === 'about') {
+        expect(data.application).toEqual(page === 'about' ? { '@context': 'https://schema.org', '@type': 'WebPage',
+          name: content.h1, description: content.description, url: pageUrl(code, page), inLanguage: hreflang }
+          : { '@context': 'https://schema.org', '@type': 'WebSite',
           name: 'runlocally', alternateName: content.h1, description: content.description,
           url: pageUrl(code, page), inLanguage: hreflang });
         for (const key of [...Object.keys(free), 'featureList', 'sameAs', 'breadcrumb']) {
@@ -66,14 +69,14 @@ describe('trust floor', () => {
           const block = footer.querySelector(`[data-trust-locale="${language}"]`)!;
           expect(block.getAttribute('lang')).toBe(language);
           for (const value of text[language]) expect(block.textContent).toContain(value);
-          expect(block.querySelectorAll('a')).toHaveLength(2);
+          expect(block.querySelectorAll('a')).toHaveLength(3);
           for (const [kind, href] of [['source', repository], ['issues', `${repository}/issues`]]) {
             const link = block.querySelector(`[data-trust-link="${kind}"]`)!;
             expect(link.getAttribute('href')).toBe(href);
             expect(allowedUrl(link.getAttribute('href'))).toBeNull();
           }
         }
-        expect(footer.querySelectorAll('[ping], [prefetch], [target], [rel~="prefetch"], a[href*="about"]')).toHaveLength(0);
+        expect(footer.querySelectorAll('[ping], [prefetch], [target], [rel~="prefetch"]')).toHaveLength(0);
         expect(document.querySelectorAll('#footer-security')).toHaveLength(1);
         const security = footer.querySelector('#footer-security')!;
         expect(security.closest('[data-trust-locale]')).toBeNull();

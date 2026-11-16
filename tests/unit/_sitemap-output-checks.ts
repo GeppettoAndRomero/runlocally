@@ -9,6 +9,7 @@ import { NOT_FOUND_FILE } from '../../src/seo/url-model';
 
 const pairs = [
   ['/', '/en/'],
+  ['/about/', '/en/about/'],
   ['/zip/', '/en/zip/'],
   ['/zip/view/', '/en/zip/view/'],
   ['/zip/extract/', '/en/zip/extract/'],
@@ -32,7 +33,7 @@ function htmlFiles(directory: string): string[] {
   });
 }
 
-/** Checks a finished product build: fourteen routes in the sitemap, matching HTML and alternates. */
+/** Checks a finished product build: sixteen routes in the sitemap, matching HTML and alternates. */
 export function checkBuiltSitemap(output: string): void {
   const childNames = readdirSync(output).filter(name => /^sitemap-\d+\.xml$/.test(name));
   expect(childNames.length).toBeGreaterThan(0);
@@ -46,12 +47,12 @@ export function checkBuiltSitemap(output: string): void {
       links: [...element.getElementsByTagNameNS('http://www.w3.org/1999/xhtml', 'link')],
     }));
   });
-  expect(entries).toHaveLength(14);
+  expect(entries).toHaveLength(16);
   expect(entries.map(entry => entry.loc).sort()).toEqual(expected);
-  expect(new Set(entries.map(entry => entry.loc)).size).toBe(14);
+  expect(new Set(entries.map(entry => entry.loc)).size).toBe(16);
 
   const files = htmlFiles(output);
-  expect(files).toHaveLength(17);
+  expect(files).toHaveLength(19);
   expect(files.map(file => url(`/${relative(output, file).replace(/(^|\/)index\.html$/, '$1')}`)).sort())
     .toEqual([...expected, url('/image/'), url('/en/image/'), url(`/${NOT_FOUND_FILE}`)].sort());
 

@@ -2,13 +2,13 @@ import { DEFAULT_LOCALE, LOCALES, type Locale } from '../i18n/locales';
 import { AVAILABLE_OPS, ZIP_SLUGS, type AvailableOpId } from '../i18n/ops';
 
 export type ZipPage = 'top' | AvailableOpId;
-export type PublicPage = 'hub' | ZipPage;
+export type PublicPage = 'hub' | 'about' | ZipPage;
 export type UnlistedPage = 'image';
 export type SitePage = PublicPage | UnlistedPage;
 export type PageRoute<Page extends SitePage = PublicPage> = { locale: Locale; page: Page };
 
 export const ZIP_PAGES: readonly ZipPage[] = ['top', ...AVAILABLE_OPS.map(op => op.id)];
-export const PUBLIC_PAGES: readonly PublicPage[] = ['hub', ...ZIP_PAGES];
+export const PUBLIC_PAGES: readonly PublicPage[] = ['hub', 'about', ...ZIP_PAGES];
 
 // PUBLIC is indexable; SITE also includes unlisted pages. Unlisted pages are generated but excluded from indexing.
 export const UNLISTED_PAGES: readonly UnlistedPage[] = ['image'];
@@ -29,6 +29,7 @@ export function __createUrlModel(unlistedPages: readonly UnlistedPage[]) {
 
     const prefix = locale === DEFAULT_LOCALE ? '' : `/${locale}`;
     if (page === 'hub') return `${prefix}/`;
+    if (page === 'about') return `${prefix}/about/`;
     if (page === 'image') return `${prefix}/image/`;
     if (page === 'top') return `${prefix}/zip/`;
     return `${prefix}/zip/${availableSlugs.get(page)}/`;
@@ -54,7 +55,7 @@ export function __createUrlModel(unlistedPages: readonly UnlistedPage[]) {
 
   function zipPageFromPath(pathname: string): PageRoute<ZipPage> | undefined {
     const route = publicPageFromPath(pathname);
-    if (!route || route.page === 'hub') return undefined;
+    if (!route || route.page === 'hub' || route.page === 'about') return undefined;
     return { locale: route.locale, page: route.page };
   }
 

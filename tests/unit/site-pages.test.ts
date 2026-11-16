@@ -34,11 +34,11 @@ afterEach(async () => {
 });
 
 describe('site page registry', () => {
-  it('registers sixteen site URLs with the same fourteen public URLs', () => {
+  it('registers eighteen site URLs with the same sixteen public URLs', () => {
     expect(UNLISTED_PAGES).toEqual(['image']);
     expect(SITE_PAGES).toEqual([...PUBLIC_PAGES, 'image']);
     expect(sitePagePaths()).toEqual(publicPagePaths());
-    expect(sitePagePaths().size).toBe(16);
+    expect(sitePagePaths().size).toBe(18);
     for (const { code } of LOCALES) for (const page of PUBLIC_PAGES) {
       expect(isIndexable(page)).toBe(true);
       expect(sitePageFromPath(pagePath(code, page))).toEqual({ locale: code, page });
@@ -88,7 +88,7 @@ describe('site page registry', () => {
     const config = await readFile(new URL('../../astro.config.mjs', import.meta.url), 'utf8');
     expect(config).toMatch(/filter:\s*isPublicPageUrl/);
     const urls = [...sitePagePaths(model)].map(path => `https://runlocally.app${path}`);
-    expect(urls.filter(isPublicPageUrl)).toHaveLength(14);
+    expect(urls.filter(isPublicPageUrl)).toHaveLength(16);
     for (const path of imagePaths) expect(isPublicPageUrl(`https://runlocally.app${path}`)).toBe(false);
   });
 });
@@ -99,7 +99,7 @@ describe('site precache', () => {
     await mkdir(join(root, 'vendor/libarchive'), { recursive: true });
     await mkdir(join(root, 'vendor/libheif'), { recursive: true });
     for (const path of vendor) await writeFile(join(root, path), path);
-    expect(sitePagePaths(model).size).toBe(16);
+    expect(sitePagePaths(model).size).toBe(18);
     for (const path of imagePaths) expect(sitePagePaths(model).has(path)).toBe(true);
     const result = await transformPrecache(entries, root, model);
     for (const path of imagePaths) expect(result.manifest).toContainEqual({ url: path, revision: path });

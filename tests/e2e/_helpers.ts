@@ -10,7 +10,7 @@ import { ui as enUi } from '../../src/i18n/en/ui';
 const menuUi = { ja: jaUi.menu, en: enUi.menu };
 function tab(page: Page, opId: AvailableOpId) {
   const route = publicPageFromPath(new URL(page.url()).pathname);
-  if (!route || route.page === 'hub') throw new Error(`Unknown ZIP page: ${page.url()}`);
+  if (!route || route.page === 'hub' || route.page === 'about') throw new Error(`Unknown ZIP page: ${page.url()}`);
   const op = AVAILABLE_OPS.find(entry => entry.id === opId);
   if (!op) throw new Error(`Unknown operation: ${opId}`);
   return page.getByRole('tab', { name: menuUi[route.locale][op.i18nKey].verb, exact: true });
@@ -43,7 +43,7 @@ export async function publicReady(page: Page) {
   await page.waitForLoadState('load');
   await expect(page.locator('#page-heading')).toBeVisible();
   await expect(page.locator('#page-content')).toBeVisible();
-  if (route.page !== 'hub') return ready(page);
+  if (route.page !== 'hub' && route.page !== 'about') return ready(page);
   await page.waitForFunction(() => {
     const calls = (window as typeof window & { __pwaRegisterCalls?: { script: string; scope?: string }[] }).__pwaRegisterCalls;
     return calls?.some(call => new URL(call.script, location.href).pathname === '/sw.js' && call.scope === '/');
