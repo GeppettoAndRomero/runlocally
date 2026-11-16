@@ -13,6 +13,7 @@ import { alternates, checkMetadataLength, headData, ogLocale, pagePath, pageUrl,
 import { chromeUi, menuUi, ui } from '../i18n/ui';
 import { PwaStartup } from '../ui/PwaStartup';
 import { repository } from '../../package.json';
+import { socialImage } from '../seo/og-image';
 
 interface Props {
   lang: Locale;
@@ -31,6 +32,7 @@ const canonical = metadata?.canonical ?? pageUrl(lang, page);
 const links = metadata?.alternates ?? alternates(page);
 const localeInfo = LOCALES.find(entry => entry.code === lang)!;
 const og = metadata?.og ?? {
+  ...socialImage(lang, new URL(canonical).origin, 'runlocally'),
   type: 'website', url: canonical, title, description, siteName: 'runlocally',
   locale: ogLocale(lang),
   alternateLocales: LOCALES.filter(entry => entry.code !== lang).map(entry => ogLocale(entry.code)),
@@ -56,6 +58,13 @@ const og = metadata?.og ?? {
     <meta property="og:title" content={og.title} />
     <meta property="og:description" content={og.description} />
     <meta property="og:site_name" content={og.siteName} />
+    <meta property="og:image" content={og.image} />
+    <meta property="og:image:width" content={og.imageWidth} />
+    <meta property="og:image:height" content={og.imageHeight} />
+    <meta property="og:image:alt" content={og.imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={og.image} />
+    <meta name="twitter:image:alt" content={og.imageAlt} />
     <meta property="og:locale" content={og.locale} />
     {og.alternateLocales.map(locale => <meta property="og:locale:alternate" content={locale} />)}
     {metadata && <script type="application/ld+json" set:html={metadata.jsonLd} />}
