@@ -21,3 +21,8 @@
 .site-footer { border-top: 1px solid var(--color-border); color: var(--color-text); }
 .site-footer a { color: var(--color-link); }
 @media (max-width: 40rem) { .site-languages { margin-inline-start: 0; } }
+
+/* Footer: show only the block for the document language (the html[lang] attribute follows ZIP language switches). */
+.site-footer [data-trust-locale] { display: none; overflow-wrap: anywhere; }
+html[lang="ja"] .site-footer [data-trust-locale="ja"],
+html[lang="en"] .site-footer [data-trust-locale="en"] { display: block; }
