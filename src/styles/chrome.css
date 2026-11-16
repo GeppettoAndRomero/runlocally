@@ -26,3 +26,5 @@
 .site-footer [data-trust-locale] { display: none; overflow-wrap: anywhere; }
 html[lang="ja"] .site-footer [data-trust-locale="ja"],
 html[lang="en"] .site-footer [data-trust-locale="en"] { display: block; }
+/* The English colophon is the single shared disclosure (README contract); Japanese pages show the translation instead. */
+html[lang="ja"] .site-footer [data-trust-colophon] { display: none; }

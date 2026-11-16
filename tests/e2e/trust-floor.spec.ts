@@ -35,8 +35,11 @@ async function check(page: Page, locale: Locale, current: SitePage,
   await expect(visible).toBeVisible();
   await expect(hidden).toBeHidden();
   for (const value of [copy[locale].free, copy[locale].disclosure, copy[locale].report]) {
-    await expect(visible.getByText(value, { exact: true })).toBeVisible();
+    await expect(footer.getByText(value, { exact: true })).toBeVisible();
   }
+  // The shared English colophon appears once in the document and only on English pages.
+  await expect(page.getByText(copy.en.disclosure, { exact: true })).toHaveCount(1);
+  if (locale === 'ja') await expect(footer.locator('[data-trust-colophon]')).toBeHidden();
   const source = footer.getByRole('link', { name: copy[locale].source, exact: true });
   const issues = footer.getByRole('link', { name: copy[locale].issues, exact: true });
   const security = footer.getByRole('link', { name: copy[locale].security, exact: true });
