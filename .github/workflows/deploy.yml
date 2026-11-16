@@ -163,6 +163,7 @@ jobs:
         with:
           ref: ${{ inputs.target_sha }}
           persist-credentials: false
+          fetch-depth: 0
       - name: Check deployment gate and main tip
         env:
           DEPLOY_ENABLED: ${{ vars.DEPLOY_ENABLED }}
@@ -223,6 +224,12 @@ jobs:
           const response = await fetch(`https://api.github.com/repos/${e.REPOSITORY}/git/ref/heads/main`, { headers: { Authorization: `Bearer ${e.GH_TOKEN}`, Accept: 'application/vnd.github+json' } });
           if (!response.ok || (await response.json()).object.sha !== e.TARGET_SHA) throw Error('main tip changed');
           NODE
+      - id: previous_build
+        name: Capture production SHA before deployment
+        # Notification bookkeeping must never block a deployment; a failure here leaves the previous
+        # SHA empty, which records a baseline without notifying.
+        continue-on-error: true
+        run: node scripts/indexnow.mjs --capture >> "$GITHUB_OUTPUT"
       - name: Deploy verified output
         env:
           PAGES_PROJECT_NAME: ${{ vars.PAGES_PROJECT_NAME }}
@@ -268,3 +275,19 @@ jobs:
       - name: Fail after smoke or notification
         if: steps.meta_before.outcome == 'failure' || steps.smoke.outcome == 'failure' || steps.meta_after.outcome == 'failure'
         run: exit 1
+      - id: indexnow
+        name: Notify IndexNow after verified production deployment
+        if: inputs.dry_run == false && vars.DEPLOY_ENABLED == 'true' && steps.meta_before.outcome == 'success' && steps.smoke.outcome == 'success' && steps.meta_after.outcome == 'success'
+        continue-on-error: true
+        env:
+          PREVIOUS_SHA: ${{ steps.previous_build.outputs.previous }}
+        run: node scripts/indexnow.mjs "$PREVIOUS_SHA" "$TARGET_SHA"
+      - name: Retain deployment baseline and notification pending record
+        if: always() && (steps.indexnow.outcome == 'success' || steps.indexnow.outcome == 'failure')
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: indexnow-state-${{ github.run_id }}-${{ github.run_attempt }}
+          path: indexnow-state/
+          if-no-files-found: error
+          retention-days: 90

@@ -72,6 +72,16 @@ about の新規3テストは自動試験の定義であり、実行結果や実�
 
 The `--from` command only verifies fixed bytes without writing. LIBHEIF_WASM_REPLACEMENT selects compatible modified WASM and recalculates SW hashes; see [distribution records](../vendor/libheif/README.md).
 
+## IndexNow の配信通知
+
+本番配信の artifact 検証・production 承認・`DEPLOY_ENABLED`・`dry_run=false` を維持し、apex SHA、smoke、再確認の各 outcome が成功した後に CI が IndexNow を通知する。利用者のブラウザからの追加送信ではなく、入力ファイル・設定値・利用履歴を送らない。クライアント CSP・egress 許可リストは変更しない。
+
+配信直前に apex の build meta から得た SHA と target SHA の `src/seo/lastmod.json` の内容ハッシュを比較し、追加・変更・削除された canonical URL のみを最大10,000件ずつ送る。画像の noindex ページ、preview、資産、鍵ファイル、クエリは除外し、差分ゼロでは POST しない。比較元 SHA／対応表がなければ新しい配信を基準として記録し、全件通知はしない。SHA と対応表の関係は CI の lastmod 検査に依存し、全 CDN 拠点や索引の状態を証明するものではない。
+
+鍵は `scripts/indexnow.mjs` の公開定数と root の UTF-8 テキストであり、秘密トークンではない。各 POST 前に同一オリジンの鍵本文と現在の本番 SHA を確認する。フッター等への掲載は不要。[公式仕様](https://www.indexnow.org/documentation)と[FAQ](https://www.indexnow.org/faq)に従い、200 は受領、202 は鍵確認待ちとして扱い、どちらも索引登録完了を意味しない。400・403・422 は診断付きで停止し、429・5xx・通信失敗は最大3試行する。
+
+`indexnow-state-<run_id>-<attempt>` artifact（90日保持）には、確認済み配信の `deployed.json` と別の通知記録 `pending.json` を保存する。未完の URL と診断は pending に残し、通知失敗で成功済み配信をロールバックしない。通知ステップは continue-on-error のため、運用者はステップ outcome と artifact を確認する。再送が必要なら保持期間内に対象 run の previous／target SHA を取り出し、同じ比較を CI 上で再実行する（`node scripts/indexnow.mjs PREVIOUS_SHA TARGET_SHA`）。現在の本番 SHA が target と異なる場合は再送しない。新しい配信は新しい比較であり、古い pending を無条件で混ぜない。artifact 自体の保存失敗は Actions の警告・ログで確認する。本番配信・鍵の実 HTTP 検証・外部 API への実送信はローカルの通信模擬テストでは確認していない。
+
 ## Image page integration checks
 
 `tests/unit/image-page-build.test.ts` checks nonempty worker output, precache membership, glue sourcemap provenance and disjoint, exhaustive size budgets. `tests/e2e/image-page.spec.ts` uses the product pages for downloads, pixel checks, queue locking, HEIC decode-path evidence, cold offline conversion and context-level communication monitoring. `tests/e2e/image-bfcache.spec.ts` requires `pageshow.persisted` for picker, drop, paste and delayed folder input. The sandbox blocked the local e2e server with EPERM/EMFILE; these browser checks have not run. Synthetic component lifecycle tests do not establish BFCache behavior. No shared input fix was applied without reproduction. Installation, multiple-download permission, OS save completion and device memory limits remain device checks.
