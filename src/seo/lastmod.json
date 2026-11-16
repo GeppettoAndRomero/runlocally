@@ -1,1 +1,66 @@
-{}
+{
+  "https://runlocally.app/": {
+    "hash": "b3d2e036cd78f326",
+    "lastmod": null
+  },
+  "https://runlocally.app/about/": {
+    "hash": "66a8dde2749fba26",
+    "lastmod": null
+  },
+  "https://runlocally.app/en/": {
+    "hash": "308dea6fa095c6b4",
+    "lastmod": null
+  },
+  "https://runlocally.app/en/about/": {
+    "hash": "c8579d77bdfd2563",
+    "lastmod": null
+  },
+  "https://runlocally.app/en/zip/": {
+    "hash": "81b23442fc4a4cc6",
+    "lastmod": null
+  },
+  "https://runlocally.app/en/zip/create/": {
+    "hash": "f2d1dc40759ed7c7",
+    "lastmod": null
+  },
+  "https://runlocally.app/en/zip/extract/": {
+    "hash": "564d007e6a8339b9",
+    "lastmod": null
+  },
+  "https://runlocally.app/en/zip/fix-names/": {
+    "hash": "fb06b642f3913008",
+    "lastmod": null
+  },
+  "https://runlocally.app/en/zip/remove/": {
+    "hash": "0b6f6f64a0c29379",
+    "lastmod": null
+  },
+  "https://runlocally.app/en/zip/view/": {
+    "hash": "f0cad6d48e25aed7",
+    "lastmod": null
+  },
+  "https://runlocally.app/zip/": {
+    "hash": "a861d666e97a2052",
+    "lastmod": null
+  },
+  "https://runlocally.app/zip/create/": {
+    "hash": "dc983c95600ff88b",
+    "lastmod": null
+  },
+  "https://runlocally.app/zip/extract/": {
+    "hash": "5b41bb440f265a29",
+    "lastmod": null
+  },
+  "https://runlocally.app/zip/fix-names/": {
+    "hash": "67258c2f0141fe9c",
+    "lastmod": null
+  },
+  "https://runlocally.app/zip/remove/": {
+    "hash": "65b29dfcf8e43160",
+    "lastmod": null
+  },
+  "https://runlocally.app/zip/view/": {
+    "hash": "c727012026e2d51c",
+    "lastmod": null
+  }
+}
