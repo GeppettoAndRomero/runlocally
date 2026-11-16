@@ -144,6 +144,10 @@ Historical local build measurements before about, with Brotli quality 11 per fil
 
 The sole excluded chunk is _astro/heic-worker-DaWRXR4i.js in this build, selected without a fixed hash by `dist/_astro/heic-worker-*.js`. It contains the pinned glue and wrapper; no separate glue dependency chunk was emitted. The 34 KB budget is `ceil(28,079 × 1.2 / 1000)` KB, allowing wrapper/generated-code variation. Unit tests follow emitted worker dependencies, require nonempty sets, verify exhaustive disjoint size coverage and precache membership, and require image-worker and general shared chunks in the main budget. These file budgets do not describe network transfer size.
 
+## Budget re-baseline (2026-11-17)
+
+The `precache` budget is 214 KB (was 210 KB since P1). Before the change the shared JS/CSS/HTML precache measured 209.55 kB with about 0.45 kB left, and adding schema.org `BreadcrumbList` to the 14 non-hub pages plus `sameAs` on the hub brought it to 210.96 kB. The budget was a self-chosen headroom, not an external limit; it is raised by a measured amount with room for the next page-text change (the mojibake repair page in #367 F2), not to hide growth. Each later increase must again state its measured cause here.
+
 ## About pages
 
 The two about documents have their own size-limit budget (`about`, 8 KB brotli) so the existing `precache` budget (210 KB) keeps measuring the same pages as before. They are still precached; only the budget is separate, like `heic-glue`. Measured at the time of adding (Brotli quality 11 per file): `/about/` 3,370 bytes and `/en/about/` 3,080 bytes.

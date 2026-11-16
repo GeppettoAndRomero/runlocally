@@ -41,7 +41,7 @@ const content = {
       expect(html).toContain('<main>Sample</main>');
       const json = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)?.[1];
       expect(json).toBeTruthy();
-      const application = JSON.parse(json!);
+      const application = JSON.parse(json!)['@graph'][0];
       expect(application).toMatchObject({
         '@type': 'SoftwareApplication', url: canonical, featureList: ['Browse entries'],
       });

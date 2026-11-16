@@ -74,7 +74,7 @@
     {
       "name": "precache",
       "path": ["dist/**/*.{js,css,html}", "!dist/_astro/heic-worker-*.js", "!dist/about/index.html", "!dist/en/about/index.html"],
-      "limit": "210 KB"
+      "limit": "214 KB"
     },
     {
       "name": "about",

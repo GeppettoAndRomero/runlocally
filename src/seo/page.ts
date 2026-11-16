@@ -1,4 +1,8 @@
 import { DEFAULT_LOCALE, ENGLISH_LOCALE, LOCALES, type Locale } from '../i18n/locales';
+import { pages as jaPages } from '../i18n/ja/pages';
+import { pages as enPages } from '../i18n/en/pages';
+import { ui as jaUi } from '../i18n/ja/ui';
+import { ui as enUi } from '../i18n/en/ui';
 import type { PageContent } from '../i18n/types';
 import type { ImagePageContent } from '../i18n/image-page';
 import type { AboutContent } from '../i18n/about';
@@ -6,6 +10,9 @@ import type { HubContent } from '../i18n/hub';
 import { pagePath as modelPagePath, publicPageFromPath, zipPageFromPath, isIndexable, type PublicPage, type SitePage, type UrlModel } from './url-model';
 
 export const SITE_ORIGIN = 'https://runlocally.app';
+// Kept equal to package.json `repository` by tests/unit/jsonld-breadcrumb.test.ts. Not imported from
+// package.json so that modules shared with the Playwright specs stay free of JSON imports.
+export const SOURCE_REPOSITORY = 'https://github.com/GeppettoAndRomero/runlocally';
 export const SITE_NAME = 'runlocally';
 export type { PublicPage, SitePage } from './url-model';
 export { publicPageFromPath, zipPageFromPath };
@@ -66,6 +73,11 @@ export function safeJsonLd(value: object): string {
     .replace(/\u2029/g, '\\u2029');
 }
 
+const breadcrumbNames: Record<Locale, { home: string; zip: string }> = {
+  ja: { home: jaUi.chrome.home, zip: jaPages.top.h1 },
+  en: { home: enUi.chrome.home, zip: enPages.top.h1 },
+};
+
 const freeApplication = {
   offers: { '@type': 'Offer', price: 0, priceCurrency: 'JPY' },
   applicationCategory: 'UtilitiesApplication',
@@ -80,12 +92,12 @@ export function headData(locale: Locale, page: SitePage, content: PageContent | 
   const localeInfo = LOCALES.find(entry => entry.code === locale)!;
   const common = { '@context': 'https://schema.org', name: content.h1, description, url, inLanguage: localeInfo.hreflang };
   let application: typeof common & { '@type': 'WebPage'; featureList?: never; alternateName?: never } |
-    typeof common & { '@type': 'WebSite'; alternateName: string; featureList?: never } |
+    typeof common & { '@type': 'WebSite'; alternateName: string; sameAs: string[]; featureList?: never } |
     typeof common & typeof freeApplication & { '@type': 'SoftwareApplication'; featureList: string[]; alternateName?: never };
   if (page === 'hub') {
     if ('steps' in content) throw new Error('Hub requires hub content');
     // The WebSite node names the site itself; the heading describes what it offers.
-    application = { ...common, '@type': 'WebSite', name: SITE_NAME, alternateName: content.h1 };
+    application = { ...common, '@type': 'WebSite', name: SITE_NAME, alternateName: content.h1, sameAs: [SOURCE_REPOSITORY] };
   } else if (page === 'about') {
     application = { ...common, '@type': 'WebPage' };
   } else if (page === 'image') {
@@ -95,6 +107,20 @@ export function headData(locale: Locale, page: SitePage, content: PageContent | 
     application = { ...common, ...freeApplication, '@type': 'SoftwareApplication',
       featureList: page === 'top' ? [] : content.steps.map(step => step.heading).filter(Boolean) };
   }
+  // Keep the site, page/application and navigation as separate schema entities.
+  // Both Base.astro and displayPage() serialize this same structure.
+  const { '@context': context, ...node } = application;
+  const hierarchy: SitePage[] = page === 'hub' ? [] : page === 'top' || page === 'about' || page === 'image'
+    ? ['hub', page] : ['hub', 'top', page];
+  const breadcrumb = {
+    '@type': 'BreadcrumbList',
+    itemListElement: hierarchy.map((entry, index) => ({
+      '@type': 'ListItem', position: index + 1,
+      name: entry === 'hub' ? breadcrumbNames[locale].home : entry === page ? content.h1 : breadcrumbNames[locale].zip,
+      item: pageUrl(locale, entry, model),
+    })),
+  };
+  const structuredData = page === 'hub' ? application : { '@context': context, '@graph': [node, breadcrumb] };
   return {
     title,
     description,
@@ -111,6 +137,7 @@ export function headData(locale: Locale, page: SitePage, content: PageContent | 
       alternateLocales: LOCALES.filter(entry => entry.code !== locale).map(entry => ogLocale(entry.code)),
     },
     application,
-    jsonLd: safeJsonLd(application),
+    structuredData,
+    jsonLd: safeJsonLd(structuredData),
   };
 }

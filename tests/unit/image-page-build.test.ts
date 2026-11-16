@@ -47,7 +47,7 @@ describe('image page build', () => {
       expect(matching.length).toBeGreaterThan(0);
       for (const path of matching) expect(main).toContain(path);
     }
-    expect(config.find((item: { name: string }) => item.name === 'precache').limit).toBe('210 KB');
+    expect(config.find((item: { name: string }) => item.name === 'precache').limit).toBe('214 KB');
     expect(config.find((item: { name: string }) => item.name === 'wasm')).toMatchObject({ limit: '5 MB', gzip: false, brotli: false });
   });
 

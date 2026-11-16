@@ -36,14 +36,14 @@ describe('trust floor', () => {
       ? imagePageContent(code) : pageContent(code, page);
     const data = headData(code, page, content);
     it(`${code}/${page} keeps tool attributes separate from the hub`, () => {
-      expect(JSON.parse(data.jsonLd)).toEqual(data.application);
+      expect(JSON.parse(data.jsonLd)).toEqual(data.structuredData);
       if (page === 'hub' || page === 'about') {
         expect(data.application).toEqual(page === 'about' ? { '@context': 'https://schema.org', '@type': 'WebPage',
           name: content.h1, description: content.description, url: pageUrl(code, page), inLanguage: hreflang }
           : { '@context': 'https://schema.org', '@type': 'WebSite',
-          name: 'runlocally', alternateName: content.h1, description: content.description,
+          name: 'runlocally', alternateName: content.h1, sameAs: [repository], description: content.description,
           url: pageUrl(code, page), inLanguage: hreflang });
-        for (const key of [...Object.keys(free), 'featureList', 'sameAs', 'breadcrumb']) {
+        for (const key of [...Object.keys(free), 'featureList', ...(page === 'about' ? ['sameAs'] : []), 'breadcrumb']) {
           expect(data.application).not.toHaveProperty(key);
         }
       } else {
@@ -53,7 +53,7 @@ describe('trust floor', () => {
       }
       const malicious = headData(code, page, { ...content, description: '</script><>&\u2028\u2029' });
       expect(malicious.jsonLd).not.toMatch(/[<>&\u2028\u2029]/u);
-      expect(JSON.parse(malicious.jsonLd)).toEqual(malicious.application);
+      expect(JSON.parse(malicious.jsonLd)).toEqual(malicious.structuredData);
       expect(safeJsonLd({ value: '</script><>&\u2028\u2029' })).not.toMatch(/[<>&\u2028\u2029]/u);
     });
 
@@ -90,7 +90,7 @@ describe('trust floor', () => {
         expect(footer.querySelectorAll('p')).toHaveLength(1);
         const scripts = document.querySelectorAll('script[type="application/ld+json"]');
         expect(scripts).toHaveLength(1);
-        expect(JSON.parse(scripts[0].textContent!)).toEqual(data.application);
+        expect(JSON.parse(scripts[0].textContent!)).toEqual(data.structuredData);
       } finally { dom.window.close(); }
     });
   }

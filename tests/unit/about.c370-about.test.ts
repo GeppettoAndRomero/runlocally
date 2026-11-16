@@ -137,8 +137,13 @@ describe('c370-about built documents', () => {
       expect(Array.from(document.querySelector('meta[name="description"]')!.getAttribute('content')!).length).toBeLessThanOrEqual(120);
       const json = document.querySelectorAll('script[type="application/ld+json"]');
       expect(json).toHaveLength(1);
-      expect(JSON.parse(json[0].textContent!)).toEqual({ '@context': 'https://schema.org', '@type': 'WebPage',
-        name: content.h1, description: content.description, url: canonical, inLanguage: code });
+      expect(JSON.parse(json[0].textContent!)).toEqual({ '@context': 'https://schema.org', '@graph': [
+        { '@type': 'WebPage', name: content.h1, description: content.description, url: canonical, inLanguage: code },
+        { '@type': 'BreadcrumbList', itemListElement: [
+          { '@type': 'ListItem', position: 1, name: code === 'ja' ? 'ホーム' : 'Home', item: `${SITE_ORIGIN}${code === 'ja' ? '/' : '/en/'}` },
+          { '@type': 'ListItem', position: 2, name: content.h1, item: canonical },
+        ] },
+      ] });
       expect(document.querySelectorAll('astro-island[component-export="PwaStartup"]')).toHaveLength(1);
       expect(document.querySelectorAll('astro-island')).toHaveLength(1);
       expect(document.querySelectorAll('.workbench, [data-chrome-nav], .operation-cards, [component-export="ImageConverter"]')).toHaveLength(0);

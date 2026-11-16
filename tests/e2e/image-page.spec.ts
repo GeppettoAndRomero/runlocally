@@ -191,7 +191,7 @@ test('both image pages fit a 360px viewport and contain current application meta
   for (const path of ['/image/', '/en/image/']) {
     await page.goto(path); await ready(page);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').innerText());
+    const ld = JSON.parse(await page.locator('script[type="application/ld+json"]').innerText())['@graph'][0];
     expect(ld['@type']).toBe('SoftwareApplication');
     expect(ld.featureList).toEqual(['JPG', 'PNG']);
     await expect(page.locator('meta[name=robots]')).toHaveAttribute('content', 'noindex');

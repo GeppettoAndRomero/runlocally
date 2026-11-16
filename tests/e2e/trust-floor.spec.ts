@@ -71,7 +71,8 @@ async function check(page: Page, locale: Locale, current: SitePage,
     await source.hover(); await issues.hover(); await issues.focus();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
-  const json = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent() ?? 'null');
+  const data = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent() ?? 'null');
+  const json = current === 'hub' ? data : data['@graph'][0];
   expect(json).toMatchObject({ '@type': current === 'hub' ? 'WebSite' : 'SoftwareApplication',
     url: pageUrl(locale, current), inLanguage: locale });
   if (current !== 'hub') {
