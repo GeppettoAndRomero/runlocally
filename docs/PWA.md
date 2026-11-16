@@ -146,4 +146,6 @@ The sole excluded chunk is _astro/heic-worker-DaWRXR4i.js in this build, selecte
 
 ## About pages
 
+The two about documents have their own size-limit budget (`about`, 8 KB brotli) so the existing `precache` budget (210 KB) keeps measuring the same pages as before. They are still precached; only the budget is separate, like `heic-glue`. Measured at the time of adding (Brotli quality 11 per file): `/about/` 3,370 bytes and `/en/about/` 3,080 bytes.
+
 The Japanese `/about/` and English `/en/about/` add two static documents to the shared precache: 18 SITE documents, including 16 indexable documents, with 19 generated HTML files including the uncached 404 document. Each existing footer language block links to about in that language. Direct visits to either about page start the shared root service worker through one independent PwaStartup island, with the existing installation and update UI and other-tab coordination.
