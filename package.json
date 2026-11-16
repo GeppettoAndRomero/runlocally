@@ -28,7 +28,7 @@
     "check:egress": "node scripts/check-egress.mjs",
     "size": "size-limit",
     "prepare": "git config core.hooksPath .githooks || true",
-    "ci": "npm run typecheck && npm run lint && npm run license:check && npm run check-leaks && npm run check:engine-dom && npm run build && npm run check:egress && npm run test:unit -- --coverage && npm run legacy:check && npm run headers:check && npm run notice:check && npm run size",
+    "ci": "npm run typecheck && npm run lint && npm run license:check && npm run check-leaks && npm run check:engine-dom && npm run build && npm run check:egress && npm run test:unit -- --coverage && npm run lastmod:check && npm run legacy:check && npm run headers:check && npm run notice:check && npm run size",
     "postinstall": "node scripts/vendor-libarchive.mjs && node scripts/vendor-libheif.mjs --verify",
     "prebuild": "node scripts/vendor-libarchive.mjs && node scripts/vendor-libheif.mjs --verify",
     "predev": "node scripts/vendor-libarchive.mjs && node scripts/vendor-libheif.mjs --verify",
@@ -36,7 +36,9 @@
     "headers:check": "node scripts/gen-headers.mjs --check",
     "postbuild": "npm run headers:generate",
     "legacy:generate": "node scripts/gen-legacy.mjs",
-    "legacy:check": "node scripts/gen-legacy.mjs --check"
+    "legacy:check": "node scripts/gen-legacy.mjs --check",
+    "lastmod:check": "node scripts/lastmod.mjs --check",
+    "lastmod:update": "npm run build && node scripts/lastmod.mjs --update"
   },
   "dependencies": {
     "@astrojs/preact": "^3.5.3",
@@ -73,12 +75,20 @@
   "size-limit": [
     {
       "name": "precache",
-      "path": ["dist/**/*.{js,css,html}", "!dist/_astro/heic-worker-*.js", "!dist/about/index.html", "!dist/en/about/index.html"],
+      "path": [
+        "dist/**/*.{js,css,html}",
+        "!dist/_astro/heic-worker-*.js",
+        "!dist/about/index.html",
+        "!dist/en/about/index.html"
+      ],
       "limit": "214 KB"
     },
     {
       "name": "about",
-      "path": ["dist/about/index.html", "dist/en/about/index.html"],
+      "path": [
+        "dist/about/index.html",
+        "dist/en/about/index.html"
+      ],
       "limit": "8 KB"
     },
     {

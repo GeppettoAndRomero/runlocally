@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { sitemapOptions } from '../../astro.config.mjs';
 import { SITE_ORIGIN } from '../../src/seo/page';
+import lastmodRegistry from '../../src/seo/lastmod.json';
 
 const pairs = [
   ['/', '/en/'],
@@ -42,7 +43,7 @@ describe('sitemap product options', () => {
       for (const path of [ja, en]) {
         const item = { url: url(path), priority: 0.7, lastmod: '2026-01-01' };
         const result = sitemapOptions.serialize(item);
-        expect(result).toEqual({ ...item, links });
+        expect(result).toEqual({ ...item, lastmod: lastmodRegistry[item.url as keyof typeof lastmodRegistry]?.lastmod ?? undefined, links });
         expect(result.links).toHaveLength(3);
         expect(new Set(result.links.map((link: { lang: string }) => link.lang)).size).toBe(3);
         expect(result.links).toContainEqual({ lang: path === ja ? 'ja' : 'en', url: url(path) });
