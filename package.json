@@ -73,8 +73,13 @@
   "size-limit": [
     {
       "name": "precache",
-      "path": ["dist/**/*.{js,css,html}", "!dist/_astro/heic-worker-*.js"],
+      "path": ["dist/**/*.{js,css,html}", "!dist/_astro/heic-worker-*.js", "!dist/about/index.html", "!dist/en/about/index.html"],
       "limit": "210 KB"
+    },
+    {
+      "name": "about",
+      "path": ["dist/about/index.html", "dist/en/about/index.html"],
+      "limit": "8 KB"
     },
     {
       "name": "heic-glue",

@@ -27,10 +27,12 @@ describe('image page build', () => {
     const all = await glob('dist/**/*.{js,css,html}');
     const main = await glob(config.find((item: { name: string }) => item.name === 'precache').path);
     const glue = await glob(config.find((item: { name: string }) => item.name === 'heic-glue').path);
+    const about = await glob(config.find((item: { name: string }) => item.name === 'about').path);
     expect(main.length).toBeGreaterThan(0);
     expect(glue.length).toBeGreaterThan(0);
-    expect(main.filter(path => glue.includes(path))).toEqual([]);
-    expect([...main, ...glue].sort()).toEqual(all.sort());
+    expect(about).toHaveLength(2);
+    expect(main.filter(path => glue.includes(path) || about.includes(path))).toEqual([]);
+    expect([...main, ...glue, ...about].sort()).toEqual(all.sort());
     const image = all.filter(path => /\/image-worker-[^/]+\.js$/.test(path));
     const heic = all.filter(path => /\/heic-worker-[^/]+\.js$/.test(path));
     expect(image).toHaveLength(1);
