@@ -7,6 +7,7 @@ import type { PageContent } from '../i18n/types';
 import type { ImagePageContent } from '../i18n/image-page';
 import type { AboutContent } from '../i18n/about';
 import type { HubContent } from '../i18n/hub';
+import { socialImage } from './og-image';
 import { pagePath as modelPagePath, publicPageFromPath, zipPageFromPath, isIndexable, type PublicPage, type SitePage, type UrlModel } from './url-model';
 
 export const SITE_ORIGIN = 'https://runlocally.app';
@@ -128,6 +129,7 @@ export function headData(locale: Locale, page: SitePage, content: PageContent | 
     alternates: alternates(page, model),
     ...((model?.isIndexable ?? isIndexable)(page) ? {} : { robots: 'noindex' }),
     og: {
+      ...socialImage(locale, SITE_ORIGIN, SITE_NAME),
       type: 'website',
       url,
       title,

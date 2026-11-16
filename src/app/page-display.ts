@@ -75,6 +75,8 @@ export function displayPage(locale: Locale, page: ZipPage): void {
   setMeta('meta[property="og:title"]', head.og.title);
   setMeta('meta[property="og:description"]', head.og.description);
   setMeta('meta[property="og:locale"]', head.og.locale);
+  setMeta('meta[property="og:image:alt"]', head.og.imageAlt);
+  setMeta('meta[name="twitter:image:alt"]', head.og.imageAlt);
   document.querySelectorAll<HTMLMetaElement>('meta[property="og:locale:alternate"]').forEach((node, index) => {
     if (head.og.alternateLocales[index]) node.content = head.og.alternateLocales[index];
   });

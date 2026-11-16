@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <title>runlocally</title>
+  <rect width="1200" height="630" fill="#4f46e5"/>
+  <!-- Existing app.svg icon, inlined so the source has no external references. -->
+  <g transform="translate(76 187) scale(.5)">
+    <rect width="512" height="512" fill="#4f46e5"/>
+    <rect x="130" y="130" width="252" height="252" rx="32" fill="#fff"/>
+    <path d="M176 210h160M176 256h160M176 302h112" fill="none" stroke="#4f46e5" stroke-width="22" stroke-linecap="round"/>
+  </g>
+  <!-- Custom geometric wordmark: runlocally. All lettering is paths, never fonts. -->
+  <g transform="translate(370 275)" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 76V24m0 18q0-18 28-18"/>
+    <path d="M50 24v34q0 18 18 18t18-18V24"/>
+    <path d="M112 76V24m0 18q0-18 18-18t18 18v34"/>
+    <path d="M176 0v76"/>
+    <path d="M242 50q0-26-20-26t-20 26 20 26 20-26Z"/>
+    <path d="M306 30q-6-6-16-6-20 0-20 26t20 26q10 0 16-6"/>
+    <path d="M372 24v52m0-26q0-26-20-26t-20 26 20 26 20-26Z"/>
+    <path d="M400 0v76m28-76v76"/>
+    <path d="m456 24 20 52m20-52-20 52q-8 26-24 26"/>
+  </g>
+</svg>
