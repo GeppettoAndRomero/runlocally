@@ -132,7 +132,7 @@ test('image is absent from sitemap and public pages have no robots meta', async 
   }
   const publicPaths = LOCALES.flatMap(({ code }) => PUBLIC_PAGES.map(page => pagePath(code, page)));
   expect(listed.sort()).toEqual([...publicPaths].sort());
-  expect(listed).toHaveLength(14);
+  expect(listed).toHaveLength(16);
   for (const path of publicPaths) {
     // A revalidated cache entry answers 304; both mean the page exists and was served.
     expect([200, 304]).toContain((await page.goto(path))?.status());

@@ -26,8 +26,8 @@ describe('image page', () => {
   });
 
   it('registers only site routes with noindex application metadata', () => {
-    expect(SITE_PAGES).toHaveLength(8);
-    expect(PUBLIC_PAGES).toHaveLength(7);
+    expect(SITE_PAGES).toHaveLength(9);
+    expect(PUBLIC_PAGES).toHaveLength(8);
     for (const { code } of LOCALES) {
       const path = code === 'ja' ? '/image/' : '/en/image/';
       expect(pagePath(code, 'image')).toBe(path);

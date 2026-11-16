@@ -12,7 +12,7 @@ import { PUBLIC_PAGES, type PublicPage as ModelPublicPage } from '../../src/seo/
 
 const sameType = <T extends ModelPublicPage>(page: PublicPage & T): ModelPublicPage => page;
 const expected = [
-  '/', '/en/', '/zip/', '/zip/view/', '/zip/extract/', '/zip/remove/', '/zip/fix-names/', '/zip/create/',
+  '/', '/en/', '/about/', '/en/about/', '/zip/', '/zip/view/', '/zip/extract/', '/zip/remove/', '/zip/fix-names/', '/zip/create/',
   '/en/zip/', '/en/zip/view/', '/en/zip/extract/', '/en/zip/remove/', '/en/zip/fix-names/', '/en/zip/create/',
 ];
 
@@ -30,7 +30,7 @@ describe('hub routes', () => {
       expect(publicPageFromPath(path)).toEqual({ locale: code, page });
       expect(publicPageFromUrl(pageUrl(code, page))).toEqual({ locale: code, page });
       expect(isPublicPageUrl(pageUrl(code, page))).toBe(true);
-      expect(zipPageFromPath(path)).toEqual(page === 'hub' ? undefined : { locale: code, page });
+      expect(zipPageFromPath(path)).toEqual(page === 'hub' || page === 'about' ? undefined : { locale: code, page });
     }
   });
 
@@ -96,7 +96,7 @@ describe('hub content and metadata', () => {
 
   it('preserves ZIP dictionaries and their SoftwareApplication features', () => {
     for (const { code } of LOCALES) for (const page of PUBLIC_PAGES) {
-      if (page === 'hub') continue;
+      if (page === 'hub' || page === 'about') continue;
       const content = pageContent(code, page);
       for (const key of ['title', 'description', 'h1', 'lead'] as const) expect(content[key].trim()).not.toBe('');
       for (const key of ['steps', 'faq', 'limits'] as const) expect(content[key].length).toBeGreaterThan(0);
@@ -105,7 +105,7 @@ describe('hub content and metadata', () => {
       expect(data.application.featureList).toEqual(page === 'top' ? [] : content.steps.map(step => step.heading));
       expect(JSON.parse(data.jsonLd)).toEqual(data.application);
     }
-    expect(AVAILABLE_OPS).toHaveLength(PUBLIC_PAGES.length - 2);
+    expect(AVAILABLE_OPS).toHaveLength(PUBLIC_PAGES.length - 3);
   });
 
   it('requires ZIP steps and keeps the hub content boundary', () => {

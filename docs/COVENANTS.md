@@ -29,15 +29,16 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 | manifest・登録・公開ページ・報告経路 | `tests/e2e/covenants.spec.ts`: `published pages, manifest and reporting path` | CI と、承認後の本番 smoke。3ブラウザで manifest、icons、theme、公開ページ、root SW、配信された SECURITY.md とフッターのリンクを検査。CDP による installability は Chromium。 |
 | ハブの画像導線・起動先 | `tests/unit/hub-image-metadata.test.ts`; `tests/e2e/hub-image-launch.spec.ts` | 日英カード・SEO・OG・WebSite JSON-LD・8キー・文字数境界。画像入力 UI への到達は3ブラウザ、保存後に同一 context の新ページで manifest の `/` を開き、再読込・画像遷移の SW 応答を確認する検査は Chromium。OS からの実起動の代替ではない。 |
 | 未定義 URL・旧 sitemap・ハブ直リンク | `tests/unit/not-found-page.test.ts`; `tests/unit/hub-operation-links.test.ts`; `tests/unit/legacy-middleware.test.ts`: `redirects the retired sitemap path to the current index without touching other sitemap files`; `tests/e2e/seo-discovery.spec.ts` | 日英の404文書（noindex・canonical と hreflang なし・ハブと ZIP へのリンク・precache 除外）、未定義 URL の404応答、`/sitemap.xml` から `/sitemap-index.xml` への301、ハブの ZIP カードから公開5操作への直リンクと360px の折り返しを CI の3ブラウザで検査する。 |
+| about 本文・登録・配信 | `tests/unit/about.c370-about.test.ts`; `tests/e2e/about.c370-about.spec.ts`; `tests/e2e/about-pwa.c370-about.spec.ts` | 辞書の境界値、日英の静的本文と WebPage、16 indexable／18 SITE／19 HTML、フッターと通常遷移、言語・履歴・Tab・360px・JS 無効、Functions の GET/HEAD・旧301/410/404、初期訪問前からの通信監視。Chromium では about 直訪問から保存・制御開始後のオフライン再読込を SW 応答で検査し、既存8スコープの人工登録と旧キャッシュからの移行、Workbox sentinel 維持も検査する。実機の古い状態や本番配信・実インストール完了の証明ではない。 |
 | 操作メニュー | `tests/e2e/menu.spec.ts`: 入力前の公開操作と直接訪問、動詞名と補足、準備前の実行不可、URL・入力・結果の保持、広い画面のキー操作、360px の折り返し、ヘッダーから作業領域へのフォーカス順 | CI の日本語・英語と Chromium・Firefox・WebKit。タブとパネルの対応、横スクロールの不在も確認する。 |
 | 外枠・ページ同期 | `tests/e2e/chrome.spec.ts`: 外枠の初期表示、操作・言語・履歴・入力形式による同期、File と結果の保持、アイコンと precache | CI の3ブラウザ。外枠の hover・focus・SPA 遷移後の追加リクエストを検査する。全操作時の通信と SW 発通信は `network.spec.ts` が検査する。 |
-| precache | `tests/unit/pwa-build.test.ts`: `contains one root worker and manifest with all public pages and matched vendor assets`; `tests/unit/pwa-manifest.test.ts`: `uses every public URL and keeps each HTML revision`; `rejects absent pages, duplicates and an incomplete vendor pair` | CI のビルドと単体検査。SITE の生成16ページと資産の構成を確認する。 |
+| precache | `tests/unit/pwa-build.test.ts`: `contains one root worker and manifest with all public pages and matched vendor assets`; `tests/unit/pwa-manifest.test.ts`: `uses every public URL and keeps each HTML revision`; `rejects absent pages, duplicates and an incomplete vendor pair` | CI のビルドと単体検査。SITE の生成18ページと資産の構成を確認する。 |
 | 旧 SW 移行 | `tests/e2e/sw-migration.spec.ts`: `chromium removes old registrations and caches while retaining current operations`; `tests/unit/register-sw.test.ts`: `removes prior scope and cache before registering once` | `tests/fixtures/sw/legacy.ts` の旧 8 スコープを使用。移行 e2e は ZIP 直接訪問と日本語・英語ハブ経由を CI の Chromium で確認する。人工的な登録・キャッシュによる検査で、本番 smoke の選択対象には含めない。 |
 | 更新・ビルド識別 | `tests/unit/register-sw.test.ts`: `holds an update when another tab does not answer`; `pauses input while applying and defers reload if work starts before controller change`; `reloads once after a safe controller change`; `tests/unit/build-meta-build.test.ts`: `keeps the worker, page revisions, assets and headers stable for a SHA-only change`; `tests/unit/check-deployed-build.test.ts`: `accepts one exact head meta with varied attribute syntax` | CI の単体検査。端末の更新操作は実機で補う。 |
 
-`tests/e2e/_helpers.ts` の一巡は ZIP の閲覧・取り出し・削除・名前修復、ファイルからの ZIP 作成と明示保存、7z の閲覧・取り出し、保存・再入力、入れ子 ZIP を含む。`tests/e2e/_covenant-support.ts` は公開操作に対応する fixture の欠落を失敗にする。通信監視は初回読み込み前に開始し、precache、操作、保存・再入力を観測する。失敗した許可外リクエストも失敗条件になる。通信を許可するページは SITE の16 URL と完全一致、資産は限定した接頭辞で許可する。CSP に遮断されて通信イベントにならない試行は CSP 検査で補う。静的 URL 検査の例外は通信先の許可を意味しない。
+`tests/e2e/_helpers.ts` の一巡は ZIP の閲覧・取り出し・削除・名前修復、ファイルからの ZIP 作成と明示保存、7z の閲覧・取り出し、保存・再入力、入れ子 ZIP を含む。`tests/e2e/_covenant-support.ts` は公開操作に対応する fixture の欠落を失敗にする。通信監視は初回読み込み前に開始し、precache、操作、保存・再入力を観測する。失敗した許可外リクエストも失敗条件になる。通信を許可するページは SITE の18 URL と完全一致、資産は限定した接頭辞で許可する。CSP に遮断されて通信イベントにならない試行は CSP 検査で補う。静的 URL 検査の例外は通信先の許可を意味しない。
 
-`tests/unit/image-soon.test.ts` と `tests/e2e/image-soon.spec.ts` は、日英の画像本文、ハブからの到達、noindex、sitemap 非掲載、公開14ページの robots メタ不在を検査する。画像ページからの PWA 起動・precache・オフライン再読込と SW 発通信は Chromium が対象で、他ブラウザと実インストールは実機確認が必要。
+`tests/unit/image-soon.test.ts` と `tests/e2e/image-soon.spec.ts` は、日英の画像本文、ハブからの到達、noindex、sitemap 非掲載、公開16ページの robots メタ不在を検査する。画像ページからの PWA 起動・precache・オフライン再読込と SW 発通信は Chromium が対象で、他ブラウザと実インストールは実機確認が必要。
 
 フォルダの選択・ドロップの相対パスはブラウザに依存するため、作成 ZIP の名前と内容を実機で確認する。`tests/e2e/create.spec.ts` にはフォルダ選択の検査があるが、自動操作の非対応による skip はブラウザ自体の非対応を示さない。オフラインの自動検証は Chromium のみで、Firefox／WebKit は実機確認が必要。
 
@@ -45,9 +46,11 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 
 自動検証は、実インストール完了、報告への応答 SLA、全 CDN 拠点、既存端末のキャッシュ更新完了を検証しない。SECURITY 経路の検査は配信文書とリンクまでであり、報告送信、メール配送、Private Vulnerability Reporting の受付動作を確認しない。配信時の注入は CI 内のビルド検査だけでは確認できない。本番 smoke が配信応答の確認経路だが、実配信と初回実行は承認後であり、現時点では未実施。
 
-`astro.config.mjs` の build meta は SW 生成後、`scripts/gen-headers.mjs` のヘッダ生成前に、`scripts/build-meta.mjs` がSITE の全16 HTML へ挿入する。SHA だけの変更では precache revision は変わらず、ページ内容の変更では更新を検知する。既存端末の DOM に残る SHA は現在の配信 SHA の判定に使わない。
+`astro.config.mjs` の build meta は SW 生成後、`scripts/gen-headers.mjs` のヘッダ生成前に、`scripts/build-meta.mjs` がSITE の全18 HTML へ挿入する。SHA だけの変更では precache revision は変わらず、ページ内容の変更では更新を検知する。既存端末の DOM に残る SHA は現在の配信 SHA の判定に使わない。
 
 `.github/workflows/deploy.yml` は手動起動で `dry_run` が既定で有効。成功した main CI の SHA を照合し、その SHA を checkout して再ビルド・検査し、`dist` と Functions を組で封印・検証する。承認後の本番 smoke は `tests/e2e/covenants.spec.ts`、`tests/e2e/network.spec.ts`、`tests/e2e/csp.spec.ts` を選択実行し、前後に `scripts/check-deployed-build.mjs` で apex の SHA を調べる。この検査は SW を介さない HTTP 応答を読み、meta の欠落・複数・不一致とリダイレクトを拒否する。実配信、配信先の対応、保護設定、通知先はこの文書の検査結果として扱わない。
+
+about の新規3テストは自動試験の定義であり、実行結果や実機・本番確認の成功を示さない。通信監視で完全な SW 発通信が観測できるのは Chromium のみ。about の PwaStartup と既存更新 UI の接続は生成 HTML と登録、および CI の既存 register-sw／部品テストで検査し、内容の異なる2ビルドの実更新完了は推定しない。
 
 ## 手動確認
 
@@ -64,7 +67,7 @@ CI の `npm run ci` はビルド、静的な URL 検査、単体・部品テス�
 
 `tests/unit/libheif-distribution.test.ts` compares normal and analysis output bytes, detects duplicate binaries and public glue, checks precache integrity and independent revisions, and rejects missing/duplicate/unreadable assets. It also checks that NOTICE and LICENSE accompany both outputs. `tests/unit/libheif-notice.test.ts` checks unchanged component license bodies, generation determinism, and missing/empty text failures.
 
-`tests/e2e/pwa-hub.spec.ts` fetches the WASM offline after initial precache in Chromium and checks its SHA-256. The existing hub, image and network tests now require the additional cached asset while keeping the sixteen-page contract and the same communication allowlist. These tests do not verify modified-build selection, other-browser offline behavior or actual installation. Image pages now mount ImageConverter and distribute bundled decoder glue. Every user's initial precache adds 1,463,506 uncompressed bytes; actual transferred bytes are unmeasured. See [PWA delivery details](PWA.md#libheif-wasm-distribution).
+`tests/e2e/pwa-hub.spec.ts` fetches the WASM offline after initial precache in Chromium and checks its SHA-256. The existing hub, image and network tests now require the additional cached asset while keeping the eighteen-page contract and the same communication allowlist. These tests do not verify modified-build selection, other-browser offline behavior or actual installation. Image pages now mount ImageConverter and distribute bundled decoder glue. Every user's initial precache adds 1,463,506 uncompressed bytes; actual transferred bytes are unmeasured. See [PWA delivery details](PWA.md#libheif-wasm-distribution).
 
 The `--from` command only verifies fixed bytes without writing. LIBHEIF_WASM_REPLACEMENT selects compatible modified WASM and recalculates SW hashes; see [distribution records](../vendor/libheif/README.md).
 

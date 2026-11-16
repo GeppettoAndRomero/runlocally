@@ -1,6 +1,8 @@
 ---
 import { LOCALES, type Locale } from '../i18n/locales';
 import { imagePageContent } from '../i18n/image-page';
+import { aboutContent } from '../i18n/about';
+import { repository } from '../../package.json';
 import { hubContent } from '../i18n/hub';
 import { operationLabel, AVAILABLE_OPS } from '../i18n/ops';
 import { pageContent } from '../i18n/pages';
@@ -22,9 +24,10 @@ export function getStaticPaths() {
 }
 
 const { locale, page } = Astro.props as { locale: Locale; page: SitePage };
-const zipPage = page === 'hub' || page === 'image' ? undefined : page;
+const zipPage = page === 'hub' || page === 'about' || page === 'image' ? undefined : page;
 const zipContent = zipPage ? pageContent(locale, zipPage) : undefined;
 const image = page === 'image' ? imagePageContent(locale) : undefined;
+const about = page === 'about' ? aboutContent(locale) : undefined;
 const hub = page === 'hub' ? hubContent(locale) : undefined;
 ---
 {hub ? <Base lang={locale} page="hub" content={hub}>
@@ -43,6 +46,24 @@ const hub = page === 'hub' ? hubContent(locale) : undefined;
         <h2><a href={pagePath(locale, 'image')}>{hub.imageCardTitle}</a></h2>
         <p>{hub.imageCardDescription}</p>
       </article>
+    </section>
+  </main>
+</Base> : about ? <Base lang={locale} page="about" content={about}>
+  <main>
+    <div class="page-identity"><h1 id="page-heading">{about.h1}</h1></div>
+    <section id="page-content" class="page-content" aria-label={about.h1}>
+      <p class="page-lead">{about.lead}</p>
+      <p>{about.operation}</p>
+      <p>{about.disclosure}</p>
+      <h2>{about.verificationHeading}</h2>
+      <ol>{about.verificationSteps.map(step => <li>{step}</li>)}</ol>
+      <h2>{about.linksHeading}</h2>
+      <ul>
+        <li><a href={repository}>{about.sourceLink}</a></li>
+        <li><a href={`${repository}/issues`}>{about.issuesLink}</a></li>
+        <li><a href="/SECURITY.md">{about.securityLink}</a></li>
+      </ul>
+      <p>{about.securityNote}</p>
     </section>
   </main>
 </Base> : image ? <Base lang={locale} page="image" content={image}>

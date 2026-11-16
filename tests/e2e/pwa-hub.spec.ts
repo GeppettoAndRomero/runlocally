@@ -6,6 +6,7 @@ import { publicReady } from './_helpers';
 
 const expectedPages = [
   '/', '/en/',
+  '/about/', '/en/about/',
   '/zip/', '/en/zip/',
   '/zip/view/', '/en/zip/view/',
   '/zip/extract/', '/en/zip/extract/',
@@ -15,9 +16,9 @@ const expectedPages = [
 const sitePages = [...expectedPages, '/image/', '/en/image/'];
 const vendor = ['/vendor/libarchive/libarchive.wasm', '/vendor/libarchive/worker-bundle.js', '/vendor/libheif/libheif.wasm'];
 
-test('public pages are the fourteen distinct routes', () => {
-  expect(publicPaths).toHaveLength(14);
-  expect(new Set(publicPaths).size).toBe(14);
+test('public pages are the sixteen distinct routes', () => {
+  expect(publicPaths).toHaveLength(16);
+  expect(new Set(publicPaths).size).toBe(16);
   expect([...publicPaths].sort()).toEqual([...expectedPages].sort());
 });
 
@@ -57,7 +58,7 @@ for (const locale of LOCALES) {
       await activeRootWorker(page);
       const paths = await cachePaths(page);
       const savedPages = paths.filter(path => path.endsWith('/'));
-      expect(savedPages).toHaveLength(16);
+      expect(savedPages).toHaveLength(18);
       expect([...savedPages].sort()).toEqual([...sitePages].sort());
       for (const path of vendor) expect(paths).toContain(path);
 

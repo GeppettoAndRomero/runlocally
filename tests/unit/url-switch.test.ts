@@ -11,6 +11,7 @@ import { publicPageFromPath as modelPageFromPath } from '../../src/seo/url-model
 
 const publicRoutes = [
   { locale: 'ja', page: 'hub', path: '/' },
+  { locale: 'ja', page: 'about', path: '/about/' },
   { locale: 'ja', page: 'top', path: '/zip/' },
   { locale: 'ja', page: 'browse', path: '/zip/view/' },
   { locale: 'ja', page: 'extract', path: '/zip/extract/' },
@@ -18,6 +19,7 @@ const publicRoutes = [
   { locale: 'ja', page: 'fix-names', path: '/zip/fix-names/' },
   { locale: 'ja', page: 'create', path: '/zip/create/' },
   { locale: 'en', page: 'hub', path: '/en/' },
+  { locale: 'en', page: 'about', path: '/en/about/' },
   { locale: 'en', page: 'top', path: '/en/zip/' },
   { locale: 'en', page: 'browse', path: '/en/zip/view/' },
   { locale: 'en', page: 'extract', path: '/en/zip/extract/' },
@@ -25,7 +27,7 @@ const publicRoutes = [
   { locale: 'en', page: 'fix-names', path: '/en/zip/fix-names/' },
   { locale: 'en', page: 'create', path: '/en/zip/create/' },
 ] as const;
-const zipRoutes = publicRoutes.filter(route => route.page !== 'hub');
+const zipRoutes = publicRoutes.filter(route => route.page !== 'hub' && route.page !== 'about');
 
 const oldOperationPaths = [
   '/zip-viewer/', '/unzip/', '/remove-from-zip/', '/zip-filename-fix/',
@@ -39,8 +41,8 @@ const content: PageContent = {
 };
 
 describe('ZIP URL connection', () => {
-  it('generates and parses the fourteen concrete public URLs through the public module', () => {
-    expect(publicRoutes).toHaveLength(14);
+  it('generates and parses the sixteen concrete public URLs through the public module', () => {
+    expect(publicRoutes).toHaveLength(16);
     expect(zipRoutes).toHaveLength(12);
     for (const { locale, page, path } of publicRoutes) {
       const route = { locale, page };
@@ -48,7 +50,7 @@ describe('ZIP URL connection', () => {
       expect(pagePath(locale, page)).toBe(path);
       expect(pageUrl(locale, page)).toBe(url);
       expect(publicPageFromPath(path)).toEqual(route);
-      expect(zipPageFromPath(path)).toEqual(page === 'hub' ? undefined : route);
+      expect(zipPageFromPath(path)).toEqual(page === 'hub' || page === 'about' ? undefined : route);
       expect(publicPageFromUrl(url)).toEqual(route);
       expect(isPublicPageUrl(url)).toBe(true);
     }

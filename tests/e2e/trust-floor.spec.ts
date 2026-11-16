@@ -46,7 +46,7 @@ async function check(page: Page, locale: Locale, current: SitePage,
   await expect(source).toHaveAttribute('href', repository);
   await expect(issues).toHaveAttribute('href', `${repository}/issues`);
   await expect(security).toHaveAttribute('href', '/SECURITY.md');
-  await expect(footer.getByRole('link')).toHaveCount(3);
+  await expect(footer.getByRole('link')).toHaveCount(4);
   for (const kind of ['source', 'issues'] as const) {
     await expect(footer.getByRole('link', { name: copy[other][kind], exact: true })).toHaveCount(0);
     if (javaScriptEnabled) {

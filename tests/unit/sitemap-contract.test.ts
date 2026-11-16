@@ -4,6 +4,7 @@ import { SITE_ORIGIN } from '../../src/seo/page';
 
 const pairs = [
   ['/', '/en/'],
+  ['/about/', '/en/about/'],
   ['/zip/', '/en/zip/'],
   ['/zip/view/', '/en/zip/view/'],
   ['/zip/extract/', '/en/zip/extract/'],
@@ -15,9 +16,9 @@ const url = (path: string) => `${SITE_ORIGIN}${path}`;
 const expected = pairs.flatMap(([ja, en]) => [url(ja), url(en)]);
 
 describe('sitemap product options', () => {
-  it('accepts exactly the fourteen published routes', () => {
-    expect(expected).toHaveLength(14);
-    expect(new Set(expected).size).toBe(14);
+  it('accepts exactly the sixteen published routes', () => {
+    expect(expected).toHaveLength(16);
+    expect(new Set(expected).size).toBe(16);
     for (const page of expected) expect(sitemapOptions.filter(page)).toBe(true);
     for (const path of [
       '/zip-viewer/', '/unzip/', '/remove-from-zip/', '/zip-filename-fix/',
