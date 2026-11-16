@@ -103,7 +103,7 @@ describe('ZIP URL connection', () => {
       expect(data.canonical).toBe(url);
       expect(data.og.url).toBe(url);
       expect(data.application.url).toBe(url);
-      expect(JSON.parse(data.jsonLd).url).toBe(url);
+      expect(JSON.parse(data.jsonLd)['@graph'][0].url).toBe(url);
       expect(data.alternates).toEqual(alternates(page));
       expect(data.alternates).toContainEqual({ hreflang: 'x-default', href: `${SITE_ORIGIN}${
         zipRoutes.find(route => route.locale === 'en' && route.page === page)!.path}` });

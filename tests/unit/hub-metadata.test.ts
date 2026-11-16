@@ -78,9 +78,9 @@ describe('hub content and metadata', () => {
       expect(data.og).toMatchObject({ type: 'website', url, title: content.title,
         description: content.description, locale: ogLocale });
       expect(data.application).toEqual({ '@context': 'https://schema.org', '@type': 'WebSite',
-        name: 'runlocally', alternateName: content.h1, description: content.description, url, inLanguage: hreflang });
+        name: 'runlocally', alternateName: content.h1, sameAs: ['https://github.com/GeppettoAndRomero/runlocally'], description: content.description, url, inLanguage: hreflang });
       expect(data.application).not.toHaveProperty('featureList');
-      expect(JSON.parse(data.jsonLd)).toEqual(data.application);
+      expect(JSON.parse(data.jsonLd)).toEqual(data.structuredData);
     }
   });
 
@@ -103,7 +103,7 @@ describe('hub content and metadata', () => {
       const data = headData(code, page, content);
       expect(data.application['@type']).toBe('SoftwareApplication');
       expect(data.application.featureList).toEqual(page === 'top' ? [] : content.steps.map(step => step.heading));
-      expect(JSON.parse(data.jsonLd)).toEqual(data.application);
+      expect(JSON.parse(data.jsonLd)).toEqual(data.structuredData);
     }
     expect(AVAILABLE_OPS).toHaveLength(PUBLIC_PAGES.length - 3);
   });

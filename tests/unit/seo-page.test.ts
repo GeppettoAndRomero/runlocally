@@ -81,7 +81,7 @@ describe('public page metadata', () => {
     const content = { ...sample, description: 'Quoted "value"\n</script><script>alert(1)</script>' };
     const data = headData(DEFAULT_LOCALE, 'browse', content);
     expect(data.jsonLd).not.toContain('<');
-    expect(JSON.parse(data.jsonLd)).toEqual(data.application);
+    expect(JSON.parse(data.jsonLd)).toEqual(data.structuredData);
     expect(safeJsonLd({ value: '\u2028\u2029&<>' })).not.toContain('<');
   });
 });

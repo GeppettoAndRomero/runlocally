@@ -45,7 +45,7 @@ describe('image page', () => {
       ]);
       expect(data.application['@type']).toBe('SoftwareApplication');
       expect(data.application.featureList).toEqual(['JPG', 'PNG']);
-      expect(JSON.parse(data.jsonLd)).toEqual(data.application);
+      expect(JSON.parse(data.jsonLd)).toEqual(data.structuredData);
       const html = readFileSync(`dist${path}index.html`, 'utf8');
       expect(html).toContain('name="robots" content="noindex"');
       expect(html).toContain('component-export="ImageConverter"');
