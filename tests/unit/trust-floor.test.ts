@@ -17,13 +17,14 @@ const free = {
   offers: { '@type': 'Offer', price: 0, priceCurrency: 'JPY' },
   applicationCategory: 'UtilitiesApplication', operatingSystem: 'Web browser',
 };
+// The English colophon is shared by both languages (README contract), outside the language blocks.
+const colophon = readFileSync('README.md', 'utf8').match(/^Colophon: (.+)$/m)![1];
 const text = {
   ja: ['無料で使えるブラウザアプリです。',
     'コードの一部は AI の支援で書かれています。レビューと判断はすべて運営者が行っています。',
     'ソースコード（GitHub）', '不具合・ご意見（GitHub Issues）',
     '脆弱性の報告は、下のセキュリティ窓口をご利用ください。'],
   en: ['A free app that runs in your browser.',
-    readFileSync('README.md', 'utf8').match(/^Colophon: (.+)$/m)![1],
     'Source code (GitHub)', 'Bugs and feedback (GitHub Issues)',
     'To report a vulnerability, use the Security link below.'],
 };
@@ -77,7 +78,13 @@ describe('trust floor', () => {
         const security = footer.querySelector('#footer-security')!;
         expect(security.closest('[data-trust-locale]')).toBeNull();
         expect(security.outerHTML).toBe(`<a id="footer-security" href="/SECURITY.md">${ui[code].shared.security}</a>`);
-        expect(html.split(text.en[1])).toHaveLength(2);
+        expect(html.split(colophon)).toHaveLength(2);
+        const shared = footer.querySelector('[data-trust-colophon]')!;
+        expect(shared.tagName).toBe('P');
+        expect(shared.getAttribute('lang')).toBe('en');
+        expect(shared.textContent).toBe(colophon);
+        expect(shared.closest('[data-trust-locale]')).toBeNull();
+        expect(footer.querySelectorAll('p')).toHaveLength(1);
         const scripts = document.querySelectorAll('script[type="application/ld+json"]');
         expect(scripts).toHaveLength(1);
         expect(JSON.parse(scripts[0].textContent!)).toEqual(data.application);
