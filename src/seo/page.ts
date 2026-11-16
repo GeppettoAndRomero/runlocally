@@ -65,6 +65,12 @@ export function safeJsonLd(value: object): string {
     .replace(/\u2029/g, '\\u2029');
 }
 
+const freeApplication = {
+  offers: { '@type': 'Offer', price: 0, priceCurrency: 'JPY' },
+  applicationCategory: 'UtilitiesApplication',
+  operatingSystem: 'Web browser',
+} as const;
+
 export function headData(locale: Locale, page: SitePage, content: PageContent | HubContent | ImagePageContent, model?: UrlModel) {
   const title = content.title;
   const description = content.description;
@@ -73,16 +79,16 @@ export function headData(locale: Locale, page: SitePage, content: PageContent | 
   const localeInfo = LOCALES.find(entry => entry.code === locale)!;
   const common = { '@context': 'https://schema.org', name: content.h1, description, url, inLanguage: localeInfo.hreflang };
   let application: typeof common & { '@type': 'WebSite'; alternateName: string; featureList?: never } |
-    typeof common & { '@type': 'SoftwareApplication'; featureList: string[]; alternateName?: never };
+    typeof common & typeof freeApplication & { '@type': 'SoftwareApplication'; featureList: string[]; alternateName?: never };
   if (page === 'hub') {
     if ('steps' in content) throw new Error('Hub requires hub content');
     // The WebSite node names the site itself; the heading describes what it offers.
     application = { ...common, '@type': 'WebSite', name: SITE_NAME, alternateName: content.h1 };
   } else if (page === 'image') {
-    application = { ...common, '@type': 'SoftwareApplication', featureList: ['JPG', 'PNG'] };
+    application = { ...common, ...freeApplication, '@type': 'SoftwareApplication', featureList: ['JPG', 'PNG'] };
   } else {
     if (!('steps' in content) || !Array.isArray(content.steps)) throw new Error('ZIP page requires steps');
-    application = { ...common, '@type': 'SoftwareApplication',
+    application = { ...common, ...freeApplication, '@type': 'SoftwareApplication',
       featureList: page === 'top' ? [] : content.steps.map(step => step.heading).filter(Boolean) };
   }
   return {
